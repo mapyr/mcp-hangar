@@ -1,0 +1,44 @@
+# MCP Registry Configuration
+# Copy to config.yaml and customize
+
+providers:
+  # ============================================
+  # SUBPROCESS MODE - Local processes
+  # ============================================
+  math:
+    mode: subprocess
+    command:
+      - python
+      - -m
+      - examples.provider_math.server
+    idle_ttl_s: 180
+    health_check_interval_s: 60
+    max_consecutive_failures: 3
+
+  # ============================================
+  # CONTAINER MODE - Pre-built images
+  # ============================================
+  # filesystem:
+  #   mode: container
+  #   image: ghcr.io/modelcontextprotocol/server-filesystem:latest
+  #   volumes:
+  #     - "${HOME}:/data:ro"
+  #   resources:
+  #     memory: 256m
+  #     cpu: "0.5"
+
+  # ============================================
+  # CONTAINER MODE - Custom build
+  # ============================================
+  # custom:
+  #   mode: container
+  #   build:
+  #     dockerfile: docker/Dockerfile.custom
+  #     context: .
+  #   env:
+  #     MY_VAR: "value"
+  #   resources:
+  #     memory: 256m
+  #     cpu: "0.5"
+  #   network: none
+

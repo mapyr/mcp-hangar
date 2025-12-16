@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  # Main MCP Hangar server
+  mcp-hangar:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mcp-hangar
+    ports:
+      - "8080:8080"
+    environment:
+      - MCP_LOG_LEVEL=INFO
+      - MCP_CONFIG=/app/config.yaml
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Example math provider (optional)
+  math-provider:
+    build:
+      context: ./examples/provider_math
+      dockerfile: Dockerfile
+    container_name: mcp-math-provider
+    restart: unless-stopped
+    networks:
+      - mcp-network
+    profiles:
+      - with-providers
+
+networks:
+  mcp-network:
+    driver: bridge
+
+volumes:
+  logs:
+    driver: local

@@ -1,0 +1,16 @@
+FROM node:20-alpine
+
+LABEL org.opencontainers.image.title="MCP Fetch Server"
+LABEL org.opencontainers.image.description="MCP server for web content fetching"
+LABEL org.opencontainers.image.source="https://github.com/kazuph/mcp-fetch"
+
+WORKDIR /app
+
+# Install the fetch server globally
+RUN npm install -g @kazuph/mcp-fetch
+
+# Run as non-root user for security (node image already has node user)
+USER node
+
+ENTRYPOINT ["mcp-fetch"]
+

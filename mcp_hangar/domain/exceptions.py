@@ -1,0 +1,289 @@
+"""
+Domain exceptions for the MCP Registry.
+
+All domain-specific exceptions should be defined here.
+These exceptions carry context and can be serialized to structured error responses.
+"""
+
+from typing import Any, Dict, Optional
+
+
+class MCPError(Exception):
+    """Base exception for all MCP registry errors.
+
+    Provides structured error information with context for debugging and logging.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        provider_id: str = "",
+        operation: str = "",
+        details: Optional[Dict[str, Any]] = None,
+    ):
+        super().__init__(message)
+        self.message = message
+        self.provider_id = provider_id
+        self.operation = operation
+        self.details = details or {}
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to structured error dictionary for API responses."""
+        return {
+            "error": self.message,
+            "provider_id": self.provider_id,
+            "operation": self.operation,
+            "details": self.details,
+            "type": self.__class__.__name__,
+        }
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"message={self.message!r}, "
+            f"provider_id={self.provider_id!r}, "
+            f"operation={self.operation!r})"
+        )
+
+
+# --- Provider Lifecycle Exceptions ---
+
+
+class ProviderError(MCPError):
+    """Base exception for provider-related errors."""
+
+    pass
+
+
+class ProviderNotFoundError(ProviderError):
+    """Raised when a provider is not found in the registry."""
+
+    def __init__(self, provider_id: str):
+        super().__init__(
+            message=f"Provider not found: {provider_id}",
+            provider_id=provider_id,
+            operation="lookup",
+        )
+
+
+class ProviderStartError(ProviderError):
+    """Raised when a provider fails to start."""
+
+    def __init__(
+        self, provider_id: str, reason: str, details: Optional[Dict[str, Any]] = None
+    ):
+        super().__init__(
+            message=f"Failed to start provider: {reason}",
+            provider_id=provider_id,
+            operation="start",
+            details=details or {},
+        )
+        self.reason = reason
+
+
+class ProviderDegradedError(ProviderError):
+    """Raised when a provider is in degraded state and cannot accept requests."""
+
+    def __init__(
+        self,
+        provider_id: str,
+        backoff_remaining: float = 0,
+        consecutive_failures: int = 0,
+    ):
+        super().__init__(
+            message=f"Provider is degraded, retry in {backoff_remaining:.1f}s",
+            provider_id=provider_id,
+            operation="ensure_ready",
+            details={
+                "backoff_remaining_s": backoff_remaining,
+                "consecutive_failures": consecutive_failures,
+            },
+        )
+        self.backoff_remaining = backoff_remaining
+        self.consecutive_failures = consecutive_failures
+
+
+class CannotStartProviderError(ProviderError):
+    """Raised when provider cannot be started due to backoff or other constraints."""
+
+    def __init__(self, provider_id: str, reason: str, time_until_retry: float = 0):
+        super().__init__(
+            message=f"Cannot start provider: {reason}",
+            provider_id=provider_id,
+            operation="start",
+            details={"time_until_retry_s": time_until_retry},
+        )
+        self.reason = reason
+        self.time_until_retry = time_until_retry
+
+
+class ProviderNotReadyError(ProviderError):
+    """Raised when an operation requires READY state but provider is not ready."""
+
+    def __init__(self, provider_id: str, current_state: str):
+        super().__init__(
+            message=f"Provider is not ready (state={current_state})",
+            provider_id=provider_id,
+            operation="invoke",
+            details={"current_state": current_state},
+        )
+        self.current_state = current_state
+
+
+class InvalidStateTransitionError(ProviderError):
+    """Raised when an invalid state transition is attempted."""
+
+    def __init__(self, provider_id: str, from_state: str, to_state: str):
+        super().__init__(
+            message=f"Invalid state transition: {from_state} -> {to_state}",
+            provider_id=provider_id,
+            operation="transition",
+            details={"from_state": from_state, "to_state": to_state},
+        )
+        self.from_state = from_state
+        self.to_state = to_state
+
+
+# --- Tool Invocation Exceptions ---
+
+
+class ToolError(MCPError):
+    """Base exception for tool-related errors."""
+
+    pass
+
+
+class ToolNotFoundError(ToolError):
+    """Raised when a tool is not found in the provider's catalog."""
+
+    def __init__(self, provider_id: str, tool_name: str):
+        super().__init__(
+            message=f"Tool not found: {tool_name}",
+            provider_id=provider_id,
+            operation="invoke",
+            details={"tool_name": tool_name},
+        )
+        self.tool_name = tool_name
+
+
+class ToolInvocationError(ToolError):
+    """Raised when a tool invocation fails."""
+
+    def __init__(
+        self, provider_id: str, message: str, details: Optional[Dict[str, Any]] = None
+    ):
+        super().__init__(
+            message=message,
+            provider_id=provider_id,
+            operation="invoke",
+            details=details or {},
+        )
+
+
+class ToolTimeoutError(ToolError):
+    """Raised when a tool invocation times out."""
+
+    def __init__(self, provider_id: str, tool_name: str, timeout: float):
+        super().__init__(
+            message=f"Tool invocation timed out after {timeout}s",
+            provider_id=provider_id,
+            operation="invoke",
+            details={"tool_name": tool_name, "timeout_s": timeout},
+        )
+        self.tool_name = tool_name
+        self.timeout = timeout
+
+
+# --- Client/Communication Exceptions ---
+
+
+class ClientError(MCPError):
+    """Raised when the stdio client encounters an error."""
+
+    def __init__(
+        self,
+        message: str,
+        provider_id: str = "",
+        details: Optional[Dict[str, Any]] = None,
+    ):
+        super().__init__(
+            message=message,
+            provider_id=provider_id,
+            operation="client",
+            details=details or {},
+        )
+
+
+class ClientNotConnectedError(ClientError):
+    """Raised when attempting to use a client that is not connected."""
+
+    def __init__(self, provider_id: str = ""):
+        super().__init__(message="Client is not connected", provider_id=provider_id)
+
+
+class ClientTimeoutError(ClientError):
+    """Raised when a client operation times out."""
+
+    def __init__(
+        self, provider_id: str = "", timeout: float = 0, operation: str = "call"
+    ):
+        super().__init__(
+            message=f"Client operation timed out after {timeout}s",
+            provider_id=provider_id,
+            details={"timeout_s": timeout, "operation": operation},
+        )
+        self.timeout = timeout
+
+
+# --- Validation Exceptions ---
+
+
+class ValidationError(MCPError):
+    """Raised when input validation fails."""
+
+    def __init__(
+        self,
+        message: str,
+        field: str = "",
+        value: Any = None,
+        details: Optional[Dict[str, Any]] = None,
+    ):
+        base_details = {"field": field}
+        if value is not None:
+            # Sanitize value for logging (truncate if too long)
+            str_value = str(value)
+            if len(str_value) > 100:
+                str_value = str_value[:100] + "..."
+            base_details["value"] = str_value
+        if details:
+            base_details.update(details)
+
+        super().__init__(message=message, operation="validation", details=base_details)
+        self.field = field
+        self.value = value
+
+
+class ConfigurationError(MCPError):
+    """Raised when configuration is invalid."""
+
+    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
+        super().__init__(
+            message=message, operation="configuration", details=details or {}
+        )
+
+
+# --- Rate Limiting Exceptions ---
+
+
+class RateLimitExceeded(MCPError):
+    """Raised when rate limit is exceeded."""
+
+    def __init__(self, provider_id: str = "", limit: int = 0, window_seconds: int = 0):
+        super().__init__(
+            message=f"Rate limit exceeded: {limit} requests per {window_seconds}s",
+            provider_id=provider_id,
+            operation="rate_limit",
+            details={"limit": limit, "window_seconds": window_seconds},
+        )
+        self.limit = limit
+        self.window_seconds = window_seconds
