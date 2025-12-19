@@ -92,7 +92,7 @@ providers:
     image: ghcr.io/modelcontextprotocol/server-filesystem:latest
     volumes:
       - "${HOME}:/data:ro"
-    
+
   # Container mode with custom build
   custom:
     mode: container
@@ -202,14 +202,41 @@ my_provider:
 
 ## Development
 
-### Running Tests
+### Development Setup
+
+To contribute to this project, you'll need [uv](https://github.com/astral-sh/uv) and a Docker runtime (Docker Desktop or Podman) installed.
+
+#### 1. Install Dependencies
+
+Standard installation only installs runtime dependencies. To run tests and linters, you must install the `dev` extras:
+
+```bash
+# Install all dependencies including pytest, ruff, etc.
+uv sync --extra dev
+```
+
+#### 2. Prepare Docker Environment
+
+Some integration tests (e.g., Memory Provider) run actual MCP servers in Docker containers. These containers need write access to the local `data` directory.
+
+Before running tests, ensure the directory exists and has permissive permissions to avoid `EACCES: permission denied` errors inside the container:
+
+```bash
+# Create data directory and set permissions for Docker volume mounting
+mkdir -p data
+chmod 777 data
+```
+
+#### 3. Run Tests
+
+Once dependencies are installed and permissions are set, you can run the full test suite:
 
 ```bash
 # All tests
-pytest tests/ -v
+uv run pytest tests/ -v
 
 # Quick tests only
-pytest tests/ -v -m "not slow"
+uv run pytest tests/ -v -m "not slow"
 ```
 
 ### Project Structure
@@ -242,4 +269,3 @@ Full documentation is available in the [docs/](docs/INDEX.md) directory:
 ## License
 
 MIT License - see [LICENSE](LICENSE)
-

@@ -5,8 +5,9 @@
 ### Prerequisites
 
 - Python 3.10+
+- [uv](https://github.com/astral-sh/uv)
 - Git
-- Docker (optional, for container provider tests)
+- Docker or Podman (optional, for container provider tests)
 
 ### Installation
 
@@ -14,14 +15,29 @@
 git clone https://github.com/mapyr/mcp-hangar.git
 cd mcp-hangar
 
-python3 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+# Install dependencies including dev tools
+uv sync --extra dev
 
-pip install -e ".[dev]"
-pre-commit install
+# Install pre-commit hooks
+uv run pre-commit install
+```
 
-# Verify installation
-pytest tests/ -v -m "not slow"
+### Prepare Docker Environment
+
+Some integration tests run actual MCP servers in Docker containers. These containers need write access to the local `data` directory.
+
+Before running tests, ensure the directory exists and has permissive permissions:
+
+```bash
+# Create data directory and set permissions for Docker volume mounting
+mkdir -p data
+chmod 777 data
+```
+
+### Verify Installation
+
+```bash
+uv run pytest tests/ -v -m "not slow"
 ```
 
 ## Project Structure
@@ -120,12 +136,12 @@ from mcp_hangar.infrastructure.event_bus import get_event_bus
 ### Running Tests
 
 ```bash
-pytest tests/ -v -m "not slow"           # Quick tests
-pytest tests/integration/test_provider_manager.py -v  # Specific file
-pytest tests/ -m "not slow" --cov=mcp_hangar --cov-report=html
-pytest tests/ -v -m unit                 # Unit tests only
-pytest tests/ -v -m integration          # Integration tests only
-pytest tests/ -v -m docker               # Docker tests only
+uv run pytest tests/ -v -m "not slow"           # Quick tests
+uv run pytest tests/integration/test_provider_manager.py -v  # Specific file
+uv run pytest tests/ -m "not slow" --cov=mcp_hangar --cov-report=html
+uv run pytest tests/ -v -m unit                 # Unit tests only
+uv run pytest tests/ -v -m integration          # Integration tests only
+uv run pytest tests/ -v -m docker               # Docker tests only
 ```
 
 ### Test Markers
@@ -156,10 +172,10 @@ def test_docker_provider():
 def test_tool_invocation_returns_result():
     # Arrange
     provider = Provider(provider_id="test", mode="subprocess", command=[...])
-    
+
     # Act
     result = provider.invoke_tool("add", {"a": 1, "b": 2})
-    
+
     # Assert
     assert result["result"] == 3
 ```
@@ -194,8 +210,8 @@ Aim for >80% coverage on new code, >90% on critical paths.
 
 4. Run tests and pre-commit:
    ```bash
-   pytest tests/ -v -m "not slow"
-   pre-commit run --all-files
+   uv run pytest tests/ -v -m "not slow"
+   uv run pre-commit run --all-files
    ```
 
 5. Update documentation if needed
