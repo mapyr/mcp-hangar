@@ -428,9 +428,7 @@ class SecurityEventHandler:
 
             # Clean old entries
             cutoff = now - self.TIME_WINDOW_S
-            self._failure_counts[provider_id] = [
-                t for t in self._failure_counts[provider_id] if t > cutoff
-            ]
+            self._failure_counts[provider_id] = [t for t in self._failure_counts[provider_id] if t > cutoff]
 
     def _check_anomalies(self, event: DomainEvent) -> None:
         """Check for anomalous patterns across events."""

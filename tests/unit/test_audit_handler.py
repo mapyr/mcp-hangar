@@ -464,9 +464,7 @@ class TestAuditEventHandler:
     def test_include_event_types_filter(self):
         """Test filtering by included event types."""
         store = InMemoryAuditStore()
-        handler = AuditEventHandler(
-            store=store, include_event_types=["ProviderStarted", "ProviderStopped"]
-        )
+        handler = AuditEventHandler(store=store, include_event_types=["ProviderStarted", "ProviderStopped"])
 
         handler.handle(ProviderStarted("p1", "subprocess", 1, 100.0))
         handler.handle(ProviderStopped("p1", "idle"))

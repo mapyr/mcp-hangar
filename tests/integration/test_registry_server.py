@@ -111,9 +111,7 @@ stdio_server(mcp)
 
 def test_registry_initialize(registry_server):
     """Test MCP initialize handshake with registry."""
-    response = registry_server.call(
-        "initialize", {"client": "test-client", "protocol_version": "2024-11-05"}
-    )
+    response = registry_server.call("initialize", {"client": "test-client", "protocol_version": "2024-11-05"})
 
     assert "result" in response
     assert "serverInfo" in response["result"]
@@ -133,9 +131,7 @@ def test_registry_list_providers(registry_server):
     assert "registry_list" in tool_names
 
     # Call registry_list
-    response = registry_server.call(
-        "tools/call", {"name": "registry_list", "arguments": {}}, timeout=10.0
-    )
+    response = registry_server.call("tools/call", {"name": "registry_list", "arguments": {}}, timeout=10.0)
 
     assert "result" in response
     result = response["result"]
@@ -240,9 +236,7 @@ def test_registry_stop_provider(registry_server):
     assert result["stopped"] == "test_math"
 
     # Verify provider is stopped
-    list_resp = registry_server.call(
-        "tools/call", {"name": "registry_list", "arguments": {}}, timeout=10.0
-    )
+    list_resp = registry_server.call("tools/call", {"name": "registry_list", "arguments": {}}, timeout=10.0)
 
     providers = list_resp["result"]["providers"]
     test_math = next(p for p in providers if p["provider"] == "test_math")

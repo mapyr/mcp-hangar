@@ -111,9 +111,7 @@ class TestEventSourcedProvider:
 
     def test_create_empty_provider(self):
         """Test creating an empty provider."""
-        provider = EventSourcedProvider(
-            provider_id="test", mode="subprocess", command=["python", "server.py"]
-        )
+        provider = EventSourcedProvider(provider_id="test", mode="subprocess", command=["python", "server.py"])
 
         assert provider.provider_id == "test"
         assert provider.mode == "subprocess"
@@ -124,9 +122,7 @@ class TestEventSourcedProvider:
         """Test rebuilding from ProviderStarted event."""
         events = [ProviderStarted("p1", "subprocess", 5, 100.0)]
 
-        provider = EventSourcedProvider.from_events(
-            provider_id="p1", mode="subprocess", events=events
-        )
+        provider = EventSourcedProvider.from_events(provider_id="p1", mode="subprocess", events=events)
 
         assert provider.state == ProviderState.READY
         assert provider.events_applied == 1
@@ -138,9 +134,7 @@ class TestEventSourcedProvider:
             ProviderStopped("p1", "idle"),
         ]
 
-        provider = EventSourcedProvider.from_events(
-            provider_id="p1", mode="subprocess", events=events
-        )
+        provider = EventSourcedProvider.from_events(provider_id="p1", mode="subprocess", events=events)
 
         assert provider.state == ProviderState.COLD
         assert provider.events_applied == 2
@@ -152,9 +146,7 @@ class TestEventSourcedProvider:
             ProviderDegraded("p1", 3, 5, "timeout"),
         ]
 
-        provider = EventSourcedProvider.from_events(
-            provider_id="p1", mode="subprocess", events=events
-        )
+        provider = EventSourcedProvider.from_events(provider_id="p1", mode="subprocess", events=events)
 
         assert provider.state == ProviderState.DEGRADED
         assert provider.health.consecutive_failures == 3
@@ -167,9 +159,7 @@ class TestEventSourcedProvider:
             ProviderStateChanged("p1", "initializing", "ready"),
         ]
 
-        provider = EventSourcedProvider.from_events(
-            provider_id="p1", mode="subprocess", events=events
-        )
+        provider = EventSourcedProvider.from_events(provider_id="p1", mode="subprocess", events=events)
 
         assert provider.state == ProviderState.READY
 
@@ -181,9 +171,7 @@ class TestEventSourcedProvider:
             ToolInvocationCompleted("p1", "add", "c2", 50.0),
         ]
 
-        provider = EventSourcedProvider.from_events(
-            provider_id="p1", mode="subprocess", events=events
-        )
+        provider = EventSourcedProvider.from_events(provider_id="p1", mode="subprocess", events=events)
 
         # Tool completion should reset consecutive failures
         assert provider.health.consecutive_failures == 0
@@ -196,9 +184,7 @@ class TestEventSourcedProvider:
             ToolInvocationFailed("p1", "add", "c2", "error2", "Error"),
         ]
 
-        provider = EventSourcedProvider.from_events(
-            provider_id="p1", mode="subprocess", events=events
-        )
+        provider = EventSourcedProvider.from_events(provider_id="p1", mode="subprocess", events=events)
 
         assert provider.health.consecutive_failures == 2
         assert provider.health.total_failures == 2
@@ -211,9 +197,7 @@ class TestEventSourcedProvider:
             HealthCheckPassed("p1", 50.0),
         ]
 
-        provider = EventSourcedProvider.from_events(
-            provider_id="p1", mode="subprocess", events=events
-        )
+        provider = EventSourcedProvider.from_events(provider_id="p1", mode="subprocess", events=events)
 
         assert provider.health.consecutive_failures == 0
 
@@ -225,9 +209,7 @@ class TestEventSourcedProvider:
             HealthCheckFailed("p1", 2, "error2"),
         ]
 
-        provider = EventSourcedProvider.from_events(
-            provider_id="p1", mode="subprocess", events=events
-        )
+        provider = EventSourcedProvider.from_events(provider_id="p1", mode="subprocess", events=events)
 
         assert provider.health.consecutive_failures == 2
 
@@ -326,9 +308,7 @@ class TestEventSourcedProvider:
             ProviderStopped("p1", "idle"),
         ]
 
-        provider = EventSourcedProvider.from_events(
-            provider_id="p1", mode="subprocess", events=events
-        )
+        provider = EventSourcedProvider.from_events(provider_id="p1", mode="subprocess", events=events)
 
         # Replay to version 1 (after first event)
         provider_v1 = provider.replay_to_version(1, events)
@@ -364,9 +344,7 @@ class TestEventSourcedProvider:
             ProviderStopped("p1", "idle"),
         ]
 
-        provider = EventSourcedProvider.from_events(
-            provider_id="p1", mode="subprocess", events=events
-        )
+        provider = EventSourcedProvider.from_events(provider_id="p1", mode="subprocess", events=events)
 
         assert provider.version == 3
 
@@ -382,9 +360,7 @@ class TestEventSourcedProvider:
             ProviderStopped("p1", "degraded"),
         ]
 
-        provider = EventSourcedProvider.from_events(
-            provider_id="p1", mode="subprocess", events=events
-        )
+        provider = EventSourcedProvider.from_events(provider_id="p1", mode="subprocess", events=events)
 
         assert provider.state == ProviderState.COLD
         assert provider.events_applied == 7

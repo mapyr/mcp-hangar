@@ -11,14 +11,7 @@ import time
 from typing import Any, Dict, List, Optional
 
 from ..events import DomainEvent
-from ..value_objects import (
-    GroupId,
-    GroupState,
-    LoadBalancerStrategy,
-    MemberPriority,
-    MemberWeight,
-    ProviderState,
-)
+from ..value_objects import GroupId, GroupState, LoadBalancerStrategy, MemberPriority, MemberWeight, ProviderState
 from .aggregate import AggregateRoot
 from .circuit_breaker import CircuitBreaker, CircuitBreakerConfig
 from .load_balancer import LoadBalancer
@@ -256,11 +249,7 @@ class ProviderGroup(AggregateRoot):
     def is_available(self) -> bool:
         """Can the group accept requests?"""
         with self._lock:
-            return (
-                not self._circuit_breaker.is_open
-                and self._state.can_accept_requests
-                and self.healthy_count >= 1
-            )
+            return not self._circuit_breaker.is_open and self._state.can_accept_requests and self.healthy_count >= 1
 
     @property
     def circuit_open(self) -> bool:
@@ -319,10 +308,7 @@ class ProviderGroup(AggregateRoot):
                 )
             )
 
-            logger.info(
-                f"Added member {member_id} to group {self.id} "
-                f"(weight={weight}, priority={priority})"
-            )
+            logger.info(f"Added member {member_id} to group {self.id} " f"(weight={weight}, priority={priority})")
 
             # Auto-start if configured
             if self._auto_start:
@@ -494,10 +480,7 @@ class ProviderGroup(AggregateRoot):
                 reason="unhealthy_threshold_reached",
             )
         )
-        logger.info(
-            f"Member {member_id} removed from rotation after "
-            f"{member.consecutive_failures} failures"
-        )
+        logger.info(f"Member {member_id} removed from rotation after " f"{member.consecutive_failures} failures")
 
     def _maybe_open_circuit(self) -> None:
         """Open circuit breaker if failure threshold reached."""
@@ -512,8 +495,7 @@ class ProviderGroup(AggregateRoot):
             )
         )
         logger.warning(
-            f"Circuit breaker opened for group {self.id} "
-            f"after {self._circuit_breaker.failure_count} failures"
+            f"Circuit breaker opened for group {self.id} " f"after {self._circuit_breaker.failure_count} failures"
         )
 
     # --- State Management ---
@@ -545,8 +527,7 @@ class ProviderGroup(AggregateRoot):
                 )
             )
             logger.info(
-                f"Group {self.id} state: {old_state.value} -> {new_state.value} "
-                f"(healthy={healthy}/{total})"
+                f"Group {self.id} state: {old_state.value} -> {new_state.value} " f"(healthy={healthy}/{total})"
             )
 
     def rebalance(self) -> None:

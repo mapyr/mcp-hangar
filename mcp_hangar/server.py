@@ -11,12 +11,7 @@ from mcp.server.fastmcp import FastMCP
 import yaml
 
 from .application.commands import register_all_handlers as register_command_handlers
-from .application.event_handlers import (
-    AlertEventHandler,
-    AuditEventHandler,
-    LoggingEventHandler,
-    MetricsEventHandler,
-)
+from .application.event_handlers import AlertEventHandler, AuditEventHandler, LoggingEventHandler, MetricsEventHandler
 from .application.mcp.tooling import (
     chain_validators,
     key_global,
@@ -196,9 +191,7 @@ def _validate_provider_id(provider: str) -> None:
             message=(result.errors[0].message if result.errors else "Invalid provider ID"),
             provider_id=provider,
         )
-        raise ValueError(
-            f"invalid_provider_id: {result.errors[0].message if result.errors else 'validation failed'}"
-        )
+        raise ValueError(f"invalid_provider_id: {result.errors[0].message if result.errors else 'validation failed'}")
 
 
 def _validate_tool_name_input(tool: str) -> None:
@@ -209,9 +202,7 @@ def _validate_tool_name_input(tool: str) -> None:
             field="tool",
             message=result.errors[0].message if result.errors else "Invalid tool name",
         )
-        raise ValueError(
-            f"invalid_tool_name: {result.errors[0].message if result.errors else 'validation failed'}"
-        )
+        raise ValueError(f"invalid_tool_name: {result.errors[0].message if result.errors else 'validation failed'}")
 
 
 def _validate_arguments_input(arguments: dict) -> None:
@@ -222,9 +213,7 @@ def _validate_arguments_input(arguments: dict) -> None:
             field="arguments",
             message=result.errors[0].message if result.errors else "Invalid arguments",
         )
-        raise ValueError(
-            f"invalid_arguments: {result.errors[0].message if result.errors else 'validation failed'}"
-        )
+        raise ValueError(f"invalid_arguments: {result.errors[0].message if result.errors else 'validation failed'}")
 
 
 def _validate_timeout_input(timeout: float) -> None:
@@ -235,9 +224,7 @@ def _validate_timeout_input(timeout: float) -> None:
             field="timeout",
             message=result.errors[0].message if result.errors else "Invalid timeout",
         )
-        raise ValueError(
-            f"invalid_timeout: {result.errors[0].message if result.errors else 'validation failed'}"
-        )
+        raise ValueError(f"invalid_timeout: {result.errors[0].message if result.errors else 'validation failed'}")
 
 
 @mcp.tool(name="registry_list")
@@ -477,9 +464,7 @@ def _invoke_on_group(group_id: str, tool: str, arguments: dict, timeout: float) 
     return _invoke_with_retry(group, tool, arguments, timeout, max_attempts=2)
 
 
-def _invoke_with_retry(
-    group: ProviderGroup, tool: str, arguments: dict, timeout: float, max_attempts: int
-) -> dict:
+def _invoke_with_retry(group: ProviderGroup, tool: str, arguments: dict, timeout: float, max_attempts: int) -> dict:
     """Invoke tool with retry on different members."""
     first_error = None
     tried_members: set = set()
@@ -714,9 +699,7 @@ def load_config(config: Dict[str, Any]) -> None:
         _load_provider_config(provider_id, spec_dict, logger)
 
 
-def _parse_strategy(
-    strategy_str: str, group_id: str, logger: logging.Logger
-) -> LoadBalancerStrategy:
+def _parse_strategy(strategy_str: str, group_id: str, logger: logging.Logger) -> LoadBalancerStrategy:
     """Parse load balancer strategy string."""
     try:
         return LoadBalancerStrategy(strategy_str)
@@ -756,9 +739,7 @@ def _load_group_members(
             _GROUP_REBALANCE_SAGA.register_member(member_id, group_id)
 
 
-def _load_provider_config(
-    provider_id: str, spec_dict: Dict[str, Any], logger: logging.Logger
-) -> Provider:
+def _load_provider_config(provider_id: str, spec_dict: Dict[str, Any], logger: logging.Logger) -> Provider:
     """Load a single provider configuration."""
     # Resolve user if set to "current"
     user = spec_dict.get("user")
@@ -811,9 +792,7 @@ def _load_group_config(group_id: str, spec_dict: Dict[str, Any], logger: logging
     _load_group_members(group, group_id, spec_dict.get("members", []), logger)
 
     GROUPS[group_id] = group
-    logger.info(
-        f"Loaded group {group_id} with {group.total_count} members, " f"strategy={strategy.value}"
-    )
+    logger.info(f"Loaded group {group_id} with {group.total_count} members, " f"strategy={strategy.value}")
 
 
 def _parse_args():
@@ -822,9 +801,7 @@ def _parse_args():
 
     parser = argparse.ArgumentParser(description="MCP Registry Server")
     parser.add_argument("--http", action="store_true", help="Run HTTP server mode")
-    parser.add_argument(
-        "--host", type=str, default=None, help="HTTP server host (default: 0.0.0.0)"
-    )
+    parser.add_argument("--host", type=str, default=None, help="HTTP server host (default: 0.0.0.0)")
     parser.add_argument("--port", type=int, default=None, help="HTTP server port (default: 8000)")
     parser.add_argument("--config", type=str, default=None, help="Path to config.yaml file")
     return parser.parse_args()

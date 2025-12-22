@@ -13,9 +13,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from mcp_hangar.application.queries import (  # noqa: E402
-    register_all_handlers as register_query_handlers,
-)
+from mcp_hangar.application.queries import register_all_handlers as register_query_handlers  # noqa: E402
 from mcp_hangar.server import (  # noqa: E402
     load_config,
     load_config_from_file,
@@ -54,11 +52,7 @@ def test_descriptions() -> None:
     for provider_id, spec in provider_config.items():
         description = spec.get("description")
         if description:
-            desc_preview = (
-                description.strip()[:60] + "..."
-                if len(description.strip()) > 60
-                else description.strip()
-            )
+            desc_preview = description.strip()[:60] + "..." if len(description.strip()) > 60 else description.strip()
             print(f"   ✅ {provider_id:20s} {desc_preview}")
         else:
             print(f"   ❌ {provider_id:20s} Missing description!")

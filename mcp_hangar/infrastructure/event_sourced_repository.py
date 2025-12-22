@@ -266,9 +266,7 @@ class EventSourcedProviderRepository(IProviderRepository):
             if event_class:
                 # Extract event data (remove event_type from data dict)
                 event_data = {
-                    k: v
-                    for k, v in stored.data.items()
-                    if k not in ("event_type", "event_id", "occurred_at")
+                    k: v for k, v in stored.data.items() if k not in ("event_type", "event_id", "occurred_at")
                 }
 
                 try:
@@ -294,9 +292,7 @@ class EventSourcedProviderRepository(IProviderRepository):
                 "idle_ttl_s": getattr(provider, "_idle_ttl_s", 300),
                 "health_check_interval_s": getattr(provider, "_health_check_interval_s", 60),
                 "max_consecutive_failures": (
-                    getattr(provider._health, "_max_consecutive_failures", 3)
-                    if hasattr(provider, "_health")
-                    else 3
+                    getattr(provider._health, "_max_consecutive_failures", 3) if hasattr(provider, "_health") else 3
                 ),
             }
             self._config_store.save(provider_id, config)
@@ -320,9 +316,7 @@ class EventSourcedProviderRepository(IProviderRepository):
         snapshot = provider.create_snapshot()
         version = self._event_store.get_version(provider.provider_id)
 
-        self._snapshot_store.save_snapshot(
-            stream_id=provider.provider_id, version=version, state=snapshot.to_dict()
-        )
+        self._snapshot_store.save_snapshot(stream_id=provider.provider_id, version=version, state=snapshot.to_dict())
 
         logger.debug(f"Created snapshot for provider {provider.provider_id} at version {version}")
 
@@ -331,10 +325,7 @@ class EventSourcedProviderRepository(IProviderRepository):
         with self._lock:
             if provider_id in self._cache:
                 return True
-            return (
-                self._event_store.stream_exists(provider_id)
-                or self._config_store.load(provider_id) is not None
-            )
+            return self._event_store.stream_exists(provider_id) or self._config_store.load(provider_id) is not None
 
     def remove(self, provider_id: str) -> bool:
         """

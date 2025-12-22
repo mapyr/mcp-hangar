@@ -274,9 +274,7 @@ def test_real_provider_mixed_operations():
     result3 = mgr.invoke_tool("power", {"base": 5, "exponent": 2}, timeout=10.0)
     assert result3["result"] == 25
 
-    result4 = mgr.invoke_tool(
-        "divide", {"a": result2["result"], "b": result3["result"]}, timeout=10.0
-    )
+    result4 = mgr.invoke_tool("divide", {"a": result2["result"], "b": result3["result"]}, timeout=10.0)
     assert result4["result"] == 1.8
 
     # Verify metrics

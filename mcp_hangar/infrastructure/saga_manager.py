@@ -358,9 +358,7 @@ class SagaManager:
                     for command in commands:
                         try:
                             self._command_bus.send(command)
-                            logger.debug(
-                                f"Saga {saga.saga_type} sent command {type(command).__name__}"
-                            )
+                            logger.debug(f"Saga {saga.saga_type} sent command {type(command).__name__}")
                         except Exception as e:
                             logger.error(f"Saga {saga.saga_type} command failed: {e}")
                 except Exception as e:

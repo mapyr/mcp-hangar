@@ -77,9 +77,7 @@ class StdioClient:
                     if pending:
                         pending.result_queue.put(msg)
                     else:
-                        logger.warning(
-                            f"stdio_client: received response for unknown request: {msg_id}"
-                        )
+                        logger.warning(f"stdio_client: received response for unknown request: {msg_id}")
                 else:
                     # Unsolicited notification - log and ignore
                     logger.debug(f"stdio_client: unsolicited notification: {msg}")
@@ -120,9 +118,7 @@ class StdioClient:
         request_id = str(uuid.uuid4())
         result_queue = Queue(maxsize=1)
 
-        pending = PendingRequest(
-            request_id=request_id, result_queue=result_queue, started_at=time.time()
-        )
+        pending = PendingRequest(request_id=request_id, result_queue=result_queue, started_at=time.time())
 
         with self.pending_lock:
             self.pending[request_id] = pending

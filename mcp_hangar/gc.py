@@ -5,11 +5,7 @@ import threading
 import time
 from typing import Any, Literal, Optional
 
-from .domain.contracts.provider_runtime import (
-    normalize_state_to_str,
-    ProviderMapping,
-    ProviderRuntime,
-)
+from .domain.contracts.provider_runtime import normalize_state_to_str, ProviderMapping, ProviderRuntime
 from .infrastructure.event_bus import get_event_bus
 from .metrics import observe_health_check, record_error, record_gc_cycle, record_provider_stop
 
@@ -126,8 +122,7 @@ class BackgroundWorker:
                 except Exception as e:
                     record_error("gc", type(e).__name__)
                     logger.error(
-                        f"background_task_failed: provider={provider_id}, "
-                        f"task={self.task}, error={e}",
+                        f"background_task_failed: provider={provider_id}, " f"task={self.task}, error={e}",
                         exc_info=True,
                     )
 

@@ -108,9 +108,7 @@ def test_registry_with_memory() -> None:
 
         if "text" in content[0]:
             data = json.loads(content[0]["text"])
-            assert not data.get("isError"), data.get("content", [{}])[0].get(
-                "text", "Unknown error"
-            )
+            assert not data.get("isError"), data.get("content", [{}])[0].get("text", "Unknown error")
 
         print("   ✅ SUCCESS! Entity created via registry")
 

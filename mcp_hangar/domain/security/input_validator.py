@@ -329,9 +329,7 @@ class InputValidator:
             return result
 
         if not isinstance(arguments, dict):
-            result.add_error(
-                "arguments", "Arguments must be a dictionary", type(arguments).__name__
-            )
+            result.add_error("arguments", "Arguments must be a dictionary", type(arguments).__name__)
             return result
 
         # Validate size
@@ -378,22 +376,16 @@ class InputValidator:
                     result.add_error(path, "Argument keys cannot be empty")
                     continue
 
-                self._validate_argument_structure(
-                    value, result, f"{path}.{key}", depth + 1, max_depth
-                )
+                self._validate_argument_structure(value, result, f"{path}.{key}", depth + 1, max_depth)
 
         elif isinstance(obj, list):
             for i, item in enumerate(obj):
-                self._validate_argument_structure(
-                    item, result, f"{path}[{i}]", depth + 1, max_depth
-                )
+                self._validate_argument_structure(item, result, f"{path}[{i}]", depth + 1, max_depth)
 
         elif isinstance(obj, str):
             # Check for very long strings that might be DoS attempts
             if len(obj) > 1_000_000:  # 1MB string
-                result.add_error(
-                    path, f"String value exceeds maximum length ({len(obj)} > 1000000)"
-                )
+                result.add_error(path, f"String value exceeds maximum length ({len(obj)} > 1000000)")
 
     def validate_timeout(self, timeout: Any) -> ValidationResult:
         """
@@ -422,9 +414,7 @@ class InputValidator:
             )
 
         if timeout > self.MAX_TIMEOUT:
-            result.add_error(
-                "timeout", f"Timeout cannot exceed {self.MAX_TIMEOUT} seconds", timeout
-            )
+            result.add_error("timeout", f"Timeout cannot exceed {self.MAX_TIMEOUT} seconds", timeout)
 
         return result
 
@@ -490,9 +480,7 @@ class InputValidator:
 
             # Check against blocklist
             if base_name in self.blocked_commands:
-                result.add_error(
-                    "command[0]", f"Executable '{base_name}' is not allowed", executable
-                )
+                result.add_error("command[0]", f"Executable '{base_name}' is not allowed", executable)
 
             # Check against allowlist if set
             if self.allowed_commands is not None:
@@ -574,9 +562,7 @@ class InputValidator:
             return result
 
         if not isinstance(env, dict):
-            result.add_error(
-                "env", "Environment variables must be a dictionary", type(env).__name__
-            )
+            result.add_error("env", "Environment variables must be a dictionary", type(env).__name__)
             return result
 
         if len(env) > self.MAX_ENV_VARS:

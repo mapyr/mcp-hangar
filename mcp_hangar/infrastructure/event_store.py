@@ -98,9 +98,7 @@ class EventStore(ABC):
         pass
 
     @abstractmethod
-    def load(
-        self, stream_id: str, from_version: int = 0, to_version: Optional[int] = None
-    ) -> List[StoredEvent]:
+    def load(self, stream_id: str, from_version: int = 0, to_version: Optional[int] = None) -> List[StoredEvent]:
         """
         Load events from a stream.
 
@@ -178,9 +176,7 @@ class InMemoryEventStore(EventStore):
 
             return new_version
 
-    def load(
-        self, stream_id: str, from_version: int = 0, to_version: Optional[int] = None
-    ) -> List[StoredEvent]:
+    def load(self, stream_id: str, from_version: int = 0, to_version: Optional[int] = None) -> List[StoredEvent]:
         """Load events from a stream."""
         with self._lock:
             if stream_id not in self._streams:
@@ -279,18 +275,14 @@ class FileEventStore(EventStore):
 
             return new_version
 
-    def load(
-        self, stream_id: str, from_version: int = 0, to_version: Optional[int] = None
-    ) -> List[StoredEvent]:
+    def load(self, stream_id: str, from_version: int = 0, to_version: Optional[int] = None) -> List[StoredEvent]:
         """Load events from a stream."""
         with self._lock:
             # Check cache first
             if stream_id in self._cache:
                 cached = self._cache[stream_id]
                 return [
-                    e
-                    for e in cached
-                    if e.version >= from_version and (to_version is None or e.version <= to_version)
+                    e for e in cached if e.version >= from_version and (to_version is None or e.version <= to_version)
                 ]
 
             # Load from file

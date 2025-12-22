@@ -4,13 +4,7 @@ import logging
 import time
 from typing import Dict, List, Optional, Type
 
-from ...domain.events import (
-    DomainEvent,
-    HealthCheckFailed,
-    ProviderDegraded,
-    ProviderStarted,
-    ProviderStopped,
-)
+from ...domain.events import DomainEvent, HealthCheckFailed, ProviderDegraded, ProviderStarted, ProviderStopped
 from ...infrastructure.command_bus import Command, StartProviderCommand, StopProviderCommand
 from ...infrastructure.saga_manager import EventTriggeredSaga
 
@@ -94,10 +88,7 @@ class ProviderRecoverySaga(EventTriggeredSaga):
 
         # Check if max retries exceeded
         if state["retries"] > self._max_retries:
-            logger.warning(
-                f"Provider {provider_id} exceeded max retries ({self._max_retries}), "
-                f"stopping recovery"
-            )
+            logger.warning(f"Provider {provider_id} exceeded max retries ({self._max_retries}), " f"stopping recovery")
             # Stop the provider permanently
             return [StopProviderCommand(provider_id=provider_id, reason="max_retries_exceeded")]
 
@@ -131,9 +122,7 @@ class ProviderRecoverySaga(EventTriggeredSaga):
                 "next_retry": 0,
             }
             if old_retries > 0:
-                logger.info(
-                    f"Provider {provider_id} recovered successfully after " f"{old_retries} retries"
-                )
+                logger.info(f"Provider {provider_id} recovered successfully after " f"{old_retries} retries")
 
         return []
 

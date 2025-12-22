@@ -136,9 +136,7 @@ class ProviderId:
         if len(value) > self._MAX_LENGTH:
             raise ValueError(f"ProviderId cannot exceed {self._MAX_LENGTH} characters")
         if not self._VALID_PATTERN.match(value):
-            raise ValueError(
-                "ProviderId must contain only alphanumeric characters, hyphens, and underscores"
-            )
+            raise ValueError("ProviderId must contain only alphanumeric characters, hyphens, and underscores")
         self._value = value
 
     @property
@@ -180,9 +178,7 @@ class ToolName:
         if len(value) > self._MAX_LENGTH:
             raise ValueError(f"ToolName cannot exceed {self._MAX_LENGTH} characters")
         if not self._VALID_PATTERN.match(value):
-            raise ValueError(
-                "ToolName must contain only alphanumeric characters, hyphens, underscores, and dots"
-            )
+            raise ValueError("ToolName must contain only alphanumeric characters, hyphens, underscores, and dots")
         self._value = value
 
     @property
@@ -543,9 +539,7 @@ class ProviderConfig:
         try:
             object.__setattr__(self, "mode", ProviderMode(mode))
         except ValueError:
-            raise ValueError(
-                f"Invalid provider mode: {mode}. Must be one of: subprocess, docker, remote"
-            )
+            raise ValueError(f"Invalid provider mode: {mode}. Must be one of: subprocess, docker, remote")
 
         # Validate mode-specific configuration
         resolved_mode = ProviderMode(mode)
@@ -570,15 +564,11 @@ class ProviderConfig:
             object.__setattr__(self, "endpoint", Endpoint(endpoint))
 
         # Environment variables
-        object.__setattr__(
-            self, "env", EnvironmentVariables(env) if env else EnvironmentVariables()
-        )
+        object.__setattr__(self, "env", EnvironmentVariables(env) if env else EnvironmentVariables())
 
         # Timing configuration
         object.__setattr__(self, "idle_ttl", IdleTTL(idle_ttl_s))
-        object.__setattr__(
-            self, "health_check_interval", HealthCheckInterval(health_check_interval_s)
-        )
+        object.__setattr__(self, "health_check_interval", HealthCheckInterval(health_check_interval_s))
         object.__setattr__(
             self,
             "max_consecutive_failures",
@@ -637,9 +627,7 @@ class ToolArguments:
         try:
             size = len(json.dumps(arguments))
             if size > self.MAX_SIZE_BYTES:
-                raise ValueError(
-                    f"Tool arguments exceed maximum size ({size} > {self.MAX_SIZE_BYTES} bytes)"
-                )
+                raise ValueError(f"Tool arguments exceed maximum size ({size} > {self.MAX_SIZE_BYTES} bytes)")
         except (TypeError, ValueError) as e:
             if "size" not in str(e):
                 raise ValueError(f"Tool arguments must be JSON-serializable: {e}")
@@ -700,9 +688,7 @@ class GroupId:
         if len(value) > self._MAX_LENGTH:
             raise ValueError(f"GroupId cannot exceed {self._MAX_LENGTH} characters")
         if not self._VALID_PATTERN.match(value):
-            raise ValueError(
-                "GroupId must contain only alphanumeric characters, hyphens, and underscores"
-            )
+            raise ValueError("GroupId must contain only alphanumeric characters, hyphens, and underscores")
         self._value = value
 
     @property

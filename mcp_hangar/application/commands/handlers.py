@@ -164,9 +164,7 @@ class ShutdownIdleProvidersHandler(BaseProviderHandler):
         return shutdown_ids
 
 
-def register_all_handlers(
-    command_bus: CommandBus, repository: IProviderRepository, event_bus: EventBus
-) -> None:
+def register_all_handlers(command_bus: CommandBus, repository: IProviderRepository, event_bus: EventBus) -> None:
     """
     Register all command handlers with the command bus.
 

@@ -175,10 +175,7 @@ class Sanitizer:
         Returns:
             Dictionary with sanitized values
         """
-        return {
-            key: self.sanitize_environment_value(value, allow_newlines)
-            for key, value in env.items()
-        }
+        return {key: self.sanitize_environment_value(value, allow_newlines) for key, value in env.items()}
 
     def sanitize_path(
         self,

@@ -292,9 +292,7 @@ class ImageBuilder:
             True if removed successfully
         """
         try:
-            result = subprocess.run(
-                [self._runtime, "rmi", tag], capture_output=True, text=True, timeout=60
-            )
+            result = subprocess.run([self._runtime, "rmi", tag], capture_output=True, text=True, timeout=60)
             return result.returncode == 0
         except Exception as e:
             logger.warning(f"Failed to remove image {tag}: {e}")

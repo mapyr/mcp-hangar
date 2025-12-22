@@ -505,9 +505,7 @@ class DockerLauncher(ProviderLauncher):
             result = self._validator.validate_environment_variables(env)
             if not result.valid:
                 errors = "; ".join(e.message for e in result.errors)
-                raise ValidationError(
-                    message=f"Environment validation failed: {errors}", field="env"
-                )
+                raise ValidationError(message=f"Environment validation failed: {errors}", field="env")
 
         # Build secure command
         cmd = self._build_docker_command(image, env)
@@ -703,16 +701,12 @@ class ContainerLauncher(ProviderLauncher):
 
         if not result.valid:
             errors = "; ".join(e.message for e in result.errors)
-            raise ValidationError(
-                message=f"Image validation failed: {errors}", field="image", value=image
-            )
+            raise ValidationError(message=f"Image validation failed: {errors}", field="image", value=image)
 
         # Check blocked images
         image_name = image.split(":")[0].split("/")[-1]
         if image_name in self._blocked_images:
-            raise ValidationError(
-                message=f"Image '{image_name}' is blocked", field="image", value=image
-            )
+            raise ValidationError(message=f"Image '{image_name}' is blocked", field="image", value=image)
 
         # Check registry whitelist
         if self._allowed_registries:
@@ -930,9 +924,7 @@ class ContainerLauncher(ProviderLauncher):
             result = self._validator.validate_environment_variables(env)
             if not result.valid:
                 errors = "; ".join(e.message for e in result.errors)
-                raise ValidationError(
-                    message=f"Environment validation failed: {errors}", field="env"
-                )
+                raise ValidationError(message=f"Environment validation failed: {errors}", field="env")
 
         # Build config
         config = ContainerConfig(

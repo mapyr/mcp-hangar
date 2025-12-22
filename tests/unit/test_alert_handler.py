@@ -322,9 +322,7 @@ class TestAlertEventHandler:
         sink = CallbackAlertSink(alerts.append)
         handler = AlertEventHandler(sinks=[sink], degradation_threshold=1)
 
-        event = ProviderDegraded(
-            provider_id="test", consecutive_failures=2, total_failures=5, reason="error"
-        )
+        event = ProviderDegraded(provider_id="test", consecutive_failures=2, total_failures=5, reason="error")
 
         handler.handle(event)
 

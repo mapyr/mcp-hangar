@@ -75,10 +75,7 @@ class LoggingEventHandler:
                 f"in {event.startup_duration_ms:.2f}ms with {event.tools_count} tools"
             )
         elif isinstance(event, ProviderStopped):
-            return (
-                f"[EVENT:{event_type}] Provider '{event.provider_id}' stopped "
-                f"(reason: {event.reason})"
-            )
+            return f"[EVENT:{event_type}] Provider '{event.provider_id}' stopped " f"(reason: {event.reason})"
         elif isinstance(event, ProviderDegraded):
             return (
                 f"[EVENT:{event_type}] Provider '{event.provider_id}' DEGRADED "
@@ -111,10 +108,7 @@ class LoggingEventHandler:
                 f"(consecutive: {event.consecutive_failures}): {event.error_message}"
             )
         elif isinstance(event, ProviderIdleDetected):
-            return (
-                f"[EVENT:{event_type}] Provider '{event.provider_id}' idle for "
-                f"{event.idle_duration_s:.1f}s"
-            )
+            return f"[EVENT:{event_type}] Provider '{event.provider_id}' idle for " f"{event.idle_duration_s:.1f}s"
         else:
             # Generic format
             return f"[EVENT:{event_type}] {json.dumps(event_data)}"

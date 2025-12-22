@@ -180,9 +180,7 @@ def run_fastmcp_server():
                 logger.debug(f"Could not update provider metrics: {e}")
 
         metrics_output = get_metrics()
-        return PlainTextResponse(
-            metrics_output, media_type="text/plain; version=0.0.4; charset=utf-8"
-        )
+        return PlainTextResponse(metrics_output, media_type="text/plain; version=0.0.4; charset=utf-8")
 
     # Health endpoint (liveness)
     async def health_endpoint(request):

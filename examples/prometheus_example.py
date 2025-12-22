@@ -55,11 +55,7 @@ def main():
         for i, tool in enumerate(tools, 1):
             print(f"   {i}. {tool.name}")
             if tool.description:
-                desc = (
-                    tool.description[:70] + "..."
-                    if len(tool.description) > 70
-                    else tool.description
-                )
+                desc = tool.description[:70] + "..." if len(tool.description) > 70 else tool.description
                 print(f"      {desc}")
 
         print("\n" + "=" * 70)
@@ -77,9 +73,7 @@ def main():
         print(f"\n❌ Error: {e}")
         print("\nTroubleshooting:")
         print("  1. Make sure Prometheus is running at the configured URL")
-        print(
-            "  2. Check if the image is accessible: podman pull ghcr.io/pab1it0/prometheus-mcp-server:latest"
-        )
+        print("  2. Check if the image is accessible: podman pull ghcr.io/pab1it0/prometheus-mcp-server:latest")
         print("  3. Verify network connectivity")
         return 1
 
