@@ -52,4 +52,3 @@ class TestProviderModeNormalization:
         """Verify invalid mode raises ValueError."""
         with pytest.raises(ValueError):
             ProviderMode.normalize("invalid_mode")
-
