@@ -57,4 +57,3 @@ class NullMetricsPublisher(IMetricsPublisher):
     def end_cold_start(self, provider_id: str) -> None:
         """No-op implementation."""
         pass
-

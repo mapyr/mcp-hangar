@@ -57,4 +57,3 @@ class ShutdownIdleProvidersCommand(Command):
     """Command to shutdown all idle providers."""
 
     pass
-

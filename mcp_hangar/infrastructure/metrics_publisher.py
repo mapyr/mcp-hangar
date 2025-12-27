@@ -17,6 +17,7 @@ class PrometheusMetricsPublisher(IMetricsPublisher):
         """Lazy load metrics module."""
         if self._metrics is None:
             from ... import metrics
+
             self._metrics = metrics
 
     def record_cold_start(self, provider_id: str, duration_s: float, mode: str) -> None:
@@ -33,4 +34,3 @@ class PrometheusMetricsPublisher(IMetricsPublisher):
         """Mark the end of a cold start."""
         self._ensure_metrics()
         self._metrics.cold_start_end(provider_id)
-
