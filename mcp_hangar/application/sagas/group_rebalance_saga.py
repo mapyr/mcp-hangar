@@ -20,8 +20,8 @@ from ...domain.events import (
     ProviderStarted,
     ProviderStopped,
 )
-from ...infrastructure.command_bus import Command
 from ...infrastructure.saga_manager import EventTriggeredSaga
+from ..commands import Command
 
 if TYPE_CHECKING:
     from ...domain.model.provider_group import ProviderGroup
