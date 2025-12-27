@@ -1,4 +1,4 @@
-"""Tests for ProviderMode normalization - ensuring 'container' maps to 'docker'."""
+"""Tests for ProviderMode normalization - ensuring modes are properly converted to enums."""
 
 import pytest
 
@@ -8,10 +8,10 @@ from mcp_hangar.domain.value_objects import ProviderMode
 class TestProviderModeNormalization:
     """Tests for ProviderMode.normalize() method."""
 
-    def test_container_string_normalizes_to_docker(self):
-        """Verify 'container' string normalizes to DOCKER mode."""
+    def test_container_string_normalizes_to_container(self):
+        """Verify 'container' string normalizes to CONTAINER mode."""
         result = ProviderMode.normalize("container")
-        assert result == ProviderMode.DOCKER
+        assert result == ProviderMode.CONTAINER
 
     def test_docker_string_stays_docker(self):
         """Verify 'docker' string remains DOCKER mode."""
@@ -33,10 +33,10 @@ class TestProviderModeNormalization:
         result = ProviderMode.normalize("group")
         assert result == ProviderMode.GROUP
 
-    def test_container_enum_normalizes_to_docker(self):
-        """Verify CONTAINER enum normalizes to DOCKER mode."""
+    def test_container_enum_stays_container(self):
+        """Verify CONTAINER enum remains CONTAINER mode."""
         result = ProviderMode.normalize(ProviderMode.CONTAINER)
-        assert result == ProviderMode.DOCKER
+        assert result == ProviderMode.CONTAINER
 
     def test_docker_enum_stays_docker(self):
         """Verify DOCKER enum remains DOCKER mode."""

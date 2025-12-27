@@ -87,14 +87,10 @@ class ProviderMode(Enum):
 
     @classmethod
     def normalize(cls, value: "str | ProviderMode") -> "ProviderMode":
-        """Normalize mode value, treating 'container' as 'docker'."""
+        """Normalize mode value to ProviderMode enum."""
         if isinstance(value, cls):
-            if value == cls.CONTAINER:
-                return cls.DOCKER
             return value
-        # Handle string values
-        if value == "container":
-            return cls.DOCKER
+        # Handle string values - return corresponding enum
         return cls(value)
 
 
