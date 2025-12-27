@@ -10,7 +10,7 @@ proper layer separation (infrastructure should not define business commands).
 
 from abc import ABC, abstractmethod
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Optional, Type
+from typing import Any, Dict, Optional, Type, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..application.commands import Command

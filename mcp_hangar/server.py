@@ -10,7 +10,12 @@ from typing import Any, Dict, List, Optional
 from mcp.server.fastmcp import FastMCP
 import yaml
 
-from .application.commands import register_all_handlers as register_command_handlers
+from .application.commands import (
+    InvokeToolCommand,
+    register_all_handlers as register_command_handlers,
+    StartProviderCommand,
+    StopProviderCommand,
+)
 from .application.event_handlers import AlertEventHandler, AuditEventHandler, LoggingEventHandler, MetricsEventHandler
 from .application.mcp.tooling import (
     chain_validators,
@@ -32,7 +37,6 @@ from .domain.security.input_validator import (
 )
 from .domain.security.sanitizer import sanitize_log_message
 from .gc import BackgroundWorker
-from .application.commands import InvokeToolCommand, StartProviderCommand, StopProviderCommand
 from .infrastructure.query_bus import GetProviderQuery, GetProviderToolsQuery, ListProvidersQuery
 from .infrastructure.saga_manager import get_saga_manager
 

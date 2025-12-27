@@ -5,6 +5,7 @@ import threading
 import time
 from typing import Any, Dict, List, Optional
 
+from ..contracts.metrics_publisher import IMetricsPublisher, NullMetricsPublisher
 from ..events import (
     HealthCheckFailed,
     HealthCheckPassed,
@@ -17,7 +18,6 @@ from ..events import (
     ToolInvocationFailed,
     ToolInvocationRequested,
 )
-from ..contracts.metrics_publisher import IMetricsPublisher, NullMetricsPublisher
 from ..exceptions import (
     CannotStartProviderError,
     InvalidStateTransitionError,
@@ -25,18 +25,10 @@ from ..exceptions import (
     ToolInvocationError,
     ToolNotFoundError,
 )
-from ..value_objects import (
-    CorrelationId,
-    HealthCheckInterval,
-    IdleTTL,
-    ProviderId,
-    ProviderMode,
-    ProviderState,
-)
+from ..value_objects import CorrelationId, HealthCheckInterval, IdleTTL, ProviderId, ProviderMode, ProviderState
 from .aggregate import AggregateRoot
 from .health_tracker import HealthTracker
 from .tool_catalog import ToolCatalog, ToolSchema
-
 
 logger = logging.getLogger(__name__)
 

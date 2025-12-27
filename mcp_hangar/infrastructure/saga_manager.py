@@ -10,7 +10,7 @@ from enum import Enum
 import logging
 import threading
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type, TYPE_CHECKING
 import uuid
 
 from ..domain.events import DomainEvent
