@@ -91,12 +91,8 @@ class Provider(AggregateRoot):
         # Identity
         self._id = ProviderId(provider_id)
 
-        # Mode - normalize to ProviderMode enum
-        if isinstance(mode, ProviderMode):
-            self._mode = mode
-        else:
-            # Convert string to ProviderMode enum for consistency
-            self._mode = ProviderMode(mode)
+        # Mode - normalize to ProviderMode enum (container -> docker)
+        self._mode = ProviderMode.normalize(mode)
 
         self._description = description
 

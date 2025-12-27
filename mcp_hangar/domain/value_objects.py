@@ -78,11 +78,24 @@ class ProviderMode(Enum):
 
     SUBPROCESS = "subprocess"
     DOCKER = "docker"
+    CONTAINER = "container"  # Alias for docker mode
     REMOTE = "remote"
     GROUP = "group"  # Provider group with load balancing
 
     def __str__(self) -> str:
         return self.value
+
+    @classmethod
+    def normalize(cls, value: "str | ProviderMode") -> "ProviderMode":
+        """Normalize mode value, treating 'container' as 'docker'."""
+        if isinstance(value, cls):
+            if value == cls.CONTAINER:
+                return cls.DOCKER
+            return value
+        # Handle string values
+        if value == "container":
+            return cls.DOCKER
+        return cls(value)
 
 
 class LoadBalancerStrategy(Enum):
