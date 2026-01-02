@@ -49,12 +49,14 @@ class StdioClient:
         Read stdout and dispatch responses to waiting callers.
         Runs in a dedicated daemon thread.
         """
+        logger.info(f"stdio_client: reader_loop started, process pid={self.process.pid}")
         while not self.closed:
             try:
                 line = self.process.stdout.readline()
                 if not line:
                     # EOF reached, process died
                     logger.warning("stdio_client: EOF on stdout, process died")
+                    self._capture_process_stderr()
                     break
 
                 line = line.strip()
@@ -88,6 +90,32 @@ class StdioClient:
 
         # Clean up on exit
         self._cleanup_pending("reader_died")
+
+    def _capture_process_stderr(self) -> None:
+        """Capture and log stderr from the process for debugging."""
+        try:
+            # Log exit code
+            rc = self.process.poll()
+            if rc is not None:
+                logger.error(f"stdio_client: process exited with code {rc}")
+
+            # Try to read stderr if available
+            stderr = getattr(self.process, "stderr", None)
+            if stderr:
+                try:
+                    # Read available stderr (non-blocking would be ideal, but read() works post-exit)
+                    err_bytes = stderr.read()
+                    if err_bytes:
+                        err_text = (err_bytes if isinstance(err_bytes, str) else err_bytes.decode(errors="replace")).strip()
+                        if err_text:
+                            # Log first 2000 chars to avoid log spam
+                            if len(err_text) > 2000:
+                                err_text = err_text[:2000] + "... (truncated)"
+                            logger.error(f"stdio_client: process stderr:\n{err_text}")
+                except Exception as read_err:
+                    logger.debug(f"stdio_client: could not read stderr: {read_err}")
+        except Exception as e:
+            logger.debug(f"stdio_client: error capturing process info: {e}")
 
     def _cleanup_pending(self, error_msg: str):
         """Clean up all pending requests on shutdown or error."""
@@ -132,9 +160,12 @@ class StdioClient:
 
         try:
             request_str = json.dumps(request) + "\n"
+            logger.info(f"stdio_client: sending request method={method}, pid={self.process.pid}, alive={self.process.poll() is None}")
             self.process.stdin.write(request_str)
             self.process.stdin.flush()
+            logger.info(f"stdio_client: request sent successfully")
         except Exception as e:
+            logger.error(f"stdio_client: write failed: {e}")
             with self.pending_lock:
                 self.pending.pop(request_id, None)
             raise ClientError(f"write_failed: {e}")

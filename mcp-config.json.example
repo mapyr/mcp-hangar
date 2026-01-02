@@ -1,7 +1,14 @@
 {
   "mcpServers": {
-    "mcp-hangar": {
+    "mcp-hangar-http": {
+      "_comment": "HTTP mode - for LM Studio. Run: python -m mcp_hangar.server --http",
       "url": "http://localhost:8000/mcp"
+    },
+    "mcp-hangar-stdio": {
+      "_comment": "Stdio mode - for Claude Desktop",
+      "command": "python",
+      "args": ["-m", "mcp_hangar.server", "--config", "/path/to/config.yaml"],
+      "cwd": "/path/to/mcp-hangar"
     }
   }
 }

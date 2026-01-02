@@ -6,7 +6,17 @@ __pycache__/
 .vscode/
 
 # Local config (contains user-specific paths)
+# Keep *.example files, ignore actual configs
 config.yaml
+config.*.yaml
+!config.*.example
+config.tools.yaml
+mcp-config.json
+!mcp-config.json.example
+
+# Data directories (user-specific, may contain sensitive data)
+data/
+
 *.py[codz]
 *$py.class
 

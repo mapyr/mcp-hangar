@@ -10,6 +10,7 @@ Endpoints (HTTP mode):
 """
 
 import logging
+from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
 
@@ -23,6 +24,14 @@ _registry_tools = None
 _registry_invoke = None
 _registry_details = None
 _registry_health = None
+
+# Discovery functions (will be set by setup)
+_registry_discover = None
+_registry_discovered = None
+_registry_quarantine = None
+_registry_approve = None
+_registry_sources = None
+_registry_metrics = None
 
 
 def create_fastmcp_server():
@@ -72,18 +81,18 @@ def create_fastmcp_server():
         return _registry_stop(provider=provider)
 
     @mcp.tool()
-    def registry_invoke(provider: str, tool: str, arguments: dict, timeout: float = 30.0) -> dict:
+    def registry_invoke(provider: str, tool: str, arguments: Optional[dict] = None, timeout: float = 30.0) -> dict:
         """Invoke a tool on a provider.
 
         Args:
             provider: Provider ID
             tool: Tool name to invoke
-            arguments: Tool arguments as dictionary
+            arguments: Tool arguments as dictionary (default: empty)
             timeout: Timeout in seconds (default 30)
         """
         if _registry_invoke is None:
             return {"error": "Registry not initialized"}
-        return _registry_invoke(provider=provider, tool=tool, arguments=arguments, timeout=timeout)
+        return _registry_invoke(provider=provider, tool=tool, arguments=arguments or {}, timeout=timeout)
 
     @mcp.tool()
     def registry_tools(provider: str) -> dict:
@@ -114,6 +123,77 @@ def create_fastmcp_server():
             return {"error": "Registry not initialized"}
         return _registry_health()
 
+    # Discovery tools
+
+    @mcp.tool()
+    async def registry_discover() -> dict:
+        """Trigger immediate discovery cycle.
+
+        Runs discovery across all configured sources and returns
+        statistics about discovered, registered, and quarantined providers.
+        """
+        if _registry_discover is None:
+            return {"error": "Discovery not configured"}
+        return await _registry_discover()
+
+    @mcp.tool()
+    def registry_discovered() -> dict:
+        """List all discovered providers pending registration.
+
+        Shows providers found by discovery but not yet registered,
+        typically due to auto_register=false or pending approval.
+        """
+        if _registry_discovered is None:
+            return {"error": "Discovery not configured"}
+        return _registry_discovered()
+
+    @mcp.tool()
+    def registry_quarantine() -> dict:
+        """List quarantined providers with failure reasons.
+
+        Shows providers that failed validation and are waiting
+        for manual approval or rejection.
+        """
+        if _registry_quarantine is None:
+            return {"error": "Discovery not configured"}
+        return _registry_quarantine()
+
+    @mcp.tool()
+    async def registry_approve(provider: str) -> dict:
+        """Approve a quarantined provider for registration.
+
+        Args:
+            provider: Name of the quarantined provider to approve
+        """
+        if _registry_approve is None:
+            return {"error": "Discovery not configured"}
+        return await _registry_approve(provider=provider)
+
+    @mcp.tool()
+    def registry_sources() -> dict:
+        """List configured discovery sources with health status.
+
+        Shows all discovery sources (kubernetes, docker, filesystem, entrypoint)
+        with their current health and last discovery timestamp.
+        """
+        if _registry_sources is None:
+            return {"error": "Discovery not configured"}
+        return _registry_sources()
+
+    @mcp.tool()
+    def registry_metrics(format: str = "summary") -> dict:
+        """Get registry metrics and statistics.
+
+        Args:
+            format: Output format - "summary" (default), "prometheus", or "detailed"
+
+        Returns metrics including provider states, tool call counts, errors,
+        discovery statistics, and performance data.
+        """
+        if _registry_metrics is None:
+            return {"error": "Metrics not available"}
+        return _registry_metrics(format=format)
+
     return mcp
 
 
@@ -125,10 +205,19 @@ def setup_fastmcp_server(
     registry_invoke_fn,
     registry_details_fn,
     registry_health_fn,
+    # Discovery functions (optional)
+    registry_discover_fn=None,
+    registry_discovered_fn=None,
+    registry_quarantine_fn=None,
+    registry_approve_fn=None,
+    registry_sources_fn=None,
+    registry_metrics_fn=None,
 ):
     """Setup FastMCP server with registry function references."""
     global _registry_list, _registry_start, _registry_stop, _registry_tools
     global _registry_invoke, _registry_details, _registry_health
+    global _registry_discover, _registry_discovered, _registry_quarantine
+    global _registry_approve, _registry_sources, _registry_metrics
 
     _registry_list = registry_list_fn
     _registry_start = registry_start_fn
@@ -138,7 +227,17 @@ def setup_fastmcp_server(
     _registry_details = registry_details_fn
     _registry_health = registry_health_fn
 
+    # Discovery functions
+    _registry_discover = registry_discover_fn
+    _registry_discovered = registry_discovered_fn
+    _registry_quarantine = registry_quarantine_fn
+    _registry_approve = registry_approve_fn
+    _registry_sources = registry_sources_fn
+    _registry_metrics = registry_metrics_fn
+
     logger.info("FastMCP server configured with registry functions")
+    if registry_discover_fn:
+        logger.info("Discovery tools enabled")
 
 
 def run_fastmcp_server():

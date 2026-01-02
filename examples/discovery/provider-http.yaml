@@ -1,0 +1,19 @@
+# Example Provider Discovery Configuration
+# HTTP/SSE provider example
+
+name: remote-service
+enabled: true
+mode: http
+
+connection:
+  host: localhost
+  port: 8080
+  health_path: /health
+  timeout: 30
+
+metadata:
+  owner: api-team
+  version: "2.1.0"
+  environment: development
+  description: Remote HTTP MCP provider
+

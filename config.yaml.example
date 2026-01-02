@@ -1,70 +1,69 @@
-# MCP Registry Configuration
+# MCP Hangar Configuration
 # Copy to config.yaml and customize
 
 providers:
-  # ============================================
-  # SUBPROCESS MODE - Local processes
-  # ============================================
+  # Subprocess
   math:
     mode: subprocess
-    command:
-      - python
-      - -m
-      - examples.provider_math.server
+    command: [python, -m, examples.provider_math.server]
     idle_ttl_s: 180
-    health_check_interval_s: 60
-    max_consecutive_failures: 3
+    tools:
+      - name: add
+        description: "Add two numbers"
+        inputSchema:
+          type: object
+          properties:
+            a: { type: number }
+            b: { type: number }
+          required: [a, b]
 
-  # ============================================
-  # PROVIDER GROUP MODE - Load balanced cluster
-  # ============================================
+  # Container - SQLite
+  # Build: podman build -t localhost/mcp-sqlite -f docker/Dockerfile.sqlite .
+  # sqlite:
+  #   mode: container
+  #   image: localhost/mcp-sqlite:latest
+  #   volumes:
+  #     - "/absolute/path/to/data:/data:rw"  # Must be absolute
+  #   network: bridge
+  #   idle_ttl_s: 300
+
+  # Container - Memory
+  # Build: podman build -t localhost/mcp-memory -f docker/Dockerfile.memory .
+  # memory:
+  #   mode: container
+  #   image: localhost/mcp-memory:latest
+  #   volumes:
+  #     - "/absolute/path/to/data:/app/data:rw"
+  #   idle_ttl_s: 300
+
+  # Container - Fetch
+  # Build: podman build -t localhost/mcp-fetch -f docker/Dockerfile.fetch .
+  # fetch:
+  #   mode: container
+  #   image: localhost/mcp-fetch:latest
+  #   network: bridge
+  #   idle_ttl_s: 180
+
+  # Provider Group
   # math-cluster:
   #   mode: group
-  #   description: "Math provider cluster with load balancing"
-  #   strategy: round_robin  # round_robin, weighted_round_robin, least_connections, random, priority
+  #   strategy: weighted_round_robin
   #   min_healthy: 1
-  #   auto_start: true
-  #   health:
-  #     unhealthy_threshold: 2
-  #     healthy_threshold: 1
-  #   circuit_breaker:
-  #     failure_threshold: 10
-  #     reset_timeout_s: 60.0
   #   members:
-  #     - id: math-node-1
-  #       weight: 1
-  #       priority: 1
+  #     - id: math-1
+  #       weight: 3
   #       mode: subprocess
   #       command: [python, -m, examples.provider_math.server]
-  #     - id: math-node-2
+  #     - id: math-2
   #       weight: 1
-  #       priority: 2
   #       mode: subprocess
   #       command: [python, -m, examples.provider_math.server]
 
-  # ============================================
-  # CONTAINER MODE - Pre-built images
-  # ============================================
-  # filesystem:
-  #   mode: container
-  #   image: ghcr.io/modelcontextprotocol/server-filesystem:latest
-  #   volumes:
-  #     - "${HOME}:/data:ro"
-  #   resources:
-  #     memory: 256m
-  #     cpu: "0.5"
+# Discovery (optional)
+# discovery:
+#   enabled: true
+#   refresh_interval_s: 30
+#   sources:
+#     - type: docker
+#       mode: additive
 
-  # ============================================
-  # CONTAINER MODE - Custom build
-  # ============================================
-  # custom:
-  #   mode: container
-  #   build:
-  #     dockerfile: docker/Dockerfile.custom
-  #     context: .
-  #   env:
-  #     MY_VAR: "value"
-  #   resources:
-  #     memory: 256m
-  #     cpu: "0.5"
-  #   network: none

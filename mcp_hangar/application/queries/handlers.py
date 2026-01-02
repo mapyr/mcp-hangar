@@ -99,11 +99,12 @@ class ListProvidersHandler(BaseQueryHandler):
             summary = ProviderSummary(
                 provider_id=provider_id,
                 state=state,
-                mode=provider.mode,
+                mode=provider.mode.value,
                 is_alive=provider.is_alive,
                 tools_count=provider.tools.count(),
                 health_status=self._get_health_status(provider),
                 description=provider.description,
+                tools_predefined=provider.tools_predefined,
             )
             result.append(summary)
 
@@ -128,7 +129,7 @@ class GetProviderHandler(BaseQueryHandler):
         return ProviderDetails(
             provider_id=query.provider_id,
             state=provider.state.value,
-            mode=provider.mode,
+            mode=provider.mode.value,
             is_alive=provider.is_alive,
             tools=tools,
             health=health,

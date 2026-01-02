@@ -332,3 +332,85 @@ class TestProviderThreadSafety:
 
         assert len(errors) == 0
         assert provider.state == ProviderState.COLD
+
+
+class TestProviderPredefinedTools:
+    """Test Provider with pre-defined tools (lazy loading support)."""
+
+    def test_create_provider_with_predefined_tools(self):
+        """Test creating a provider with pre-defined tools."""
+        tools = [
+            {"name": "add", "description": "Add numbers", "inputSchema": {"type": "object"}},
+            {"name": "multiply", "description": "Multiply numbers", "inputSchema": {"type": "object"}},
+        ]
+        provider = Provider(
+            provider_id="test",
+            mode="subprocess",
+            command=["test"],
+            tools=tools,
+        )
+
+        assert provider.state == ProviderState.COLD
+        assert provider.has_tools is True
+        assert provider.tools_predefined is True
+        assert provider.tools.count() == 2
+        assert "add" in provider.tools.list_names()
+        assert "multiply" in provider.tools.list_names()
+
+    def test_create_provider_without_predefined_tools(self):
+        """Test creating a provider without pre-defined tools."""
+        provider = Provider(
+            provider_id="test",
+            mode="subprocess",
+            command=["test"],
+        )
+
+        assert provider.state == ProviderState.COLD
+        assert provider.has_tools is False
+        assert provider.tools_predefined is False
+        assert provider.tools.count() == 0
+
+    def test_predefined_tools_have_correct_schema(self):
+        """Test that pre-defined tools maintain their schema."""
+        tools = [
+            {
+                "name": "calculate",
+                "description": "Perform calculation",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "a": {"type": "number"},
+                        "b": {"type": "number"},
+                    },
+                    "required": ["a", "b"],
+                },
+            },
+        ]
+        provider = Provider(
+            provider_id="test",
+            mode="subprocess",
+            command=["test"],
+            tools=tools,
+        )
+
+        tool = provider.tools.get("calculate")
+        assert tool is not None
+        assert tool.name == "calculate"
+        assert tool.description == "Perform calculation"
+        assert tool.input_schema["type"] == "object"
+        assert "a" in tool.input_schema["properties"]
+        assert "b" in tool.input_schema["properties"]
+
+    def test_predefined_tools_with_empty_list(self):
+        """Test provider with empty tools list."""
+        provider = Provider(
+            provider_id="test",
+            mode="subprocess",
+            command=["test"],
+            tools=[],
+        )
+
+        assert provider.has_tools is False
+        assert provider.tools_predefined is False  # Empty list = no predefined tools
+        assert provider.tools.count() == 0
+

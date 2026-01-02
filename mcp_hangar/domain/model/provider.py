@@ -83,6 +83,8 @@ class Provider(AggregateRoot):
         read_only: bool = True,
         user: Optional[str] = None,  # UID:GID or username
         description: Optional[str] = None,  # Description/preprompt for AI models
+        # Pre-defined tools (allows visibility before provider starts)
+        tools: Optional[List[Dict[str, Any]]] = None,
         # Dependencies
         metrics_publisher: Optional[IMetricsPublisher] = None,
     ):
@@ -133,6 +135,12 @@ class Provider(AggregateRoot):
         self._meta: Dict[str, Any] = {}
         self._last_used: float = 0.0
 
+        # Pre-load tools from configuration (allows visibility before start)
+        self._tools_predefined = False
+        if tools:
+            self._tools.update_from_list(tools)
+            self._tools_predefined = True
+
         # Thread safety
         self._lock = threading.RLock()
 
@@ -178,6 +186,16 @@ class Provider(AggregateRoot):
     def tools(self) -> ToolCatalog:
         """Tool catalog."""
         return self._tools
+
+    @property
+    def has_tools(self) -> bool:
+        """Check if provider has any tools registered (predefined or discovered)."""
+        return self._tools.count() > 0
+
+    @property
+    def tools_predefined(self) -> bool:
+        """Check if tools were predefined in configuration (no startup needed for visibility)."""
+        return self._tools_predefined
 
     @property
     def is_alive(self) -> bool:
@@ -362,7 +380,16 @@ class Provider(AggregateRoot):
             return {"command": self._command, "env": self._env}
 
         if self._mode == ProviderMode.DOCKER:
-            return {"image": self._image, "env": self._env}
+            return {
+                "image": self._image,
+                "volumes": self._volumes,
+                "env": self._env,
+                "memory_limit": self._resources.get("memory", "512m"),
+                "cpu_limit": self._resources.get("cpu", "1.0"),
+                "network": self._network,
+                "read_only": self._read_only,
+                "user": self._user,
+            }
 
         if self._mode.value in ("container", "podman"):
             return {
