@@ -167,3 +167,96 @@ class ProviderIdleDetected(DomainEvent):
 # Provider Group Events are defined in mcp_hangar.domain.model.provider_group
 # to avoid circular imports. Re-export them here for convenience.
 # Import at runtime only when needed.
+
+
+# Discovery Events
+
+
+@dataclass
+class ProviderDiscovered(DomainEvent):
+    """Published when a new provider is discovered."""
+
+    provider_name: str
+    source_type: str
+    mode: str
+    fingerprint: str
+
+    def __post_init__(self):
+        super().__init__()
+
+
+@dataclass
+class ProviderDiscoveryLost(DomainEvent):
+    """Published when a previously discovered provider is no longer found."""
+
+    provider_name: str
+    source_type: str
+    reason: str  # "ttl_expired", "source_removed", etc.
+
+    def __post_init__(self):
+        super().__init__()
+
+
+@dataclass
+class ProviderDiscoveryConfigChanged(DomainEvent):
+    """Published when discovered provider configuration changes."""
+
+    provider_name: str
+    source_type: str
+    old_fingerprint: str
+    new_fingerprint: str
+
+    def __post_init__(self):
+        super().__init__()
+
+
+@dataclass
+class ProviderQuarantined(DomainEvent):
+    """Published when a discovered provider is quarantined."""
+
+    provider_name: str
+    source_type: str
+    reason: str
+    validation_result: str
+
+    def __post_init__(self):
+        super().__init__()
+
+
+@dataclass
+class ProviderApproved(DomainEvent):
+    """Published when a quarantined provider is approved."""
+
+    provider_name: str
+    source_type: str
+    approved_by: str  # "manual" or "auto"
+
+    def __post_init__(self):
+        super().__init__()
+
+
+@dataclass
+class DiscoveryCycleCompleted(DomainEvent):
+    """Published when a discovery cycle completes."""
+
+    discovered_count: int
+    registered_count: int
+    deregistered_count: int
+    quarantined_count: int
+    error_count: int
+    duration_ms: float
+
+    def __post_init__(self):
+        super().__init__()
+
+
+@dataclass
+class DiscoverySourceHealthChanged(DomainEvent):
+    """Published when a discovery source health status changes."""
+
+    source_type: str
+    is_healthy: bool
+    error_message: str | None = None
+
+    def __post_init__(self):
+        super().__init__()

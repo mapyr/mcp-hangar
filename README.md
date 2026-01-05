@@ -1,273 +1,165 @@
 # MCP Hangar
 
 [![Tests](https://github.com/mapyr/mcp-hangar/actions/workflows/test.yml/badge.svg)](https://github.com/mapyr/mcp-hangar/actions/workflows/test.yml)
-[![Lint](https://github.com/mapyr/mcp-hangar/actions/workflows/lint.yml/badge.svg)](https://github.com/mapyr/mcp-hangar/actions/workflows/lint.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A production-grade registry for managing Model Context Protocol (MCP) providers with hot-loading, health monitoring, and automatic garbage collection.
-
+Production-grade MCP provider registry with lazy loading, health monitoring, and container support.
 
 ## Features
 
-- **Multiple Transport Modes**: Stdio (default) and HTTP with Streamable HTTP support
-- **Container Support**: Docker and Podman with auto-detection
-- **Pre-Built Images**: Use any Docker/Podman image directly
-- **Provider Groups**: Load balancing and high availability with multiple strategies
-- **Thread-Safe**: All operations protected with proper locking
-- **Health Monitoring**: Active health checks with circuit breaker pattern
-- **Garbage Collection**: Automatic shutdown of idle providers
-- **State Machine**: `COLD → INITIALIZING → READY → DEGRADED → DEAD`
+- **Lazy Loading** — Providers start only when invoked, tools visible immediately
+- **Container Support** — Docker/Podman with auto-detection
+- **Provider Groups** — Load balancing with multiple strategies
+- **Health Monitoring** — Circuit breaker pattern with automatic recovery
+- **Auto-Discovery** — Detect providers from Docker labels, K8s annotations, filesystem
 
 ## Quick Start
 
-### Installation
-
-Using `uv` (recommended):
-
 ```bash
 uv pip install .
+python -m mcp_hangar.server --config config.yaml
 ```
 
-Or using standard `pip`:
-
-```bash
-pip install .
-```
-
-### Running the Registry
-
-#### Stdio Mode (Default)
-
-For MCP clients that spawn processes (Claude Desktop, etc.):
-
-```bash
-python -m mcp_hangar.server
-```
-
-#### HTTP Mode
-
-For HTTP-based MCP clients (LM Studio, web apps, etc.):
-
-```bash
-python -m mcp_hangar.server --http
-```
-
-Server will start on `http://localhost:8000/mcp`
-
-### LM Studio Configuration
-
-Create `mcp-config.json`:
+### Claude Desktop
 
 ```json
 {
   "mcpServers": {
     "mcp-hangar": {
-      "url": "http://localhost:8000/mcp"
+      "command": "python",
+      "args": ["-m", "mcp_hangar.server", "--config", "/path/to/config.yaml"],
+      "cwd": "/path/to/mcp-hangar"
     }
   }
 }
 ```
 
-Then in LM Studio: Settings → Developer → MCP Servers → Select the config file.
+### HTTP Mode (LM Studio)
+
+```bash
+python -m mcp_hangar.server --http
+# Server at http://localhost:8000/mcp
+```
 
 ## Configuration
 
-### Configuration File
-
-Create `config.yaml`:
-
 ```yaml
 providers:
-  # Subprocess mode
+  # Subprocess
   math:
     mode: subprocess
-    command:
-      - python
-      - -m
-      - examples.provider_math.server
+    command: [python, -m, examples.provider_math.server]
     idle_ttl_s: 180
+    tools:
+      - name: add
+        description: "Add two numbers"
+        inputSchema:
+          type: object
+          properties:
+            a: { type: number }
+            b: { type: number }
+          required: [a, b]
 
-  # Container mode with pre-built image
-  filesystem:
+  # Container
+  sqlite:
     mode: container
-    image: ghcr.io/modelcontextprotocol/server-filesystem:latest
+    image: localhost/mcp-sqlite:latest
     volumes:
-      - "${HOME}:/data:ro"
-
-  # Container mode with custom build
-  custom:
-    mode: container
-    build:
-      dockerfile: docker/Dockerfile.custom
-      context: .
+      - "/absolute/path/to/data:/data:rw"  # Must be absolute
+    network: bridge
+    idle_ttl_s: 300
 ```
 
-### Environment Variables
+> **Note**: Use absolute paths for volume mounts. Relative paths fail when MCP clients start the server from different directories.
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `MCP_CONFIG` | Path to config file | `config.yaml` |
-| `MCP_HTTP_HOST` | HTTP server host | `0.0.0.0` |
-| `MCP_HTTP_PORT` | HTTP server port | `8000` |
+### Building Container Images
+
+```bash
+podman build -t localhost/mcp-sqlite -f docker/Dockerfile.sqlite .
+podman build -t localhost/mcp-memory -f docker/Dockerfile.memory .
+podman build -t localhost/mcp-filesystem -f docker/Dockerfile.filesystem .
+podman build -t localhost/mcp-fetch -f docker/Dockerfile.fetch .
+
+mkdir -p data/sqlite data/memory data/filesystem
+```
 
 ## Registry Tools
 
-The registry exposes these MCP tools:
-
 | Tool | Description |
 |------|-------------|
-| `registry_list` | List all providers with status |
-| `registry_start` | Start a provider |
-| `registry_stop` | Stop a provider |
-| `registry_invoke` | Invoke a tool on a provider |
-| `registry_tools` | Get provider's tool schemas |
-| `registry_details` | Get provider details |
-| `registry_health` | Get registry health status |
+| `registry_list` | List providers |
+| `registry_start` | Start provider |
+| `registry_stop` | Stop provider |
+| `registry_invoke` | Invoke tool |
+| `registry_tools` | Get tool schemas |
+| `registry_health` | Health status |
 
-### Example: Invoke a Tool
+### Examples
 
 ```python
-# Through the registry
-result = registry_invoke(
-    provider="math",
-    tool="add",
-    arguments={"a": 5, "b": 3}
-)
-# Returns: {"result": 8}
+# List providers (containers stay OFF)
+registry_list()
+
+# Get tools (container still OFF)
+registry_tools(provider="sqlite")
+
+# Invoke tool (starts container, executes)
+registry_invoke(provider="sqlite", tool="execute", 
+                arguments={"sql": "CREATE TABLE users (id INTEGER PRIMARY KEY)"})
+
+registry_invoke(provider="sqlite", tool="query",
+                arguments={"sql": "SELECT * FROM users"})
 ```
 
-## Provider Modes
-
-### Subprocess Mode
-
-Runs MCP server as a local subprocess:
+## Provider Groups
 
 ```yaml
-my_provider:
-  mode: subprocess
-  command:
-    - python
-    - -m
-    - my_mcp_server
+providers:
+  math-cluster:
+    mode: group
+    strategy: weighted_round_robin
+    min_healthy: 2
+    members:
+      - id: math-1
+        weight: 3
+        mode: subprocess
+        command: [python, -m, examples.provider_math.server]
+      - id: math-2
+        weight: 1
+        mode: subprocess
+        command: [python, -m, examples.provider_math.server]
 ```
 
-### Container Mode
+Strategies: `round_robin`, `weighted_round_robin`, `random`, `priority`, `least_connections`
 
-Runs MCP server in Docker/Podman container:
+## Environment Variables
 
-```yaml
-my_provider:
-  mode: container
-  image: my-mcp-server:latest
-  # Or build from Dockerfile:
-  build:
-    dockerfile: Dockerfile
-    context: .
-  volumes:
-    - "/host/path:/container/path:ro"
-  env:
-    MY_VAR: "value"
-  resources:
-    memory: 256m
-    cpu: "0.5"
-```
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                       MCP Hangar                             │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
-│  │  Provider 1 │  │  Provider 2 │  │  Provider N │          │
-│  │  (subprocess)│  │  (docker)   │  │  (podman)   │          │
-│  └─────────────┘  └─────────────┘  └─────────────┘          │
-│         │                │                │                  │
-│         └────────────────┴────────────────┘                  │
-│                          │                                   │
-│              ┌───────────┴───────────┐                       │
-│              │    Provider Manager   │                       │
-│              │  (State, Health, GC)  │                       │
-│              └───────────────────────┘                       │
-│                          │                                   │
-│              ┌───────────┴───────────┐                       │
-│              │     MCP Server        │                       │
-│              │  (Stdio or HTTP)      │                       │
-│              └───────────────────────┘                       │
-└─────────────────────────────────────────────────────────────┘
-                           │
-              ┌────────────┴────────────┐
-              │      MCP Clients        │
-              │ (LM Studio, Claude, etc)│
-              └─────────────────────────┘
-```
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MCP_CONFIG` | `config.yaml` | Config file path |
+| `MCP_HTTP_PORT` | `8000` | HTTP server port |
+| `MCP_RATE_LIMIT_RPS` | `10` | Rate limit |
+| `MCP_CONTAINER_RUNTIME` | auto | Force `podman` or `docker` |
 
 ## Development
 
-### Development Setup
-
-To contribute to this project, you'll need [uv](https://github.com/astral-sh/uv) and a Docker runtime (Docker Desktop or Podman) installed.
-
-#### 1. Install Dependencies
-
-Standard installation only installs runtime dependencies. To run tests and linters, you must install the `dev` extras:
-
 ```bash
-# Install all dependencies including pytest, ruff, etc.
+git clone https://github.com/mapyr/mcp-hangar.git
+cd mcp-hangar
 uv sync --extra dev
-```
-
-#### 2. Prepare Docker Environment
-
-Some integration tests (e.g., Memory Provider) run actual MCP servers in Docker containers. These containers need write access to the local `data` directory.
-
-Before running tests, ensure the directory exists and has permissive permissions to avoid `EACCES: permission denied` errors inside the container:
-
-```bash
-# Create data directory and set permissions for Docker volume mounting
-mkdir -p data
-chmod 777 data
-```
-
-#### 3. Run Tests
-
-Once dependencies are installed and permissions are set, you can run the full test suite:
-
-```bash
-# All tests
-uv run pytest tests/ -v
-
-# Quick tests only
 uv run pytest tests/ -v -m "not slow"
-```
-
-### Project Structure
-
-```
-mcp_hangar/
-├── server.py           # Main MCP server (stdio + http modes)
-├── provider_manager.py # Provider lifecycle management
-├── stdio_client.py     # JSON-RPC client for providers
-├── gc.py               # Background health checks & GC
-├── fastmcp_server.py   # HTTP server using FastMCP
-├── http_server.py      # REST API server
-└── mcp_sse.py          # SSE transport (legacy)
 ```
 
 ## Documentation
 
-Full documentation is available in the [docs/](docs/INDEX.md) directory:
-
-- [Getting Started](docs/INDEX.md#getting-started) - Quick start guide
-- [Docker Support](docs/DOCKER_SUPPORT.md) - Container configuration
-- [Pre-built Images](docs/PREBUILT_IMAGES.md) - Using existing Docker images
-- [API Reference](docs/api/TOOLS_REFERENCE.md) - Registry tools API
-- [Architecture](docs/architecture/OVERVIEW.md) - System design
-- [Contributing](docs/development/CONTRIBUTING.md) - Development guide
-- [Security](docs/SECURITY.md) - Security features
-- [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
-- [FAQ](docs/FAQ.md) - Frequently asked questions
+- [Container Guide](docs/guides/CONTAINERS.md)
+- [Discovery](docs/guides/DISCOVERY.md)
+- [Architecture](docs/architecture/OVERVIEW.md)
+- [Testing](docs/guides/TESTING.md)
+- [Contributing](docs/development/CONTRIBUTING.md)
 
 ## License
 
-MIT License - see [LICENSE](LICENSE)
+MIT
+

@@ -68,6 +68,7 @@ class ProviderSummary:
     tools_count: int
     health_status: str  # healthy, degraded, unhealthy
     description: Optional[str] = None
+    tools_predefined: bool = False  # True if tools were defined in config (no startup needed)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
@@ -78,6 +79,7 @@ class ProviderSummary:
             "alive": self.is_alive,
             "tools_count": self.tools_count,
             "health_status": self.health_status,
+            "tools_predefined": self.tools_predefined,
         }
         if self.description:
             result["description"] = self.description

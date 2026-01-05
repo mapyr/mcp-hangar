@@ -360,6 +360,7 @@ class DockerLauncher(ProviderLauncher):
         cpu_limit: str = "1.0",
         read_only: bool = True,
         drop_capabilities: bool = True,
+        runtime: Optional[str] = None,  # "docker", "podman", or None for auto-detect
     ):
         """
         Initialize Docker launcher with security configuration.
@@ -372,6 +373,7 @@ class DockerLauncher(ProviderLauncher):
             cpu_limit: CPU limit for container
             read_only: Whether to mount filesystem read-only
             drop_capabilities: Whether to drop all capabilities
+            runtime: Container runtime ("docker", "podman", or None for auto-detect)
         """
         self._allowed_registries = allowed_registries
         self._blocked_images = blocked_images or self.BLOCKED_IMAGES
@@ -380,9 +382,27 @@ class DockerLauncher(ProviderLauncher):
         self._cpu_limit = cpu_limit
         self._read_only = read_only
         self._drop_capabilities = drop_capabilities
+        self._runtime = runtime or self._detect_runtime()
 
         self._validator = InputValidator()
         self._sanitizer = Sanitizer()
+
+    def _detect_runtime(self) -> str:
+        """Auto-detect container runtime (docker or podman)."""
+        import shutil
+
+        # Check for podman first (preferred on macOS with Podman Desktop)
+        if shutil.which("podman"):
+            logger.debug("Detected container runtime: podman")
+            return "podman"
+
+        if shutil.which("docker"):
+            logger.debug("Detected container runtime: docker")
+            return "docker"
+
+        # Default to docker, will fail at runtime if not available
+        logger.warning("No container runtime found in PATH, defaulting to 'docker'")
+        return "docker"
 
     def _validate_image(self, image: str) -> None:
         """
@@ -432,16 +452,16 @@ class DockerLauncher(ProviderLauncher):
         env: Optional[Dict[str, str]] = None,
     ) -> List[str]:
         """
-        Build secure Docker run command.
+        Build secure Docker/Podman run command.
 
         Args:
             image: Docker image to run
             env: Environment variables for container
 
         Returns:
-            Complete docker run command as list
+            Complete container run command as list
         """
-        cmd = ["docker", "run", "--rm", "-i"]
+        cmd = [self._runtime, "run", "--rm", "-i"]
 
         # Security options
         if not self._enable_network:
@@ -549,7 +569,7 @@ class ContainerConfig:
     cpu_limit: str = "1.0"
     network: str = "none"  # none, bridge, host
     read_only: bool = True
-    drop_capabilities: bool = True
+    drop_capabilities: bool = False  # Disabled: causes issues with native modules (e.g., better-sqlite3)
     user: Optional[str] = None  # Run as specific user
 
 
@@ -943,7 +963,7 @@ class ContainerLauncher(ProviderLauncher):
 
         # Log launch
         logger.info(f"Launching container [{self._runtime}]: {image}")
-        logger.debug(f"Container command: {' '.join(cmd[:10])}...")
+        logger.info(f"Container full command: {' '.join(cmd)}")
 
         try:
             inherit_stderr = os.getenv("MCP_CONTAINER_INHERIT_STDERR", "").strip().lower() in {
@@ -1016,7 +1036,7 @@ def get_launcher(mode: str) -> ProviderLauncher:
     """
     launchers = {
         "subprocess": SubprocessLauncher,
-        "docker": DockerLauncher,
+        "docker": lambda: ContainerLauncher(runtime="auto"),  # Use ContainerLauncher with auto-detection
         "container": lambda: ContainerLauncher(runtime="auto"),
         "podman": lambda: ContainerLauncher(runtime="podman"),
     }

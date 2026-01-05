@@ -18,7 +18,14 @@ dependencies = [
     "starlette>=0.27.0",
     "pyyaml>=6.0",
     "httpx>=0.25.0",
+    "docker>=7.1.0",
 ]
+
+[project.urls]
+Homepage = "https://mcp-hangar.io"
+Documentation = "https://mcp-hangar.io/docs"
+Repository = "https://github.com/mapyr/mcp-hangar"
+Changelog = "https://github.com/mapyr/mcp-hangar/blob/main/CHANGELOG.md"
 
 [project.scripts]
 mcp-hangar = "mcp_hangar.server:main"

@@ -1,0 +1,41 @@
+# Podman Discovery Test - docker-compose.podman.yml
+#
+# Test MCP Hangar discovery with Podman
+#
+# Usage:
+#   podman-compose -f docker-compose.podman.yml up -d
+#   # or
+#   podman compose -f docker-compose.podman.yml up -d
+
+version: '3.8'
+
+services:
+  # Simple test container with MCP labels
+  test-provider:
+    image: docker.io/library/python:3.11-slim
+    command: ["python", "-m", "http.server", "8080"]
+    labels:
+      mcp.hangar.enabled: "true"
+      mcp.hangar.name: "test-provider"
+      mcp.hangar.mode: "http"
+      mcp.hangar.port: "8080"
+    networks:
+      - mcp-net
+
+  # Another test container
+  math-provider:
+    image: docker.io/library/python:3.11-slim
+    command: ["python", "-m", "http.server", "8080"]
+    labels:
+      mcp.hangar.enabled: "true"
+      mcp.hangar.name: "math-provider"
+      mcp.hangar.mode: "http"
+      mcp.hangar.port: "8080"
+      mcp.hangar.group: "math-tools"
+    networks:
+      - mcp-net
+
+networks:
+  mcp-net:
+    driver: bridge
+

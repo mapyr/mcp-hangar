@@ -653,6 +653,77 @@ RATE_LIMIT_HITS_TOTAL = Counter(
     labels=["endpoint"],
 )
 
+# -----------------------------------------------------------------------------
+# Discovery Metrics
+# -----------------------------------------------------------------------------
+
+DISCOVERY_SOURCES_TOTAL = Gauge(
+    name="mcp_registry_discovery_sources",
+    description="Number of configured discovery sources",
+    labels=["source_type", "mode"],
+)
+
+DISCOVERY_SOURCES_HEALTHY = Gauge(
+    name="mcp_registry_discovery_sources_healthy",
+    description="Whether discovery source is healthy (1=healthy, 0=unhealthy)",
+    labels=["source_type"],
+)
+
+DISCOVERY_PROVIDERS_TOTAL = Gauge(
+    name="mcp_registry_discovery_providers",
+    description="Number of discovered providers",
+    labels=["source_type", "status"],  # status: discovered, registered, quarantined
+)
+
+DISCOVERY_CYCLES_TOTAL = Counter(
+    name="mcp_registry_discovery_cycles",
+    description="Total number of discovery cycles executed",
+    labels=["source_type"],
+)
+
+DISCOVERY_CYCLE_DURATION_SECONDS = Histogram(
+    name="mcp_registry_discovery_cycle_duration_seconds",
+    description="Duration of discovery cycles in seconds",
+    labels=["source_type"],
+    buckets=(0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0),
+)
+
+DISCOVERY_REGISTRATIONS_TOTAL = Counter(
+    name="mcp_registry_discovery_registrations",
+    description="Total provider registrations from discovery",
+    labels=["source_type"],
+)
+
+DISCOVERY_DEREGISTRATIONS_TOTAL = Counter(
+    name="mcp_registry_discovery_deregistrations",
+    description="Total provider deregistrations from discovery",
+    labels=["source_type", "reason"],  # reason: ttl_expired, source_removed, manual
+)
+
+DISCOVERY_CONFLICTS_TOTAL = Counter(
+    name="mcp_registry_discovery_conflicts",
+    description="Total discovery conflicts",
+    labels=["conflict_type"],  # conflict_type: static_wins, source_priority
+)
+
+DISCOVERY_QUARANTINE_TOTAL = Counter(
+    name="mcp_registry_discovery_quarantine",
+    description="Total providers quarantined",
+    labels=["reason"],  # reason: health_check_failed, validation_failed, rate_limited
+)
+
+DISCOVERY_ERRORS_TOTAL = Counter(
+    name="mcp_registry_discovery_errors",
+    description="Total discovery errors",
+    labels=["source_type", "error_type"],
+)
+
+DISCOVERY_LAST_CYCLE_TIMESTAMP = Gauge(
+    name="mcp_registry_discovery_last_cycle_timestamp_seconds",
+    description="Unix timestamp of last discovery cycle",
+    labels=["source_type"],
+)
+
 
 # =============================================================================
 # Register All Metrics
@@ -690,6 +761,18 @@ def _register_all_metrics():
         GC_PROVIDERS_COLLECTED_TOTAL,
         ERRORS_TOTAL,
         RATE_LIMIT_HITS_TOTAL,
+        # Discovery metrics
+        DISCOVERY_SOURCES_TOTAL,
+        DISCOVERY_SOURCES_HEALTHY,
+        DISCOVERY_PROVIDERS_TOTAL,
+        DISCOVERY_CYCLES_TOTAL,
+        DISCOVERY_CYCLE_DURATION_SECONDS,
+        DISCOVERY_REGISTRATIONS_TOTAL,
+        DISCOVERY_DEREGISTRATIONS_TOTAL,
+        DISCOVERY_CONFLICTS_TOTAL,
+        DISCOVERY_QUARANTINE_TOTAL,
+        DISCOVERY_ERRORS_TOTAL,
+        DISCOVERY_LAST_CYCLE_TIMESTAMP,
     ]
     for metric in metrics:
         REGISTRY.register(metric)
@@ -815,6 +898,94 @@ def record_gc_cycle(duration: float, collected: Dict[str, int] = None):
 def record_error(component: str, error_type: str):
     """Record an error."""
     ERRORS_TOTAL.inc(component=component, error_type=error_type)
+
+
+# =============================================================================
+# Discovery Metrics Functions
+# =============================================================================
+
+
+def update_discovery_source(source_type: str, mode: str, is_healthy: bool, providers_count: int):
+    """Update discovery source metrics.
+
+    Args:
+        source_type: Type of source (filesystem, docker, kubernetes, entrypoint)
+        mode: Discovery mode (additive, authoritative)
+        is_healthy: Whether the source is healthy
+        providers_count: Number of providers discovered by this source
+    """
+    DISCOVERY_SOURCES_TOTAL.set(1, source_type=source_type, mode=mode)
+    DISCOVERY_SOURCES_HEALTHY.set(1 if is_healthy else 0, source_type=source_type)
+    DISCOVERY_PROVIDERS_TOTAL.set(providers_count, source_type=source_type, status="discovered")
+
+
+def record_discovery_cycle(
+    source_type: str,
+    duration: float,
+    discovered: int = 0,
+    registered: int = 0,
+    quarantined: int = 0,
+):
+    """Record a discovery cycle execution.
+
+    Args:
+        source_type: Type of source
+        duration: Duration of the cycle in seconds
+        discovered: Number of providers discovered
+        registered: Number of providers registered
+        quarantined: Number of providers quarantined
+    """
+    DISCOVERY_CYCLES_TOTAL.inc(source_type=source_type)
+    DISCOVERY_CYCLE_DURATION_SECONDS.observe(duration, source_type=source_type)
+    DISCOVERY_LAST_CYCLE_TIMESTAMP.set(time.time(), source_type=source_type)
+
+    # Update provider counts
+    DISCOVERY_PROVIDERS_TOTAL.set(discovered, source_type=source_type, status="discovered")
+    DISCOVERY_PROVIDERS_TOTAL.set(registered, source_type=source_type, status="registered")
+    DISCOVERY_PROVIDERS_TOTAL.set(quarantined, source_type=source_type, status="quarantined")
+
+
+def record_discovery_registration(source_type: str):
+    """Record a provider registration from discovery."""
+    DISCOVERY_REGISTRATIONS_TOTAL.inc(source_type=source_type)
+
+
+def record_discovery_deregistration(source_type: str, reason: str):
+    """Record a provider deregistration from discovery.
+
+    Args:
+        source_type: Type of source
+        reason: Reason for deregistration (ttl_expired, source_removed, manual)
+    """
+    DISCOVERY_DEREGISTRATIONS_TOTAL.inc(source_type=source_type, reason=reason)
+
+
+def record_discovery_conflict(conflict_type: str):
+    """Record a discovery conflict.
+
+    Args:
+        conflict_type: Type of conflict (static_wins, source_priority)
+    """
+    DISCOVERY_CONFLICTS_TOTAL.inc(conflict_type=conflict_type)
+
+
+def record_discovery_quarantine(reason: str):
+    """Record a provider quarantine.
+
+    Args:
+        reason: Reason for quarantine (health_check_failed, validation_failed, rate_limited)
+    """
+    DISCOVERY_QUARANTINE_TOTAL.inc(reason=reason)
+
+
+def record_discovery_error(source_type: str, error_type: str):
+    """Record a discovery error.
+
+    Args:
+        source_type: Type of source
+        error_type: Type of error
+    """
+    DISCOVERY_ERRORS_TOTAL.inc(source_type=source_type, error_type=error_type)
 
 
 # =============================================================================
