@@ -381,4 +381,3 @@ class ConcurrentModificationError(PersistenceError):
             f"Concurrent modification on provider '{provider_id}': "
             f"expected version {expected_version}, actual {actual_version}"
         )
-

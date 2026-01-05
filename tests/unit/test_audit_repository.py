@@ -1,7 +1,8 @@
 """Tests for persistence layer - audit repository."""
 
-import pytest
 from datetime import datetime, timedelta, timezone
+
+import pytest
 
 from mcp_hangar.domain.contracts.persistence import (
     AuditAction,
@@ -39,9 +40,7 @@ class TestInMemoryAuditRepository:
         return InMemoryAuditRepository()
 
     @pytest.mark.asyncio
-    async def test_append_and_get_by_entity(
-        self, repo: InMemoryAuditRepository, audit_entry: AuditEntry
-    ):
+    async def test_append_and_get_by_entity(self, repo: InMemoryAuditRepository, audit_entry: AuditEntry):
         """Test appending and retrieving by entity."""
         await repo.append(audit_entry)
 
@@ -52,9 +51,7 @@ class TestInMemoryAuditRepository:
         assert results[0].action == AuditAction.STARTED
 
     @pytest.mark.asyncio
-    async def test_get_by_entity_with_type_filter(
-        self, repo: InMemoryAuditRepository, audit_entry: AuditEntry
-    ):
+    async def test_get_by_entity_with_type_filter(self, repo: InMemoryAuditRepository, audit_entry: AuditEntry):
         """Test filtering by entity type."""
         await repo.append(audit_entry)
 
@@ -68,9 +65,7 @@ class TestInMemoryAuditRepository:
         )
         await repo.append(other_entry)
 
-        results = await repo.get_by_entity(
-            audit_entry.entity_id, entity_type="provider"
-        )
+        results = await repo.get_by_entity(audit_entry.entity_id, entity_type="provider")
 
         assert len(results) == 1
         assert results[0].entity_type == "provider"
@@ -109,9 +104,7 @@ class TestInMemoryAuditRepository:
         assert results[0].entity_id == "provider-2"
 
     @pytest.mark.asyncio
-    async def test_get_by_correlation_id(
-        self, repo: InMemoryAuditRepository, audit_entry: AuditEntry
-    ):
+    async def test_get_by_correlation_id(self, repo: InMemoryAuditRepository, audit_entry: AuditEntry):
         """Test filtering by correlation ID."""
         await repo.append(audit_entry)
 
@@ -205,9 +198,7 @@ class TestSQLiteAuditRepository:
         assert len(page2) == 3
 
     @pytest.mark.asyncio
-    async def test_get_by_time_range_with_action_filter(
-        self, database: Database, repo: SQLiteAuditRepository
-    ):
+    async def test_get_by_time_range_with_action_filter(self, database: Database, repo: SQLiteAuditRepository):
         """Test filtering by action type."""
         await database.initialize()
         now = datetime.now(timezone.utc)
@@ -291,9 +282,7 @@ class TestSQLiteAuditRepository:
         assert all(r.action == AuditAction.STARTED for r in results)
 
     @pytest.mark.asyncio
-    async def test_serialization_of_complex_metadata(
-        self, database: Database, repo: SQLiteAuditRepository
-    ):
+    async def test_serialization_of_complex_metadata(self, database: Database, repo: SQLiteAuditRepository):
         """Test that complex metadata is properly serialized/deserialized."""
         await database.initialize()
         entry = AuditEntry(
@@ -321,4 +310,3 @@ class TestSQLiteAuditRepository:
         assert result.new_state == {"new": "config", "list": [1, 2, 3]}
         assert result.metadata["duration_ms"] == 150.5
         assert result.metadata["tools"] == ["tool1", "tool2"]
-

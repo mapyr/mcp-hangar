@@ -16,8 +16,8 @@ from ...domain.contracts.persistence import (
 from ...domain.model import Provider
 from ...domain.repository import IProviderRepository
 from ...logging_config import get_logger
-from .config_repository import SQLiteProviderConfigRepository
 from .audit_repository import SQLiteAuditRepository
+from .config_repository import SQLiteProviderConfigRepository
 from .database import Database
 
 logger = get_logger(__name__)
@@ -107,9 +107,7 @@ class RecoveryService:
                     result.failed_count += 1
                     result.failed_ids.append(config.provider_id)
                     result.errors[config.provider_id] = str(e)
-                    logger.error(
-                        f"Recovery: Failed to restore provider {config.provider_id}: {e}"
-                    )
+                    logger.error(f"Recovery: Failed to restore provider {config.provider_id}: {e}")
 
             # Record recovery in audit log
             await self._record_recovery_audit(result)
@@ -120,9 +118,7 @@ class RecoveryService:
 
         finally:
             result.completed_at = datetime.now(timezone.utc)
-            result.duration_ms = (
-                result.completed_at - start_time
-            ).total_seconds() * 1000
+            result.duration_ms = (result.completed_at - start_time).total_seconds() * 1000
             self._last_recovery = result
 
         logger.info(
@@ -132,9 +128,7 @@ class RecoveryService:
 
         return result.recovered_ids
 
-    def _create_provider_from_config(
-        self, config: ProviderConfigSnapshot
-    ) -> Provider:
+    def _create_provider_from_config(self, config: ProviderConfigSnapshot) -> Provider:
         """Create Provider aggregate from configuration snapshot.
 
         Args:
@@ -211,9 +205,7 @@ class RecoveryService:
             "skipped_count": result.skipped_count,
             "duration_ms": result.duration_ms,
             "started_at": result.started_at.isoformat() if result.started_at else None,
-            "completed_at": (
-                result.completed_at.isoformat() if result.completed_at else None
-            ),
+            "completed_at": (result.completed_at.isoformat() if result.completed_at else None),
             "recovered_ids": result.recovered_ids,
             "failed_ids": result.failed_ids,
             "errors": result.errors,
@@ -273,11 +265,7 @@ class RecoveryService:
             network=provider._network,
             read_only=provider._read_only,
             user=provider._user,
-            tools=(
-                [t.to_dict() for t in provider.tools]
-                if provider._tools_predefined
-                else None
-            ),
+            tools=([t.to_dict() for t in provider.tools] if provider._tools_predefined else None),
             enabled=True,
         )
 
@@ -326,4 +314,3 @@ class RecoveryService:
             )
 
         return deleted
-

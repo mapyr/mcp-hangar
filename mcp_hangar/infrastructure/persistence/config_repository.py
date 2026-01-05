@@ -50,9 +50,7 @@ class InMemoryProviderConfigRepository:
                         "updated_at": now,
                     }
                 )
-                self._versions[config.provider_id] = (
-                    self._versions.get(config.provider_id, 0) + 1
-                )
+                self._versions[config.provider_id] = self._versions.get(config.provider_id, 0) + 1
             else:
                 # Create new
                 new_config = ProviderConfigSnapshot(
@@ -229,9 +227,7 @@ class SQLiteProviderConfigRepository:
         """
         try:
             async with self._db.connection() as conn:
-                cursor = await conn.execute(
-                    "SELECT config_json FROM provider_configs WHERE enabled = 1"
-                )
+                cursor = await conn.execute("SELECT config_json FROM provider_configs WHERE enabled = 1")
                 rows = await cursor.fetchall()
 
                 configs = []
@@ -330,9 +326,7 @@ class SQLiteProviderConfigRepository:
             logger.error(f"Failed to check provider existence: {e}")
             raise PersistenceError(f"Failed to check provider existence: {e}") from e
 
-    async def get_with_version(
-        self, provider_id: str
-    ) -> Optional[tuple[ProviderConfigSnapshot, int]]:
+    async def get_with_version(self, provider_id: str) -> Optional[tuple[ProviderConfigSnapshot, int]]:
         """Get configuration with its version for optimistic locking.
 
         Args:
@@ -357,9 +351,7 @@ class SQLiteProviderConfigRepository:
 
         except Exception as e:
             logger.error(f"Failed to get provider config with version: {e}")
-            raise PersistenceError(
-                f"Failed to get provider config with version: {e}"
-            ) from e
+            raise PersistenceError(f"Failed to get provider config with version: {e}") from e
 
     async def update_last_started(self, provider_id: str) -> None:
         """Update the last_started_at timestamp.
@@ -386,9 +378,7 @@ class SQLiteProviderConfigRepository:
             logger.error(f"Failed to update last_started_at: {e}")
             # Non-critical operation, don't raise
 
-    async def update_failure_count(
-        self, provider_id: str, consecutive_failures: int
-    ) -> None:
+    async def update_failure_count(self, provider_id: str, consecutive_failures: int) -> None:
         """Update the consecutive failure count.
 
         Args:
@@ -413,4 +403,3 @@ class SQLiteProviderConfigRepository:
         except Exception as e:
             logger.error(f"Failed to update failure count: {e}")
             # Non-critical operation, don't raise
-

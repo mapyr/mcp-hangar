@@ -4,9 +4,9 @@ Connects the existing AuditEventHandler with the new
 persistent IAuditRepository implementation.
 """
 
+import asyncio
 from datetime import datetime, timezone
 from typing import List, Optional
-import asyncio
 
 from ...domain.contracts.persistence import (
     AuditAction,
@@ -233,4 +233,3 @@ def create_persistent_audit_handler(
         include_event_types=include_event_types,
         exclude_event_types=exclude_event_types,
     )
-

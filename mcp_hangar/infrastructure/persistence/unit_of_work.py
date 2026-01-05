@@ -96,9 +96,7 @@ class TransactionalProviderConfigRepository:
 
     async def get_all(self) -> List[ProviderConfigSnapshot]:
         """Retrieve all provider configurations within transaction."""
-        cursor = await self._conn.execute(
-            "SELECT config_json FROM provider_configs WHERE enabled = 1"
-        )
+        cursor = await self._conn.execute("SELECT config_json FROM provider_configs WHERE enabled = 1")
         rows = await cursor.fetchall()
 
         configs = []
@@ -302,9 +300,7 @@ class SQLiteUnitOfWork:
         )
 
         # Configure connection
-        await self._conn.execute(
-            f"PRAGMA busy_timeout = {self._db.config.busy_timeout_ms}"
-        )
+        await self._conn.execute(f"PRAGMA busy_timeout = {self._db.config.busy_timeout_ms}")
         await self._conn.execute("PRAGMA foreign_keys = ON")
 
         # Create transactional repositories
@@ -415,4 +411,3 @@ class InMemoryUnitOfWork:
     def audit(self):
         """Access audit repository."""
         return self._audit
-

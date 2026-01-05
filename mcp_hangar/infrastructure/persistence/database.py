@@ -4,12 +4,12 @@ Provides async-compatible database access with connection pooling,
 migrations, and health checking.
 """
 
+import asyncio
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
 import threading
 from typing import Any, AsyncIterator, Dict, List, Optional, Tuple
-import asyncio
 
 import aiosqlite
 
@@ -136,13 +136,15 @@ class Database:
         """Apply database migrations."""
         async with self.connection() as conn:
             # Create migrations tracking table
-            await conn.execute("""
+            await conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS _migrations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL UNIQUE,
                     applied_at TEXT NOT NULL DEFAULT (datetime('now'))
                 )
-            """)
+            """
+            )
 
             # Get applied migrations
             cursor = await conn.execute("SELECT name FROM _migrations")
@@ -328,4 +330,3 @@ async def initialize_database(config: Optional[DatabaseConfig] = None) -> Databa
     db = get_database(config)
     await db.initialize()
     return db
-

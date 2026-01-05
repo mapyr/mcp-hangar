@@ -374,4 +374,3 @@ class AuditService:
                 actor=actor,
                 correlation_id=event.correlation_id,
             )
-

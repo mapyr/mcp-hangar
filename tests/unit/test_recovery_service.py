@@ -1,7 +1,8 @@
 """Tests for recovery service."""
 
-import pytest
 from datetime import datetime, timezone
+
+import pytest
 
 from mcp_hangar.domain.contracts.persistence import (
     ProviderConfigSnapshot,
@@ -320,4 +321,3 @@ class TestRecoveryServiceInMemory:
 
         assert result is True
         assert await config_repo.exists("to-delete") is False
-

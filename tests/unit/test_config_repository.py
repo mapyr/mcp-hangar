@@ -1,13 +1,14 @@
 """Tests for persistence layer - provider config repository."""
 
-import pytest
-from datetime import datetime
 import asyncio
+from datetime import datetime
+
+import pytest
 
 from mcp_hangar.domain.contracts.persistence import (
-    ProviderConfigSnapshot,
     ConcurrentModificationError,
     PersistenceError,
+    ProviderConfigSnapshot,
 )
 from mcp_hangar.infrastructure.persistence import (
     Database,
@@ -42,9 +43,7 @@ class TestInMemoryProviderConfigRepository:
         return InMemoryProviderConfigRepository()
 
     @pytest.mark.asyncio
-    async def test_save_and_get(
-        self, repo: InMemoryProviderConfigRepository, config_snapshot: ProviderConfigSnapshot
-    ):
+    async def test_save_and_get(self, repo: InMemoryProviderConfigRepository, config_snapshot: ProviderConfigSnapshot):
         """Test saving and retrieving a configuration."""
         await repo.save(config_snapshot)
 
@@ -170,18 +169,14 @@ class TestSQLiteProviderConfigRepository:
     async def test_get_all_enabled_only(self, database: Database, repo: SQLiteProviderConfigRepository):
         """Test get_all returns only enabled configurations."""
         await database.initialize()
-        enabled_config = ProviderConfigSnapshot(
-            provider_id="enabled-provider", mode="subprocess", enabled=True
-        )
+        enabled_config = ProviderConfigSnapshot(provider_id="enabled-provider", mode="subprocess", enabled=True)
         await repo.save(enabled_config)
 
         # Delete (soft delete)
         await repo.delete("enabled-provider")
 
         # Re-add another
-        new_config = ProviderConfigSnapshot(
-            provider_id="new-provider", mode="subprocess", enabled=True
-        )
+        new_config = ProviderConfigSnapshot(provider_id="new-provider", mode="subprocess", enabled=True)
         await repo.save(new_config)
 
         all_configs = await repo.get_all()
@@ -190,7 +185,9 @@ class TestSQLiteProviderConfigRepository:
         assert all_configs[0].provider_id == "new-provider"
 
     @pytest.mark.asyncio
-    async def test_soft_delete(self, database: Database, repo: SQLiteProviderConfigRepository, config_snapshot: ProviderConfigSnapshot):
+    async def test_soft_delete(
+        self, database: Database, repo: SQLiteProviderConfigRepository, config_snapshot: ProviderConfigSnapshot
+    ):
         """Test soft delete marks config as disabled."""
         await database.initialize()
         await repo.save(config_snapshot)
@@ -202,7 +199,9 @@ class TestSQLiteProviderConfigRepository:
         assert await repo.exists(config_snapshot.provider_id) is False
 
     @pytest.mark.asyncio
-    async def test_hard_delete(self, database: Database, repo: SQLiteProviderConfigRepository, config_snapshot: ProviderConfigSnapshot):
+    async def test_hard_delete(
+        self, database: Database, repo: SQLiteProviderConfigRepository, config_snapshot: ProviderConfigSnapshot
+    ):
         """Test hard delete permanently removes configuration."""
         await database.initialize()
         await repo.save(config_snapshot)
@@ -213,7 +212,9 @@ class TestSQLiteProviderConfigRepository:
         assert await repo.get(config_snapshot.provider_id) is None
 
     @pytest.mark.asyncio
-    async def test_version_increment(self, database: Database, repo: SQLiteProviderConfigRepository, config_snapshot: ProviderConfigSnapshot):
+    async def test_version_increment(
+        self, database: Database, repo: SQLiteProviderConfigRepository, config_snapshot: ProviderConfigSnapshot
+    ):
         """Test version increments on update."""
         await database.initialize()
         await repo.save(config_snapshot)
@@ -258,4 +259,3 @@ class TestSQLiteProviderConfigRepository:
         await repo.update_failure_count(config_snapshot.provider_id, 5)
 
         # No error means success
-

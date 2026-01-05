@@ -183,4 +183,3 @@ async def shutdown_runtime(runtime: Runtime) -> None:
     """
     if runtime.database:
         await runtime.database.close()
-
