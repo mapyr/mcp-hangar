@@ -1,7 +1,7 @@
 """Event Sourced Provider aggregate - provider that rebuilds state from events."""
 
 from dataclasses import dataclass
-import logging
+from ...logging_config import get_logger
 import threading
 from typing import Any, Dict, List, Optional
 
@@ -23,7 +23,7 @@ from .health_tracker import HealthTracker
 from .provider import Provider, ProviderState
 from .tool_catalog import ToolCatalog
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

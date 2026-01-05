@@ -13,13 +13,13 @@ Validation Pipeline:
 import asyncio
 from dataclasses import dataclass, field
 from enum import Enum
-import logging
+from ...logging_config import get_logger
 import time
 from typing import Any, Dict, List, Optional, Set
 
 from mcp_hangar.domain.discovery.discovered_provider import DiscoveredProvider
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Optional aiohttp dependency
 try:
@@ -28,7 +28,7 @@ try:
     AIOHTTP_AVAILABLE = True
 except ImportError:
     AIOHTTP_AVAILABLE = False
-    logger.debug("aiohttp not installed, health checks will be limited")
+    # Note: No logging here - module is imported before setup_logging() is called
 
 
 class ValidationResult(Enum):

@@ -9,12 +9,13 @@ Endpoints (HTTP mode):
 - /metrics: prometheus metrics
 """
 
-import logging
 from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
 
-logger = logging.getLogger(__name__)
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 
 # Global registry functions (will be set by setup)
 _registry_list = None
@@ -235,9 +236,7 @@ def setup_fastmcp_server(
     _registry_sources = registry_sources_fn
     _registry_metrics = registry_metrics_fn
 
-    logger.info("FastMCP server configured with registry functions")
-    if registry_discover_fn:
-        logger.info("Discovery tools enabled")
+    logger.info("fastmcp_server_configured", discovery_enabled=registry_discover_fn is not None)
 
 
 def run_fastmcp_server():
@@ -250,10 +249,13 @@ def run_fastmcp_server():
 
     from .metrics import get_metrics, init_metrics, update_provider_state
 
-    logger.info("Starting FastMCP HTTP server on 0.0.0.0:8000")
-    print("🌐 MCP Registry FastMCP Server starting on http://0.0.0.0:8000", flush=True)
-    print("📚 Streamable HTTP: http://0.0.0.0:8000/mcp", flush=True)
-    print("📊 Metrics: http://0.0.0.0:8000/metrics", flush=True)
+    logger.info(
+        "fastmcp_http_server_starting",
+        host="0.0.0.0",
+        port=8000,
+        streamable_http_path="/mcp",
+        metrics_path="/metrics",
+    )
 
     # Initialize server metrics
     init_metrics(version="1.0.0")
@@ -366,10 +368,17 @@ def run_fastmcp_server():
                 return
         await mcp_app(scope, receive, send)
 
-    # Run with uvicorn
-    uvicorn.run(combined_app, host="0.0.0.0", port=8000, log_level="info")
+    # Run with uvicorn - disable access logs (we'll use our own structured logging)
+    uvicorn.run(
+        combined_app,
+        host="0.0.0.0",
+        port=8000,
+        log_level="warning",  # Only show warnings/errors from uvicorn itself
+        access_log=False,  # Disable uvicorn access logs
+    )
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    from .logging_config import setup_logging
+    setup_logging(level="INFO", json_format=False)
     run_fastmcp_server()

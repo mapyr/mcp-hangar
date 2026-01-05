@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 import hashlib
-import logging
+from ...logging_config import get_logger
 import os
 from pathlib import Path
 import shutil
@@ -11,7 +11,7 @@ from typing import Optional
 
 from ..exceptions import ProviderStartError
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

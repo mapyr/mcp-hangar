@@ -1,6 +1,5 @@
 """Query handlers implementation."""
 
-import logging
 import time
 from typing import Dict, List
 
@@ -16,6 +15,7 @@ from ...infrastructure.query_bus import (
     QueryBus,
     QueryHandler,
 )
+from ...logging_config import get_logger
 from ..read_models import (
     HealthInfo,
     ProviderDetails,
@@ -24,7 +24,7 @@ from ..read_models import (
     ToolInfo,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class BaseQueryHandler(QueryHandler):
@@ -230,4 +230,4 @@ def register_all_handlers(query_bus: QueryBus, repository: IProviderRepository) 
     query_bus.register(GetProviderHealthQuery, GetProviderHealthHandler(repository))
     query_bus.register(GetSystemMetricsQuery, GetSystemMetricsHandler(repository))
 
-    logger.info("All query handlers registered")
+    logger.info("query_handlers_registered")

@@ -9,12 +9,12 @@ This ensures explicit operator intent is never overridden by automated discovery
 
 from dataclasses import dataclass
 from enum import Enum
-import logging
+from ...logging_config import get_logger
 from typing import Dict, Optional, Set
 
 from .discovered_provider import DiscoveredProvider
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ConflictResolution(Enum):

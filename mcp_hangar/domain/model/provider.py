@@ -1,10 +1,10 @@
 """Provider aggregate root - the main domain entity."""
 
-import logging
 import threading
 import time
 from typing import Any, Dict, List, Optional
 
+from ...logging_config import get_logger
 from ..contracts.metrics_publisher import IMetricsPublisher, NullMetricsPublisher
 from ..events import (
     HealthCheckFailed,
@@ -37,7 +37,7 @@ from .aggregate import AggregateRoot
 from .health_tracker import HealthTracker
 from .tool_catalog import ToolCatalog, ToolSchema
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Valid state transitions

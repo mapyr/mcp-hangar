@@ -9,13 +9,14 @@ proper layer separation (infrastructure should not define business commands).
 """
 
 from abc import ABC, abstractmethod
-import logging
 from typing import Any, Dict, Optional, Type, TYPE_CHECKING
+
+from mcp_hangar.logging_config import get_logger
 
 if TYPE_CHECKING:
     from ..application.commands import Command
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class CommandHandler(ABC):
@@ -52,7 +53,7 @@ class CommandBus:
         if command_type in self._handlers:
             raise ValueError(f"Handler already registered for {command_type.__name__}")
         self._handlers[command_type] = handler
-        logger.debug(f"Registered handler for {command_type.__name__}")
+        logger.debug("command_handler_registered", command_type=command_type.__name__)
 
     def unregister(self, command_type: Type) -> bool:
         """
@@ -85,7 +86,7 @@ class CommandBus:
         if handler is None:
             raise ValueError(f"No handler registered for {command_type.__name__}")
 
-        logger.debug(f"Dispatching {command_type.__name__}")
+        logger.debug("command_dispatching", command_type=command_type.__name__)
         return handler.handle(command)
 
     def has_handler(self, command_type: Type) -> bool:

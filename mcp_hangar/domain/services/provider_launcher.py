@@ -21,12 +21,13 @@ subprocess.Popen); otherwise stderr remains captured.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-import logging
 import os
 import shutil
 import subprocess
 import sys
 from typing import Dict, List, Optional, Set
+
+from ...logging_config import get_logger
 
 from ...stdio_client import StdioClient
 from ..exceptions import ProviderStartError, ValidationError
@@ -34,7 +35,7 @@ from ..security.input_validator import InputValidator
 from ..security.sanitizer import Sanitizer
 from ..security.secrets import is_sensitive_key
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ProviderLauncher(ABC):

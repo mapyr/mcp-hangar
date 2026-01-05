@@ -1,6 +1,5 @@
 """Background workers for garbage collection and health checks."""
 
-import logging
 import threading
 import time
 from typing import Any, Literal, Optional
@@ -11,6 +10,7 @@ from .domain.contracts.provider_runtime import (
     ProviderRuntime,
 )
 from .infrastructure.event_bus import get_event_bus
+from .logging_config import get_logger
 from .metrics import (
     observe_health_check,
     record_error,
@@ -18,7 +18,7 @@ from .metrics import (
     record_provider_stop,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class BackgroundWorker:
@@ -59,17 +59,17 @@ class BackgroundWorker:
     def start(self):
         """Start the background worker thread."""
         if self.running:
-            logger.warning(f"background_worker already running: task={self.task}")
+            logger.warning("background_worker_already_running", task=self.task)
             return
 
         self.running = True
         self.thread.start()
-        logger.info(f"background_worker_started: task={self.task}, interval={self.interval_s}s")
+        logger.info("background_worker_started", task=self.task, interval_s=self.interval_s)
 
     def stop(self):
         """Stop the background worker thread."""
         self.running = False
-        logger.info(f"background_worker_stopped: task={self.task}")
+        logger.info("background_worker_stopped", task=self.task)
 
     def _publish_events(self, provider: ProviderRuntime) -> None:
         """Publish all collected events from a provider.
@@ -80,7 +80,7 @@ class BackgroundWorker:
             try:
                 self._event_bus.publish(event)
             except Exception:
-                logger.error("Failed to publish event", exc_info=True)
+                logger.exception("event_publish_failed")
 
     def _loop(self):
         """Main worker loop."""
@@ -98,7 +98,7 @@ class BackgroundWorker:
                     if self.task == "gc":
                         # Garbage collection - shutdown idle providers
                         if provider.maybe_shutdown_idle():
-                            logger.info(f"gc_shutdown: provider={provider_id}")
+                            logger.info("gc_shutdown", provider_id=provider_id)
                             gc_collected["idle"] += 1
                             record_provider_stop(provider_id, "idle")
 
@@ -123,16 +123,18 @@ class BackgroundWorker:
                         )
 
                         if not is_healthy and not is_cold:
-                            logger.warning(f"health_check_unhealthy: provider={provider_id}")
+                            logger.warning("health_check_unhealthy", provider_id=provider_id)
 
                     # Publish any collected events
                     self._publish_events(provider)
 
                 except Exception as e:
                     record_error("gc", type(e).__name__)
-                    logger.error(
-                        f"background_task_failed: provider={provider_id}, " f"task={self.task}, error={e}",
-                        exc_info=True,
+                    logger.exception(
+                        "background_task_failed",
+                        provider_id=provider_id,
+                        task=self.task,
+                        error=str(e),
                     )
 
             # Record GC cycle metrics

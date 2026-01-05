@@ -6,14 +6,14 @@ and applies business rules for registration and lifecycle management.
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-import logging
+from ...logging_config import get_logger
 from typing import Dict, List, Optional, Set
 
 from .conflict_resolver import ConflictResolution, ConflictResolver
 from .discovered_provider import DiscoveredProvider
 from .discovery_source import DiscoveryMode, DiscoverySource
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

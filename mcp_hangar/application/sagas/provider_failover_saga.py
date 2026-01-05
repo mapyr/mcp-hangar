@@ -1,7 +1,7 @@
 """Provider Failover Saga - failover to backup providers on failure."""
 
 from dataclasses import dataclass
-import logging
+from ...logging_config import get_logger
 import time
 from typing import Dict, List, Optional, Set, Type
 
@@ -14,7 +14,7 @@ from ...domain.events import (
 from ...infrastructure.saga_manager import EventTriggeredSaga
 from ..commands import Command, StartProviderCommand, StopProviderCommand
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

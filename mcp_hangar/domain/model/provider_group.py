@@ -5,11 +5,11 @@ as a single logical unit with automatic load balancing and failover.
 """
 
 from dataclasses import dataclass
-import logging
 import threading
 import time
 from typing import Any, Dict, List, Optional
 
+from ...logging_config import get_logger
 from ..events import DomainEvent
 from ..value_objects import (
     GroupId,
@@ -24,7 +24,7 @@ from .circuit_breaker import CircuitBreaker, CircuitBreakerConfig
 from .load_balancer import LoadBalancer
 from .provider import Provider
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # --- Group-specific Domain Events ---

@@ -19,6 +19,7 @@ dependencies = [
     "pyyaml>=6.0",
     "httpx>=0.25.0",
     "docker>=7.1.0",
+    "structlog>=24.0.0",
 ]
 
 [project.urls]

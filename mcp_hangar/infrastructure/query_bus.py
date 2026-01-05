@@ -7,10 +7,11 @@ Each query has exactly one handler that returns data.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-import logging
 from typing import Any, Dict, Optional, Type
 
-logger = logging.getLogger(__name__)
+from mcp_hangar.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass(frozen=True)
@@ -93,7 +94,7 @@ class QueryBus:
         if query_type in self._handlers:
             raise ValueError(f"Handler already registered for {query_type.__name__}")
         self._handlers[query_type] = handler
-        logger.debug(f"Registered query handler for {query_type.__name__}")
+        logger.debug("query_handler_registered", query_type=query_type.__name__)
 
     def unregister(self, query_type: Type[Query]) -> bool:
         """
@@ -126,7 +127,7 @@ class QueryBus:
         if handler is None:
             raise ValueError(f"No handler registered for {query_type.__name__}")
 
-        logger.debug(f"Executing {query_type.__name__}")
+        logger.debug("query_executing", query_type=query_type.__name__)
         return handler.handle(query)
 
     def has_handler(self, query_type: Type[Query]) -> bool:

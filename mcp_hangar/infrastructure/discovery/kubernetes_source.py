@@ -14,13 +14,13 @@ Example Pod Annotations:
     mcp.hangar.io/health-path: "/health"
 """
 
-import logging
+from ...logging_config import get_logger
 from typing import List, Optional
 
 from mcp_hangar.domain.discovery.discovered_provider import DiscoveredProvider
 from mcp_hangar.domain.discovery.discovery_source import DiscoveryMode, DiscoverySource
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Optional Kubernetes dependency
 try:

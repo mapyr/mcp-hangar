@@ -1,6 +1,5 @@
 """Logging event handler - logs all domain events."""
 
-import json
 import logging
 
 from mcp_hangar.domain.events import (
@@ -15,8 +14,9 @@ from mcp_hangar.domain.events import (
     ToolInvocationFailed,
     ToolInvocationRequested,
 )
+from mcp_hangar.logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class LoggingEventHandler:
@@ -42,22 +42,24 @@ class LoggingEventHandler:
         Args:
             event: The domain event to log
         """
+        event_type = event.__class__.__name__
+        event_data = event.to_dict()
+        # Remove event_type from data if present to avoid duplication
+        event_data.pop("event_type", None)
+
         # Different events get different log levels
         if isinstance(event, (ProviderDegraded, ToolInvocationFailed, HealthCheckFailed)):
-            level = logging.WARNING
+            logger.warning("domain_event", event_type=event_type, **event_data)
         elif isinstance(event, (ProviderStarted, ProviderStopped)):
-            level = logging.INFO
+            logger.info("domain_event", event_type=event_type, **event_data)
         elif isinstance(event, (ToolInvocationRequested, ToolInvocationCompleted)):
-            level = logging.DEBUG
+            logger.debug("domain_event", event_type=event_type, **event_data)
         else:
-            level = self.log_level
-
-        # Log with structured data
-        logger.log(level, self._format_event(event))
+            logger.info("domain_event", event_type=event_type, **event_data)
 
     def _format_event(self, event: DomainEvent) -> str:
         """
-        Format an event for logging.
+        Format an event for logging (deprecated - kept for compatibility).
 
         Args:
             event: The event to format
@@ -66,49 +68,4 @@ class LoggingEventHandler:
             Formatted log message
         """
         event_type = event.__class__.__name__
-        event_data = event.to_dict()
-
-        # Create structured log message
-        if isinstance(event, ProviderStarted):
-            return (
-                f"[EVENT:{event_type}] Provider '{event.provider_id}' started "
-                f"in {event.startup_duration_ms:.2f}ms with {event.tools_count} tools"
-            )
-        elif isinstance(event, ProviderStopped):
-            return f"[EVENT:{event_type}] Provider '{event.provider_id}' stopped " f"(reason: {event.reason})"
-        elif isinstance(event, ProviderDegraded):
-            return (
-                f"[EVENT:{event_type}] Provider '{event.provider_id}' DEGRADED "
-                f"after {event.consecutive_failures} consecutive failures "
-                f"(total: {event.total_failures})"
-            )
-        elif isinstance(event, ToolInvocationRequested):
-            return (
-                f"[EVENT:{event_type}] Tool '{event.tool_name}' invocation requested "
-                f"on '{event.provider_id}' [correlation_id={event.correlation_id}]"
-            )
-        elif isinstance(event, ToolInvocationCompleted):
-            return (
-                f"[EVENT:{event_type}] Tool '{event.tool_name}' completed "
-                f"in {event.duration_ms:.2f}ms [correlation_id={event.correlation_id}]"
-            )
-        elif isinstance(event, ToolInvocationFailed):
-            return (
-                f"[EVENT:{event_type}] Tool '{event.tool_name}' FAILED: {event.error_message} "
-                f"[correlation_id={event.correlation_id}]"
-            )
-        elif isinstance(event, HealthCheckPassed):
-            return (
-                f"[EVENT:{event_type}] Provider '{event.provider_id}' health check passed "
-                f"in {event.duration_ms:.2f}ms"
-            )
-        elif isinstance(event, HealthCheckFailed):
-            return (
-                f"[EVENT:{event_type}] Provider '{event.provider_id}' health check FAILED "
-                f"(consecutive: {event.consecutive_failures}): {event.error_message}"
-            )
-        elif isinstance(event, ProviderIdleDetected):
-            return f"[EVENT:{event_type}] Provider '{event.provider_id}' idle for " f"{event.idle_duration_s:.1f}s"
-        else:
-            # Generic format
-            return f"[EVENT:{event_type}] {json.dumps(event_data)}"
+        return f"[EVENT:{event_type}] {event.to_dict()}"

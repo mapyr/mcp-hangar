@@ -9,7 +9,6 @@ serves as an event-driven bridge for external events (like health checks)
 that may not flow through the standard invoke path.
 """
 
-import logging
 from typing import Callable, Dict, List, Optional, Type, TYPE_CHECKING
 
 from ...domain.events import (
@@ -21,12 +20,13 @@ from ...domain.events import (
     ProviderStopped,
 )
 from ...infrastructure.saga_manager import EventTriggeredSaga
+from ...logging_config import get_logger
 from ..commands import Command
 
 if TYPE_CHECKING:
     from ...domain.model.provider_group import ProviderGroup
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class GroupRebalanceSaga(EventTriggeredSaga):

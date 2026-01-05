@@ -6,16 +6,16 @@ New code should use the Provider aggregate directly from mcp_hangar.domain.model
 Deprecated: Use mcp_hangar.domain.model.Provider instead.
 """
 
-import logging
 from typing import Any, Dict
 
 from .domain.model import Provider
 from .domain.value_objects import ProviderState
 from .infrastructure.event_bus import get_event_bus
 from .infrastructure.metrics_publisher import PrometheusMetricsPublisher
+from .logging_config import get_logger
 from .models import ProviderConnection, ProviderSpec, ToolSchema
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Shared metrics publisher instance
 _metrics_publisher = None
@@ -98,7 +98,7 @@ class ProviderManager:
             try:
                 self._event_bus.publish(event)
             except Exception as e:
-                logger.error(f"Failed to publish event {event.__class__.__name__}: {e}")
+                logger.error("event_publish_failed", event_type=event.__class__.__name__, error=str(e))
 
     def ensure_ready(self) -> None:
         """

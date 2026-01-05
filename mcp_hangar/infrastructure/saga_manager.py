@@ -7,20 +7,20 @@ or services. They react to domain events and emit commands.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-import logging
 import threading
 import time
 from typing import Any, Dict, List, Optional, Type, TYPE_CHECKING
 import uuid
 
 from ..domain.events import DomainEvent
+from ..logging_config import get_logger
 from .command_bus import CommandBus, get_command_bus
 from .event_bus import EventBus, get_event_bus
 
 if TYPE_CHECKING:
     from ..application.commands import Command
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SagaState(Enum):
@@ -220,7 +220,7 @@ class SagaManager:
         """Register an event-triggered saga."""
         with self._lock:
             self._event_sagas[saga.saga_type] = saga
-            logger.info(f"Registered event-triggered saga: {saga.saga_type}")
+            logger.info("event_saga_registered", saga_type=saga.saga_type)
 
     def unregister_event_saga(self, saga_type: str) -> bool:
         """Unregister an event-triggered saga."""

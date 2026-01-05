@@ -3,7 +3,7 @@
 Stores providers by persisting their domain events and rebuilding state on load.
 """
 
-import logging
+from ..logging_config import get_logger
 import threading
 from typing import Any, Dict, List, Optional
 
@@ -13,7 +13,7 @@ from ..domain.repository import IProviderRepository, ProviderLike
 from .event_bus import EventBus, get_event_bus
 from .event_store import EventStore, EventStoreSnapshot, get_event_store, StoredEvent
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ProviderConfigStore:

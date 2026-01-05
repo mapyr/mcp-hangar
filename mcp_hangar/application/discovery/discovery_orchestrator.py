@@ -7,7 +7,6 @@ Manages discovery sources, validation, and integration with the registry.
 import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-import logging
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Set
 
 from mcp_hangar.domain.discovery.conflict_resolver import ConflictResolver
@@ -17,6 +16,7 @@ from mcp_hangar.domain.discovery.discovery_service import (
     DiscoveryService,
 )
 from mcp_hangar.domain.discovery.discovery_source import DiscoverySource
+from mcp_hangar.logging_config import get_logger
 
 # Import main metrics for unified observability
 from mcp_hangar import metrics as main_metrics
@@ -25,7 +25,7 @@ from .discovery_metrics import get_discovery_metrics
 from .lifecycle_manager import DiscoveryLifecycleManager
 from .security_validator import SecurityConfig, SecurityValidator
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

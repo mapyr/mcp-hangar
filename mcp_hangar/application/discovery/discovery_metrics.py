@@ -5,11 +5,11 @@ Tracks discovery cycles, registrations, conflicts, and validation times.
 """
 
 from functools import wraps
-import logging
+from ...logging_config import get_logger
 import time
 from typing import Callable
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Optional prometheus dependency
 try:
@@ -18,7 +18,7 @@ try:
     PROMETHEUS_AVAILABLE = True
 except ImportError:
     PROMETHEUS_AVAILABLE = False
-    logger.debug("prometheus_client not installed, metrics will be no-ops")
+    # Note: No logging here - module is imported before setup_logging() is called
 
 
 class DiscoveryMetrics:
