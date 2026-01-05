@@ -288,7 +288,9 @@ class AuditService:
                 metadata={
                     "provider_id": provider_id,
                     "tool_name": tool_name,
-                    "arguments_keys": list(arguments.keys()),  # Only log keys, not values
+                    "arguments_keys": list(
+                        arguments.keys()
+                    ),  # Only log keys, not values
                     "duration_ms": duration_ms,
                     "success": success,
                     "error": error,

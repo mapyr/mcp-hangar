@@ -40,7 +40,9 @@ class TestInMemoryAuditRepository:
         return InMemoryAuditRepository()
 
     @pytest.mark.asyncio
-    async def test_append_and_get_by_entity(self, repo: InMemoryAuditRepository, audit_entry: AuditEntry):
+    async def test_append_and_get_by_entity(
+        self, repo: InMemoryAuditRepository, audit_entry: AuditEntry
+    ):
         """Test appending and retrieving by entity."""
         await repo.append(audit_entry)
 
@@ -51,7 +53,9 @@ class TestInMemoryAuditRepository:
         assert results[0].action == AuditAction.STARTED
 
     @pytest.mark.asyncio
-    async def test_get_by_entity_with_type_filter(self, repo: InMemoryAuditRepository, audit_entry: AuditEntry):
+    async def test_get_by_entity_with_type_filter(
+        self, repo: InMemoryAuditRepository, audit_entry: AuditEntry
+    ):
         """Test filtering by entity type."""
         await repo.append(audit_entry)
 
@@ -65,7 +69,9 @@ class TestInMemoryAuditRepository:
         )
         await repo.append(other_entry)
 
-        results = await repo.get_by_entity(audit_entry.entity_id, entity_type="provider")
+        results = await repo.get_by_entity(
+            audit_entry.entity_id, entity_type="provider"
+        )
 
         assert len(results) == 1
         assert results[0].entity_type == "provider"
@@ -104,7 +110,9 @@ class TestInMemoryAuditRepository:
         assert results[0].entity_id == "provider-2"
 
     @pytest.mark.asyncio
-    async def test_get_by_correlation_id(self, repo: InMemoryAuditRepository, audit_entry: AuditEntry):
+    async def test_get_by_correlation_id(
+        self, repo: InMemoryAuditRepository, audit_entry: AuditEntry
+    ):
         """Test filtering by correlation ID."""
         await repo.append(audit_entry)
 
@@ -178,7 +186,9 @@ class TestSQLiteAuditRepository:
         assert results[0].metadata == audit_entry.metadata
 
     @pytest.mark.asyncio
-    async def test_get_by_entity_with_pagination(self, database: Database, repo: SQLiteAuditRepository):
+    async def test_get_by_entity_with_pagination(
+        self, database: Database, repo: SQLiteAuditRepository
+    ):
         """Test pagination of results."""
         await database.initialize()
         for i in range(10):
@@ -198,7 +208,9 @@ class TestSQLiteAuditRepository:
         assert len(page2) == 3
 
     @pytest.mark.asyncio
-    async def test_get_by_time_range_with_action_filter(self, database: Database, repo: SQLiteAuditRepository):
+    async def test_get_by_time_range_with_action_filter(
+        self, database: Database, repo: SQLiteAuditRepository
+    ):
         """Test filtering by action type."""
         await database.initialize()
         now = datetime.now(timezone.utc)
@@ -231,7 +243,9 @@ class TestSQLiteAuditRepository:
         assert results[0].action == AuditAction.STARTED
 
     @pytest.mark.asyncio
-    async def test_count_by_entity(self, database: Database, repo: SQLiteAuditRepository):
+    async def test_count_by_entity(
+        self, database: Database, repo: SQLiteAuditRepository
+    ):
         """Test counting entries by entity."""
         await database.initialize()
         for i in range(5):
@@ -249,7 +263,9 @@ class TestSQLiteAuditRepository:
         assert count == 5
 
     @pytest.mark.asyncio
-    async def test_get_recent_actions(self, database: Database, repo: SQLiteAuditRepository):
+    async def test_get_recent_actions(
+        self, database: Database, repo: SQLiteAuditRepository
+    ):
         """Test getting recent actions of specific type."""
         await database.initialize()
         for i in range(3):
@@ -282,7 +298,9 @@ class TestSQLiteAuditRepository:
         assert all(r.action == AuditAction.STARTED for r in results)
 
     @pytest.mark.asyncio
-    async def test_serialization_of_complex_metadata(self, database: Database, repo: SQLiteAuditRepository):
+    async def test_serialization_of_complex_metadata(
+        self, database: Database, repo: SQLiteAuditRepository
+    ):
         """Test that complex metadata is properly serialized/deserialized."""
         await database.initialize()
         entry = AuditEntry(

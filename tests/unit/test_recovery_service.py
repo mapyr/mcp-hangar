@@ -1,7 +1,5 @@
 """Tests for recovery service."""
 
-from datetime import datetime, timezone
-
 import pytest
 
 from mcp_hangar.domain.contracts.persistence import (
@@ -11,8 +9,6 @@ from mcp_hangar.domain.repository import InMemoryProviderRepository
 from mcp_hangar.infrastructure.persistence import (
     Database,
     DatabaseConfig,
-    InMemoryAuditRepository,
-    InMemoryProviderConfigRepository,
     RecoveryService,
     SQLiteAuditRepository,
     SQLiteProviderConfigRepository,
