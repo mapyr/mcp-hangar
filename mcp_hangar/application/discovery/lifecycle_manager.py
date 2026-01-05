@@ -76,7 +76,9 @@ class DiscoveryLifecycleManager:
 
         self._running = True
         self._lifecycle_task = asyncio.create_task(self._lifecycle_loop())
-        logger.info(f"Lifecycle manager started (ttl={self.default_ttl}s, interval={self.check_interval}s)")
+        logger.info(
+            f"Lifecycle manager started (ttl={self.default_ttl}s, interval={self.check_interval}s)"
+        )
 
     async def stop(self) -> None:
         """Stop lifecycle management."""
@@ -116,7 +118,8 @@ class DiscoveryLifecycleManager:
             if provider.is_expired():
                 expired.append(name)
                 logger.info(
-                    f"Provider '{name}' expired (last seen: {provider.last_seen_at}). " f"Starting deregistration."
+                    f"Provider '{name}' expired (last seen: {provider.last_seen_at}). "
+                    f"Starting deregistration."
                 )
                 await self._deregister(name, "ttl_expired")
 
@@ -285,9 +288,15 @@ class DiscoveryLifecycleManager:
         Returns:
             Dictionary with counts
         """
-        return {"active": len(self._providers), "quarantined": len(self._quarantine), "draining": len(self._draining)}
+        return {
+            "active": len(self._providers),
+            "quarantined": len(self._quarantine),
+            "draining": len(self._draining),
+        }
 
-    def get_expiring_soon(self, threshold_seconds: int = 30) -> List[DiscoveredProvider]:
+    def get_expiring_soon(
+        self, threshold_seconds: int = 30
+    ) -> List[DiscoveredProvider]:
         """Get providers expiring soon.
 
         Args:

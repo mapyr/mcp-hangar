@@ -55,7 +55,9 @@ class TestSagaStep:
 
     def test_step_creation(self):
         """Test creating saga step."""
-        step = SagaStep(name="start_provider", command=StartProviderCommand(provider_id="p1"))
+        step = SagaStep(
+            name="start_provider", command=StartProviderCommand(provider_id="p1")
+        )
 
         assert step.name == "start_provider"
         assert not step.completed
@@ -66,7 +68,9 @@ class TestSagaStep:
         step = SagaStep(
             name="start_provider",
             command=StartProviderCommand(provider_id="p1"),
-            compensation_command=StopProviderCommand(provider_id="p1", reason="rollback"),
+            compensation_command=StopProviderCommand(
+                provider_id="p1", reason="rollback"
+            ),
         )
 
         assert step.compensation_command is not None
@@ -84,7 +88,9 @@ class SimpleSaga(Saga):
         self.add_step(
             name="start",
             command=StartProviderCommand(provider_id=provider_id),
-            compensation_command=StopProviderCommand(provider_id=provider_id, reason="rollback"),
+            compensation_command=StopProviderCommand(
+                provider_id=provider_id, reason="rollback"
+            ),
         )
 
 
@@ -99,12 +105,16 @@ class FailingSaga(Saga):
         self.add_step(
             name="step1",
             command=StartProviderCommand(provider_id="p1"),
-            compensation_command=StopProviderCommand(provider_id="p1", reason="rollback"),
+            compensation_command=StopProviderCommand(
+                provider_id="p1", reason="rollback"
+            ),
         )
         self.add_step(
             name="step2",
             command=StartProviderCommand(provider_id="fail"),  # Will fail
-            compensation_command=StopProviderCommand(provider_id="fail", reason="rollback"),
+            compensation_command=StopProviderCommand(
+                provider_id="fail", reason="rollback"
+            ),
         )
 
 
@@ -261,7 +271,10 @@ class TestSagaManager:
         assert context.error is not None
 
         # First step should have been compensated
-        assert any(isinstance(c, StopProviderCommand) and c.provider_id == "p1" for c in call_log)
+        assert any(
+            isinstance(c, StopProviderCommand) and c.provider_id == "p1"
+            for c in call_log
+        )
 
     def test_event_triggers_saga(self):
         """Test that events trigger saga handlers."""

@@ -61,7 +61,8 @@ class LogAlertSink(AlertSink):
         }.get(alert.level, logger.info)
 
         log_method(
-            f"ALERT [{alert.level.upper()}] {alert.message} " f"provider={alert.provider_id} event={alert.event_type}"
+            f"ALERT [{alert.level.upper()}] {alert.message} "
+            f"provider={alert.provider_id} event={alert.event_type}"
         )
 
 
@@ -119,7 +120,11 @@ class AlertEventHandler:
 
     def _handle_degraded(self, event: ProviderDegraded) -> None:
         """Handle provider degraded event."""
-        level = "critical" if event.consecutive_failures >= self._degradation_threshold else "warning"
+        level = (
+            "critical"
+            if event.consecutive_failures >= self._degradation_threshold
+            else "warning"
+        )
 
         alert = Alert(
             level=level,

@@ -83,7 +83,9 @@ class SourceStatus:
             "mode": self.mode.value,
             "is_healthy": self.is_healthy,
             "is_enabled": self.is_enabled,
-            "last_discovery": self.last_discovery.isoformat() if self.last_discovery else None,
+            "last_discovery": (
+                self.last_discovery.isoformat() if self.last_discovery else None
+            ),
             "providers_count": self.providers_count,
             "error_message": self.error_message,
         }
@@ -104,7 +106,11 @@ class DiscoveryService:
         - Manage pending and quarantined providers
     """
 
-    def __init__(self, conflict_resolver: Optional[ConflictResolver] = None, auto_register: bool = True):
+    def __init__(
+        self,
+        conflict_resolver: Optional[ConflictResolver] = None,
+        auto_register: bool = True,
+    ):
         """Initialize discovery service.
 
         Args:
@@ -140,7 +146,10 @@ class DiscoveryService:
         self._sources[source_type] = source
         self._providers_by_source[source_type] = set()
         self._source_status[source_type] = SourceStatus(
-            source_type=source_type, mode=source.mode, is_healthy=False, is_enabled=source.is_enabled
+            source_type=source_type,
+            mode=source.mode,
+            is_healthy=False,
+            is_enabled=source.is_enabled,
         )
 
         logger.info(f"Registered discovery source: {source_type} (mode={source.mode})")
@@ -210,7 +219,9 @@ class DiscoveryService:
 
                 # Update source status
                 self._source_status[source_type].is_healthy = True
-                self._source_status[source_type].last_discovery = datetime.now(timezone.utc)
+                self._source_status[source_type].last_discovery = datetime.now(
+                    timezone.utc
+                )
                 self._source_status[source_type].providers_count = len(providers)
                 self._source_status[source_type].error_message = None
 

@@ -46,31 +46,47 @@ class DiscoveryMetrics:
         self._enabled = PROMETHEUS_AVAILABLE
 
         if not self._enabled:
-            logger.warning("Prometheus metrics disabled (prometheus_client not installed)")
+            logger.warning(
+                "Prometheus metrics disabled (prometheus_client not installed)"
+            )
             return
 
         # Gauges
         self.providers_total = Gauge(
-            f"{prefix}_providers_total", "Number of discovered providers", ["source", "status"]
+            f"{prefix}_providers_total",
+            "Number of discovered providers",
+            ["source", "status"],
         )
 
         # Counters
         self.registrations_total = Counter(
-            f"{prefix}_registrations_total", "Total provider registrations from discovery", ["source"]
+            f"{prefix}_registrations_total",
+            "Total provider registrations from discovery",
+            ["source"],
         )
 
         self.deregistrations_total = Counter(
-            f"{prefix}_deregistrations_total", "Total provider deregistrations", ["source", "reason"]
+            f"{prefix}_deregistrations_total",
+            "Total provider deregistrations",
+            ["source", "reason"],
         )
 
-        self.errors_total = Counter(f"{prefix}_errors_total", "Total discovery errors", ["source", "error_type"])
+        self.errors_total = Counter(
+            f"{prefix}_errors_total", "Total discovery errors", ["source", "error_type"]
+        )
 
-        self.conflicts_total = Counter(f"{prefix}_conflicts_total", "Total discovery conflicts", ["type"])
+        self.conflicts_total = Counter(
+            f"{prefix}_conflicts_total", "Total discovery conflicts", ["type"]
+        )
 
-        self.quarantine_total = Counter(f"{prefix}_quarantine_total", "Total quarantined providers", ["reason"])
+        self.quarantine_total = Counter(
+            f"{prefix}_quarantine_total", "Total quarantined providers", ["reason"]
+        )
 
         self.validation_failures_total = Counter(
-            f"{prefix}_validation_failures_total", "Total validation failures", ["source", "validation_type"]
+            f"{prefix}_validation_failures_total",
+            "Total validation failures",
+            ["source", "validation_type"],
         )
 
         # Histograms
@@ -160,7 +176,9 @@ class DiscoveryMetrics:
             validation_type: Type of validation that failed
         """
         if self._enabled:
-            self.validation_failures_total.labels(source=source, validation_type=validation_type).inc()
+            self.validation_failures_total.labels(
+                source=source, validation_type=validation_type
+            ).inc()
 
     def observe_latency(self, source: str, duration_seconds: float) -> None:
         """Record discovery latency.
@@ -180,7 +198,9 @@ class DiscoveryMetrics:
             duration_seconds: Duration in seconds
         """
         if self._enabled:
-            self.validation_duration_seconds.labels(source=source).observe(duration_seconds)
+            self.validation_duration_seconds.labels(source=source).observe(
+                duration_seconds
+            )
 
     def observe_cycle_duration(self, duration_seconds: float) -> None:
         """Record full discovery cycle duration.
@@ -229,7 +249,9 @@ def observe_discovery(source_type: str):
 
                 # Update provider count if result is a list
                 if isinstance(result, list):
-                    metrics.set_providers_count(source=source_type, status="discovered", count=len(result))
+                    metrics.set_providers_count(
+                        source=source_type, status="discovered", count=len(result)
+                    )
 
                 return result
 
@@ -268,7 +290,9 @@ def observe_validation(source_type: str):
 
             finally:
                 duration = time.perf_counter() - start
-                metrics.observe_validation_duration(source=source_type, duration_seconds=duration)
+                metrics.observe_validation_duration(
+                    source=source_type, duration_seconds=duration
+                )
 
         return wrapper
 

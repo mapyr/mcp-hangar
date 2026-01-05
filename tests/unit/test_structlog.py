@@ -1,9 +1,7 @@
 """Tests for structlog logging configuration."""
 
-import io
 import json
 import logging
-import sys
 
 import pytest
 import structlog

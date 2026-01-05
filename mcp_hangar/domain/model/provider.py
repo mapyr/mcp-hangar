@@ -80,7 +80,9 @@ class Provider(AggregateRoot):
         endpoint: Optional[str] = None,
         env: Optional[Dict[str, str]] = None,
         idle_ttl_s: int | IdleTTL = 300,  # Accept both int and value object
-        health_check_interval_s: int | HealthCheckInterval = 60,  # Accept both int and value object
+        health_check_interval_s: (
+            int | HealthCheckInterval
+        ) = 60,  # Accept both int and value object
         max_consecutive_failures: int = 3,
         # Container-specific options
         volumes: Optional[List[str]] = None,
@@ -258,7 +260,9 @@ class Provider(AggregateRoot):
             return
 
         if new_state not in VALID_TRANSITIONS.get(self._state, set()):
-            raise InvalidStateTransitionError(self.provider_id, str(self._state.value), str(new_state.value))
+            raise InvalidStateTransitionError(
+                self.provider_id, str(self._state.value), str(new_state.value)
+            )
 
         old_state = self._state
         self._state = new_state
@@ -361,14 +365,18 @@ class Provider(AggregateRoot):
         except Exception:
             return None
 
-    def _end_cold_start_tracking(self, start_time: Optional[float], success: bool) -> None:
+    def _end_cold_start_tracking(
+        self, start_time: Optional[float], success: bool
+    ) -> None:
         """End cold start tracking and record metrics."""
         if start_time is None:
             return
         try:
             if success:
                 duration = time.time() - start_time
-                self._metrics_publisher.record_cold_start(self.provider_id, duration, self._mode.value)
+                self._metrics_publisher.record_cold_start(
+                    self.provider_id, duration, self._mode.value
+                )
             self._metrics_publisher.end_cold_start(self.provider_id)
         except Exception:
             pass
@@ -457,7 +465,9 @@ class Provider(AggregateRoot):
         tools_resp = client.call("tools/list", {}, timeout=10.0)
         if "error" in tools_resp:
             error_msg = tools_resp["error"].get("message", "unknown")
-            raise ProviderStartError(self.provider_id, f"tools_list_failed: {error_msg}")
+            raise ProviderStartError(
+                self.provider_id, f"tools_list_failed: {error_msg}"
+            )
 
         tool_list = tools_resp.get("result", {}).get("tools", [])
         self._tools.update_from_list(tool_list)
@@ -477,7 +487,11 @@ class Provider(AggregateRoot):
             try:
                 err_bytes = stderr.read()
                 if err_bytes:
-                    err_text = (err_bytes if isinstance(err_bytes, str) else err_bytes.decode(errors="replace")).strip()
+                    err_text = (
+                        err_bytes
+                        if isinstance(err_bytes, str)
+                        else err_bytes.decode(errors="replace")
+                    ).strip()
                     if err_text:
                         logger.error(f"provider_container_stderr: {err_text}")
             except Exception:
@@ -513,7 +527,9 @@ class Provider(AggregateRoot):
             )
         )
 
-        logger.info(f"provider_started: {self.provider_id}, mode={self._mode.value}, tools={self._tools.count()}")
+        logger.info(
+            f"provider_started: {self.provider_id}, mode={self._mode.value}, tools={self._tools.count()}"
+        )
 
     def _handle_start_failure(self, error: Optional[Exception]) -> None:
         """Handle start failure (must hold lock)."""
@@ -535,7 +551,10 @@ class Provider(AggregateRoot):
             self._state = ProviderState.DEGRADED
             self._increment_version()
 
-            logger.warning(f"provider_degraded: {self.provider_id}, " f"failures={self._health.consecutive_failures}")
+            logger.warning(
+                f"provider_degraded: {self.provider_id}, "
+                f"failures={self._health.consecutive_failures}"
+            )
 
             self._record_event(
                 ProviderDegraded(
@@ -551,7 +570,9 @@ class Provider(AggregateRoot):
 
         logger.error(f"provider_start_failed: {self.provider_id}, error={error_str}")
 
-    def invoke_tool(self, tool_name: str, arguments: Dict[str, Any], timeout: float = 30.0) -> Dict[str, Any]:
+    def invoke_tool(
+        self, tool_name: str, arguments: Dict[str, Any], timeout: float = 30.0
+    ) -> Dict[str, Any]:
         """
         Invoke a tool on this provider.
 
@@ -641,7 +662,10 @@ class Provider(AggregateRoot):
                     )
                 )
 
-                logger.debug(f"tool_invoked: {correlation_id}, " f"provider={self.provider_id}, tool={tool_name}")
+                logger.debug(
+                    f"tool_invoked: {correlation_id}, "
+                    f"provider={self.provider_id}, tool={tool_name}"
+                )
 
                 return result
 
@@ -709,7 +733,11 @@ class Provider(AggregateRoot):
                 duration_ms = (time.time() - start_time) * 1000
                 self._health.record_success()
 
-                self._record_event(HealthCheckPassed(provider_id=self.provider_id, duration_ms=duration_ms))
+                self._record_event(
+                    HealthCheckPassed(
+                        provider_id=self.provider_id, duration_ms=duration_ms
+                    )
+                )
 
                 return True
 
@@ -730,7 +758,9 @@ class Provider(AggregateRoot):
                     self._state = ProviderState.DEGRADED
                     self._increment_version()
 
-                    logger.warning(f"provider_degraded_by_health_check: {self.provider_id}")
+                    logger.warning(
+                        f"provider_degraded_by_health_check: {self.provider_id}"
+                    )
 
                     self._record_event(
                         ProviderDegraded(
@@ -763,7 +793,9 @@ class Provider(AggregateRoot):
                     )
                 )
 
-                logger.info(f"provider_idle_shutdown: {self.provider_id}, idle={idle_time:.1f}s")
+                logger.info(
+                    f"provider_idle_shutdown: {self.provider_id}, idle={idle_time:.1f}s"
+                )
                 self._shutdown_internal(reason="idle")
                 return True
 

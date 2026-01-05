@@ -98,7 +98,11 @@ class ProviderManager:
             try:
                 self._event_bus.publish(event)
             except Exception as e:
-                logger.error("event_publish_failed", event_type=event.__class__.__name__, error=str(e))
+                logger.error(
+                    "event_publish_failed",
+                    event_type=event.__class__.__name__,
+                    error=str(e),
+                )
 
     def ensure_ready(self) -> None:
         """
@@ -122,7 +126,9 @@ class ProviderManager:
             self._publish_events()
             self._sync_state_to_conn()
 
-    def invoke_tool(self, tool_name: str, arguments: Dict[str, Any], timeout: float = 30.0) -> Dict[str, Any]:
+    def invoke_tool(
+        self, tool_name: str, arguments: Dict[str, Any], timeout: float = 30.0
+    ) -> Dict[str, Any]:
         """
         Invoke a tool with proper error handling and health tracking.
 

@@ -112,7 +112,10 @@ class CircuitBreaker:
         with self._lock:
             self._failure_count += 1
 
-            if self._state == CircuitState.CLOSED and self._failure_count >= self._config.failure_threshold:
+            if (
+                self._state == CircuitState.CLOSED
+                and self._failure_count >= self._config.failure_threshold
+            ):
                 self._open()
                 return True
 

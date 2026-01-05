@@ -104,7 +104,11 @@ class DiscoveryOrchestrator:
         await orchestrator.start()
     """
 
-    def __init__(self, config: Optional[DiscoveryConfig] = None, static_providers: Optional[Set[str]] = None):
+    def __init__(
+        self,
+        config: Optional[DiscoveryConfig] = None,
+        static_providers: Optional[Set[str]] = None,
+    ):
         """Initialize discovery orchestrator.
 
         Args:
@@ -116,7 +120,8 @@ class DiscoveryOrchestrator:
         # Core components
         self._conflict_resolver = ConflictResolver(static_providers)
         self._discovery_service = DiscoveryService(
-            conflict_resolver=self._conflict_resolver, auto_register=self.config.auto_register
+            conflict_resolver=self._conflict_resolver,
+            auto_register=self.config.auto_register,
         )
         self._validator = SecurityValidator(self.config.security)
         self._lifecycle_manager = DiscoveryLifecycleManager(
@@ -185,7 +190,10 @@ class DiscoveryOrchestrator:
         # Start discovery loop
         self._discovery_task = asyncio.create_task(self._discovery_loop())
 
-        logger.info(f"Discovery orchestrator started " f"(refresh_interval={self.config.refresh_interval_s}s)")
+        logger.info(
+            f"Discovery orchestrator started "
+            f"(refresh_interval={self.config.refresh_interval_s}s)"
+        )
 
     async def stop(self) -> None:
         """Stop the discovery orchestrator."""
@@ -220,7 +228,9 @@ class DiscoveryOrchestrator:
                 break
             except Exception as e:
                 logger.error(f"Error in discovery loop: {e}")
-                self._metrics.inc_errors(source="orchestrator", error_type=type(e).__name__)
+                self._metrics.inc_errors(
+                    source="orchestrator", error_type=type(e).__name__
+                )
 
     async def run_discovery_cycle(self) -> DiscoveryCycleResult:
         """Run a single discovery cycle.
@@ -310,21 +320,27 @@ class DiscoveryOrchestrator:
         validation_report = await self._validator.validate(provider)
 
         self._metrics.observe_validation_duration(
-            source=provider.source_type, duration_seconds=validation_report.duration_ms / 1000
+            source=provider.source_type,
+            duration_seconds=validation_report.duration_ms / 1000,
         )
 
         if not validation_report.is_passed:
             # Handle validation failure
-            logger.warning(f"Provider '{provider.name}' failed validation: {validation_report.reason}")
+            logger.warning(
+                f"Provider '{provider.name}' failed validation: {validation_report.reason}"
+            )
 
             self._metrics.inc_validation_failures(
-                source=provider.source_type, validation_type=validation_report.result.value
+                source=provider.source_type,
+                validation_type=validation_report.result.value,
             )
 
             if self.config.security.quarantine_on_failure:
                 self._lifecycle_manager.quarantine(provider, validation_report.reason)
                 self._metrics.inc_quarantine(reason=validation_report.result.value)
-                main_metrics.record_discovery_quarantine(reason=validation_report.result.value)
+                main_metrics.record_discovery_quarantine(
+                    reason=validation_report.result.value
+                )
                 return "quarantined"
 
             return "skipped"
@@ -361,8 +377,12 @@ class DiscoveryOrchestrator:
         provider = self._lifecycle_manager.get_provider(name)
         if provider:
             self._validator.record_deregistration(provider)
-            self._metrics.inc_deregistrations(source=provider.source_type, reason=reason)
-            main_metrics.record_discovery_deregistration(source_type=provider.source_type, reason=reason)
+            self._metrics.inc_deregistrations(
+                source=provider.source_type, reason=reason
+            )
+            main_metrics.record_discovery_deregistration(
+                source_type=provider.source_type, reason=reason
+            )
 
         if self.on_deregister:
             try:
@@ -397,7 +417,11 @@ class DiscoveryOrchestrator:
         """
         quarantined = self._lifecycle_manager.get_quarantined()
         return {
-            name: {"provider": provider.to_dict(), "reason": reason, "quarantine_time": qtime.isoformat()}
+            name: {
+                "provider": provider.to_dict(),
+                "reason": reason,
+                "quarantine_time": qtime.isoformat(),
+            }
             for name, (provider, reason, qtime) in quarantined.items()
         }
 
@@ -426,7 +450,11 @@ class DiscoveryOrchestrator:
 
             return {"approved": True, "provider": name, "status": "registered"}
 
-        return {"approved": False, "provider": name, "error": "Provider not found in quarantine"}
+        return {
+            "approved": False,
+            "provider": name,
+            "error": "Provider not found in quarantine",
+        }
 
     async def reject_provider(self, name: str) -> Dict[str, Any]:
         """Reject a quarantined provider.
@@ -442,7 +470,11 @@ class DiscoveryOrchestrator:
         if provider:
             return {"rejected": True, "provider": name}
 
-        return {"rejected": False, "provider": name, "error": "Provider not found in quarantine"}
+        return {
+            "rejected": False,
+            "provider": name,
+            "error": "Provider not found in quarantine",
+        }
 
     async def get_sources_status(self) -> List[Dict[str, Any]]:
         """Get status of all discovery sources.

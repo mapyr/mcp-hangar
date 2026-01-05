@@ -134,7 +134,9 @@ class ProviderFailoverSaga(EventTriggeredSaga):
 
         # Check if this provider is a backup currently serving
         if provider_id in self._active_backups:
-            logger.warning(f"Backup provider {provider_id} degraded - no further failover")
+            logger.warning(
+                f"Backup provider {provider_id} degraded - no further failover"
+            )
             return []
 
         # Check if this provider has a backup configured
@@ -188,7 +190,10 @@ class ProviderFailoverSaga(EventTriggeredSaga):
                 failback_time = time.time() + config.failback_delay_s
                 self._pending_failbacks[provider_id] = failback_time
 
-                logger.info(f"Primary {provider_id} recovered, scheduling failback in " f"{config.failback_delay_s}s")
+                logger.info(
+                    f"Primary {provider_id} recovered, scheduling failback in "
+                    f"{config.failback_delay_s}s"
+                )
 
                 # In a real implementation, you'd use a scheduler
                 # For now, immediately trigger failback commands
@@ -231,7 +236,9 @@ class ProviderFailoverSaga(EventTriggeredSaga):
         logger.info(f"Executing failback: {state.backup_id} -> {primary_id}")
 
         # Stop the backup (primary is already running)
-        commands.append(StopProviderCommand(provider_id=state.backup_id, reason="failback"))
+        commands.append(
+            StopProviderCommand(provider_id=state.backup_id, reason="failback")
+        )
 
         # Clean up failover state
         del self._active_failovers[primary_id]

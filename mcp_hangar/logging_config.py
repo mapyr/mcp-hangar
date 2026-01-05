@@ -24,21 +24,35 @@ import structlog
 from structlog.types import Processor
 
 
-def _add_service_context(logger: logging.Logger, method_name: str, event_dict: dict[str, Any]) -> dict[str, Any]:
+def _add_service_context(
+    logger: logging.Logger, method_name: str, event_dict: dict[str, Any]
+) -> dict[str, Any]:
     """Add service-level context to all log entries."""
     event_dict.setdefault("service", "mcp-hangar")
     return event_dict
 
 
-def _sanitize_sensitive_data(logger: logging.Logger, method_name: str, event_dict: dict[str, Any]) -> dict[str, Any]:
+def _sanitize_sensitive_data(
+    logger: logging.Logger, method_name: str, event_dict: dict[str, Any]
+) -> dict[str, Any]:
     """Redact sensitive fields from log output."""
-    sensitive_keys = {"password", "secret", "token", "api_key", "authorization", "credential"}
+    sensitive_keys = {
+        "password",
+        "secret",
+        "token",
+        "api_key",
+        "authorization",
+        "credential",
+    }
 
     def redact(obj: Any, depth: int = 0) -> Any:
         if depth > 5:  # Prevent infinite recursion
             return obj
         if isinstance(obj, dict):
-            return {k: "[REDACTED]" if k.lower() in sensitive_keys else redact(v, depth + 1) for k, v in obj.items()}
+            return {
+                k: "[REDACTED]" if k.lower() in sensitive_keys else redact(v, depth + 1)
+                for k, v in obj.items()
+            }
         if isinstance(obj, list):
             return [redact(item, depth + 1) for item in obj]
         return obj
@@ -46,7 +60,9 @@ def _sanitize_sensitive_data(logger: logging.Logger, method_name: str, event_dic
     return redact(event_dict)
 
 
-def _drop_color_message_key(logger: logging.Logger, method_name: str, event_dict: dict[str, Any]) -> dict[str, Any]:
+def _drop_color_message_key(
+    logger: logging.Logger, method_name: str, event_dict: dict[str, Any]
+) -> dict[str, Any]:
     """Remove the color_message key that uvicorn adds."""
     event_dict.pop("color_message", None)
     return event_dict

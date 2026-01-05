@@ -53,7 +53,9 @@ class HealthTracker:
         """Success rate as percentage (0.0 to 1.0)."""
         if self._total_invocations == 0:
             return 1.0
-        return (self._total_invocations - self._total_failures) / self._total_invocations
+        return (
+            self._total_invocations - self._total_failures
+        ) / self._total_invocations
 
     def record_success(self) -> None:
         """Record a successful operation."""

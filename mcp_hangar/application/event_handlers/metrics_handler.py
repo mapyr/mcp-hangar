@@ -51,7 +51,11 @@ class ProviderMetrics:
             return 0.0
         sorted_latencies = sorted(self.invocation_latencies)
         index = int(len(sorted_latencies) * 0.95)
-        return sorted_latencies[index] if index < len(sorted_latencies) else sorted_latencies[-1]
+        return (
+            sorted_latencies[index]
+            if index < len(sorted_latencies)
+            else sorted_latencies[-1]
+        )
 
 
 class MetricsEventHandler:
@@ -64,7 +68,9 @@ class MetricsEventHandler:
 
     def __init__(self):
         """Initialize the metrics handler."""
-        self._metrics: Dict[str, ProviderMetrics] = defaultdict(lambda: ProviderMetrics(""))
+        self._metrics: Dict[str, ProviderMetrics] = defaultdict(
+            lambda: ProviderMetrics("")
+        )
         self._started_at = time.time()
 
     def handle(self, event: DomainEvent) -> None:

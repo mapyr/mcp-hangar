@@ -34,7 +34,9 @@ except ImportError:
     ApiException = Exception  # Fallback for type hints
     client = None
     config = None
-    logger.debug("kubernetes package not installed, KubernetesDiscoverySource unavailable")
+    logger.debug(
+        "kubernetes package not installed, KubernetesDiscoverySource unavailable"
+    )
 
 
 class KubernetesDiscoverySource(DiscoverySource):
@@ -72,7 +74,8 @@ class KubernetesDiscoverySource(DiscoverySource):
 
         if not KUBERNETES_AVAILABLE:
             raise ImportError(
-                "kubernetes package is required for KubernetesDiscoverySource. " "Install with: pip install kubernetes"
+                "kubernetes package is required for KubernetesDiscoverySource. "
+                "Install with: pip install kubernetes"
             )
 
         self.namespaces = namespaces or []
@@ -122,7 +125,9 @@ class KubernetesDiscoverySource(DiscoverySource):
 
         for namespace in namespaces:
             try:
-                pods = self._v1.list_namespaced_pod(namespace=namespace, label_selector=self.label_selector)
+                pods = self._v1.list_namespaced_pod(
+                    namespace=namespace, label_selector=self.label_selector
+                )
 
                 for pod in pods.items:
                     provider = self._parse_pod(pod, namespace)
@@ -161,7 +166,9 @@ class KubernetesDiscoverySource(DiscoverySource):
         port = annotations.get(f"{self.ANNOTATION_PREFIX}port", "8080")
         group = annotations.get(f"{self.ANNOTATION_PREFIX}group")
         health_path = annotations.get(f"{self.ANNOTATION_PREFIX}health-path", "/health")
-        ttl = int(annotations.get(f"{self.ANNOTATION_PREFIX}ttl", str(self.default_ttl)))
+        ttl = int(
+            annotations.get(f"{self.ANNOTATION_PREFIX}ttl", str(self.default_ttl))
+        )
 
         # Get pod IP
         pod_ip = pod.status.pod_ip if pod.status else None
@@ -172,11 +179,17 @@ class KubernetesDiscoverySource(DiscoverySource):
         # Check pod phase
         phase = pod.status.phase if pod.status else "Unknown"
         if phase != "Running":
-            logger.debug(f"Pod {pod.metadata.name} not running (phase={phase}), skipping")
+            logger.debug(
+                f"Pod {pod.metadata.name} not running (phase={phase}), skipping"
+            )
             return None
 
         # Build connection info
-        connection_info = {"host": pod_ip, "port": int(port), "health_path": health_path}
+        connection_info = {
+            "host": pod_ip,
+            "port": int(port),
+            "health_path": health_path,
+        }
 
         # Handle subprocess mode
         if mode == "subprocess" or mode == "stdio":
@@ -190,7 +203,11 @@ class KubernetesDiscoverySource(DiscoverySource):
             "pod_uid": pod.metadata.uid,
             "group": group,
             "labels": pod.metadata.labels or {},
-            "annotations": {k: v for k, v in annotations.items() if k.startswith(self.ANNOTATION_PREFIX)},
+            "annotations": {
+                k: v
+                for k, v in annotations.items()
+                if k.startswith(self.ANNOTATION_PREFIX)
+            },
             "node_name": pod.spec.node_name if pod.spec else None,
             "phase": phase,
         }

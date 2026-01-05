@@ -5,9 +5,7 @@ import logging
 from mcp_hangar.domain.events import (
     DomainEvent,
     HealthCheckFailed,
-    HealthCheckPassed,
     ProviderDegraded,
-    ProviderIdleDetected,
     ProviderStarted,
     ProviderStopped,
     ToolInvocationCompleted,
@@ -48,7 +46,9 @@ class LoggingEventHandler:
         event_data.pop("event_type", None)
 
         # Different events get different log levels
-        if isinstance(event, (ProviderDegraded, ToolInvocationFailed, HealthCheckFailed)):
+        if isinstance(
+            event, (ProviderDegraded, ToolInvocationFailed, HealthCheckFailed)
+        ):
             logger.warning("domain_event", event_type=event_type, **event_data)
         elif isinstance(event, (ProviderStarted, ProviderStopped)):
             logger.info("domain_event", event_type=event_type, **event_data)

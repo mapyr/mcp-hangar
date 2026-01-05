@@ -66,7 +66,9 @@ class StdioClient:
                 try:
                     msg = json.loads(line)
                 except json.JSONDecodeError as e:
-                    logger.error("stdio_client_malformed_json", preview=line[:100], error=str(e))
+                    logger.error(
+                        "stdio_client_malformed_json", preview=line[:100], error=str(e)
+                    )
                     continue
 
                 msg_id = msg.get("id")
@@ -79,7 +81,9 @@ class StdioClient:
                     if pending:
                         pending.result_queue.put(msg)
                     else:
-                        logger.warning("stdio_client_unknown_request", request_id=msg_id)
+                        logger.warning(
+                            "stdio_client_unknown_request", request_id=msg_id
+                        )
                 else:
                     # Unsolicited notification - log and ignore
                     logger.debug("stdio_client_notification", message=msg)
@@ -107,7 +111,9 @@ class StdioClient:
                     err_bytes = stderr.read()
                     if err_bytes:
                         err_text = (
-                            err_bytes if isinstance(err_bytes, str) else err_bytes.decode(errors="replace")
+                            err_bytes
+                            if isinstance(err_bytes, str)
+                            else err_bytes.decode(errors="replace")
                         ).strip()
                         if err_text:
                             # Log first 2000 chars to avoid log spam
@@ -126,7 +132,9 @@ class StdioClient:
                 pending.result_queue.put({"error": {"code": -1, "message": error_msg}})
             self.pending.clear()
 
-    def call(self, method: str, params: Dict[str, Any], timeout: float = 15.0) -> Dict[str, Any]:
+    def call(
+        self, method: str, params: Dict[str, Any], timeout: float = 15.0
+    ) -> Dict[str, Any]:
         """
         Synchronous RPC call with explicit timeout.
 
@@ -148,7 +156,9 @@ class StdioClient:
         request_id = str(uuid.uuid4())
         result_queue = Queue(maxsize=1)
 
-        pending = PendingRequest(request_id=request_id, result_queue=result_queue, started_at=time.time())
+        pending = PendingRequest(
+            request_id=request_id, result_queue=result_queue, started_at=time.time()
+        )
 
         with self.pending_lock:
             self.pending[request_id] = pending

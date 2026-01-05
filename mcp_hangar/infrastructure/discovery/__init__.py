@@ -81,25 +81,32 @@ def __getattr__(name: str):
         cls = _get_kubernetes_source()
         if cls is None:
             raise ImportError(
-                "KubernetesDiscoverySource requires 'kubernetes' package. " "Install with: pip install kubernetes"
+                "KubernetesDiscoverySource requires 'kubernetes' package. "
+                "Install with: pip install kubernetes"
             )
         return cls
     elif name == "DockerDiscoverySource":
         cls = _get_docker_source()
         if cls is None:
-            raise ImportError("DockerDiscoverySource requires 'docker' package. " "Install with: pip install docker")
+            raise ImportError(
+                "DockerDiscoverySource requires 'docker' package. "
+                "Install with: pip install docker"
+            )
         return cls
     elif name == "FilesystemDiscoverySource":
         cls = _get_filesystem_source()
         if cls is None:
             raise ImportError(
-                "FilesystemDiscoverySource requires 'pyyaml' package. " "Install with: pip install pyyaml"
+                "FilesystemDiscoverySource requires 'pyyaml' package. "
+                "Install with: pip install pyyaml"
             )
         return cls
     elif name == "EntrypointDiscoverySource":
         cls = _get_entrypoint_source()
         if cls is None:
-            raise ImportError("EntrypointDiscoverySource requires 'importlib-metadata' package")
+            raise ImportError(
+                "EntrypointDiscoverySource requires 'importlib-metadata' package"
+            )
         return cls
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 

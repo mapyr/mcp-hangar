@@ -25,7 +25,9 @@ class TestProviderInitialization:
 
     def test_create_docker_provider(self):
         """Test creating a docker provider."""
-        provider = Provider(provider_id="docker-provider", mode="docker", image="test:latest")
+        provider = Provider(
+            provider_id="docker-provider", mode="docker", image="test:latest"
+        )
 
         assert provider.provider_id == "docker-provider"
         assert provider.mode == ProviderMode.DOCKER
@@ -126,7 +128,9 @@ class TestProviderProperties:
 
     def test_provider_id_property(self):
         """Test provider_id property returns string."""
-        provider = Provider(provider_id="test-provider", mode="subprocess", command=["test"])
+        provider = Provider(
+            provider_id="test-provider", mode="subprocess", command=["test"]
+        )
 
         assert provider.provider_id == "test-provider"
         assert isinstance(provider.provider_id, str)
@@ -135,7 +139,9 @@ class TestProviderProperties:
         """Test id property returns ProviderId value object."""
         from mcp_hangar.domain.value_objects import ProviderId
 
-        provider = Provider(provider_id="test-provider", mode="subprocess", command=["test"])
+        provider = Provider(
+            provider_id="test-provider", mode="subprocess", command=["test"]
+        )
 
         assert isinstance(provider.id, ProviderId)
         assert str(provider.id) == "test-provider"
@@ -211,7 +217,9 @@ class TestProviderShutdown:
         # Add a tool manually for testing
         from mcp_hangar.domain.model.tool_catalog import ToolSchema
 
-        provider._tools.add(ToolSchema(name="test", description="Test", input_schema={}))
+        provider._tools.add(
+            ToolSchema(name="test", description="Test", input_schema={})
+        )
 
         provider.shutdown()
 
@@ -340,8 +348,16 @@ class TestProviderPredefinedTools:
     def test_create_provider_with_predefined_tools(self):
         """Test creating a provider with pre-defined tools."""
         tools = [
-            {"name": "add", "description": "Add numbers", "inputSchema": {"type": "object"}},
-            {"name": "multiply", "description": "Multiply numbers", "inputSchema": {"type": "object"}},
+            {
+                "name": "add",
+                "description": "Add numbers",
+                "inputSchema": {"type": "object"},
+            },
+            {
+                "name": "multiply",
+                "description": "Multiply numbers",
+                "inputSchema": {"type": "object"},
+            },
         ]
         provider = Provider(
             provider_id="test",

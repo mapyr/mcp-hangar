@@ -64,7 +64,9 @@ class DiscoveredProvider:
             New DiscoveredProvider instance with computed fingerprint
         """
         metadata = metadata or {}
-        fingerprint_data = json.dumps({"connection_info": connection_info, "metadata": metadata}, sort_keys=True)
+        fingerprint_data = json.dumps(
+            {"connection_info": connection_info, "metadata": metadata}, sort_keys=True
+        )
         fingerprint = hashlib.sha256(fingerprint_data.encode()).hexdigest()[:16]
         now = datetime.now(timezone.utc)
 

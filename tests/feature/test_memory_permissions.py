@@ -71,7 +71,9 @@ def test_memory_container() -> None:
                     {
                         "name": "test-calculation",
                         "entityType": "calculation",
-                        "observations": ["Testing memory persistence in container mode"],
+                        "observations": [
+                            "Testing memory persistence in container mode"
+                        ],
                     }
                 ]
             },

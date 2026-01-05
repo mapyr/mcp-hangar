@@ -308,7 +308,13 @@ async def test_no_label_ignored(runner: ContainerTestRunner):
 async def main():
     parser = argparse.ArgumentParser(description="Container Discovery Tests")
     parser.add_argument("--socket", "-s", help="Socket path")
-    parser.add_argument("--runtime", "-r", default="podman", choices=["podman", "docker"], help="Container runtime")
+    parser.add_argument(
+        "--runtime",
+        "-r",
+        default="podman",
+        choices=["podman", "docker"],
+        help="Container runtime",
+    )
     parser.add_argument("--test", "-t", help="Run specific test")
     args = parser.parse_args()
 

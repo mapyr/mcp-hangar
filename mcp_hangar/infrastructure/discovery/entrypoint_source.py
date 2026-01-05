@@ -31,7 +31,9 @@ except ImportError:
         METADATA_AVAILABLE = True
     except ImportError:
         METADATA_AVAILABLE = False
-        logger.debug("importlib.metadata not available, EntrypointDiscoverySource unavailable")
+        logger.debug(
+            "importlib.metadata not available, EntrypointDiscoverySource unavailable"
+        )
 
 
 class EntrypointDiscoverySource(DiscoverySource):
@@ -62,7 +64,12 @@ class EntrypointDiscoverySource(DiscoverySource):
 
     DEFAULT_GROUP = "mcp.providers"
 
-    def __init__(self, group: str = DEFAULT_GROUP, mode: DiscoveryMode = DiscoveryMode.ADDITIVE, default_ttl: int = 90):
+    def __init__(
+        self,
+        group: str = DEFAULT_GROUP,
+        mode: DiscoveryMode = DiscoveryMode.ADDITIVE,
+        default_ttl: int = 90,
+    ):
         """Initialize entrypoint discovery source.
 
         Args:
@@ -154,7 +161,9 @@ class EntrypointDiscoverySource(DiscoverySource):
             logger.error(f"Error loading entry point {ep.name}: {e}")
             return None
 
-    def _build_provider(self, ep: EntryPoint, config: Optional[Dict[str, Any]]) -> DiscoveredProvider:
+    def _build_provider(
+        self, ep: EntryPoint, config: Optional[Dict[str, Any]]
+    ) -> DiscoveredProvider:
         """Build provider from entry point and optional config.
 
         Args:
@@ -180,7 +189,9 @@ class EntrypointDiscoverySource(DiscoverySource):
             command = config.get("command")
             if not command:
                 # Parse entry point value to get module
-                module_path = ep.value.rsplit(":", 1)[0] if ":" in ep.value else ep.value
+                module_path = (
+                    ep.value.rsplit(":", 1)[0] if ":" in ep.value else ep.value
+                )
                 command = ["python", "-m", module_path]
             connection_info["command"] = command
 

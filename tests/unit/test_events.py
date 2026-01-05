@@ -44,7 +44,9 @@ def test_event_bus_subscribe_and_publish():
     bus.subscribe(ProviderStarted, handler)
 
     # Publish event
-    event = ProviderStarted(provider_id="test", mode="subprocess", tools_count=3, startup_duration_ms=100.0)
+    event = ProviderStarted(
+        provider_id="test", mode="subprocess", tools_count=3, startup_duration_ms=100.0
+    )
     bus.publish(event)
 
     # Verify handler was called
@@ -69,7 +71,9 @@ def test_event_bus_multiple_subscribers():
     bus.subscribe(ProviderStarted, handler2)
 
     # Publish event
-    event = ProviderStarted(provider_id="test", mode="subprocess", tools_count=3, startup_duration_ms=100.0)
+    event = ProviderStarted(
+        provider_id="test", mode="subprocess", tools_count=3, startup_duration_ms=100.0
+    )
     bus.publish(event)
 
     # Both handlers should have received it
@@ -89,7 +93,9 @@ def test_event_bus_subscribe_to_all():
     bus.subscribe_to_all(handler)
 
     # Publish different event types
-    event1 = ProviderStarted(provider_id="test", mode="subprocess", tools_count=3, startup_duration_ms=100.0)
+    event1 = ProviderStarted(
+        provider_id="test", mode="subprocess", tools_count=3, startup_duration_ms=100.0
+    )
     event2 = ProviderStopped(provider_id="test", reason="shutdown")
 
     bus.publish(event1)
@@ -119,7 +125,9 @@ def test_event_bus_error_handling():
     bus.subscribe(ProviderStarted, working_handler)
 
     # Publish event
-    event = ProviderStarted(provider_id="test", mode="subprocess", tools_count=3, startup_duration_ms=100.0)
+    event = ProviderStarted(
+        provider_id="test", mode="subprocess", tools_count=3, startup_duration_ms=100.0
+    )
     bus.publish(event)
 
     # Both should have been called despite the error
@@ -132,10 +140,14 @@ def test_logging_event_handler():
     handler = LoggingEventHandler()
 
     # Should not raise errors
-    event = ProviderStarted(provider_id="test", mode="subprocess", tools_count=3, startup_duration_ms=100.0)
+    event = ProviderStarted(
+        provider_id="test", mode="subprocess", tools_count=3, startup_duration_ms=100.0
+    )
     handler.handle(event)
 
-    event = ToolInvocationCompleted(provider_id="test", tool_name="add", correlation_id="abc123", duration_ms=50.0)
+    event = ToolInvocationCompleted(
+        provider_id="test", tool_name="add", correlation_id="abc123", duration_ms=50.0
+    )
     handler.handle(event)
 
 
@@ -203,14 +215,18 @@ def test_event_bus_unsubscribe():
 
     # Subscribe and publish
     bus.subscribe(ProviderStarted, handler)
-    event1 = ProviderStarted(provider_id="test", mode="subprocess", tools_count=3, startup_duration_ms=100.0)
+    event1 = ProviderStarted(
+        provider_id="test", mode="subprocess", tools_count=3, startup_duration_ms=100.0
+    )
     bus.publish(event1)
 
     assert len(received_events) == 1
 
     # Unsubscribe and publish again
     bus.unsubscribe(ProviderStarted, handler)
-    event2 = ProviderStarted(provider_id="test2", mode="subprocess", tools_count=5, startup_duration_ms=200.0)
+    event2 = ProviderStarted(
+        provider_id="test2", mode="subprocess", tools_count=5, startup_duration_ms=200.0
+    )
     bus.publish(event2)
 
     # Should still be 1 (handler not called second time)
@@ -229,7 +245,9 @@ def test_event_bus_clear():
     bus.clear()
 
     # Publish after clear
-    event = ProviderStarted(provider_id="test", mode="subprocess", tools_count=3, startup_duration_ms=100.0)
+    event = ProviderStarted(
+        provider_id="test", mode="subprocess", tools_count=3, startup_duration_ms=100.0
+    )
     bus.publish(event)
 
     # Handler should not have been called

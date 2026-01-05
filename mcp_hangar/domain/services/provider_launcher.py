@@ -212,7 +212,9 @@ class SubprocessLauncher(ProviderLauncher):
                 details={"errors": [e.to_dict() for e in result.errors]},
             )
 
-    def _prepare_env(self, provider_env: Optional[Dict[str, str]] = None) -> Dict[str, str]:
+    def _prepare_env(
+        self, provider_env: Optional[Dict[str, str]] = None
+    ) -> Dict[str, str]:
         """
         Prepare secure environment for subprocess.
 
@@ -295,7 +297,9 @@ class SubprocessLauncher(ProviderLauncher):
                 resolved_command[0] = resolved
 
         # Log launch (without sensitive data)
-        safe_command = [c[:50] + "..." if len(c) > 50 else c for c in resolved_command[:5]]
+        safe_command = [
+            c[:50] + "..." if len(c) > 50 else c for c in resolved_command[:5]
+        ]
         logger.info(f"Launching subprocess: {safe_command}")
 
         try:
@@ -525,7 +529,9 @@ class DockerLauncher(ProviderLauncher):
             result = self._validator.validate_environment_variables(env)
             if not result.valid:
                 errors = "; ".join(e.message for e in result.errors)
-                raise ValidationError(message=f"Environment validation failed: {errors}", field="env")
+                raise ValidationError(
+                    message=f"Environment validation failed: {errors}", field="env"
+                )
 
         # Build secure command
         cmd = self._build_docker_command(image, env)
@@ -569,7 +575,9 @@ class ContainerConfig:
     cpu_limit: str = "1.0"
     network: str = "none"  # none, bridge, host
     read_only: bool = True
-    drop_capabilities: bool = False  # Disabled: causes issues with native modules (e.g., better-sqlite3)
+    drop_capabilities: bool = (
+        False  # Disabled: causes issues with native modules (e.g., better-sqlite3)
+    )
     user: Optional[str] = None  # Run as specific user
 
 
@@ -721,12 +729,16 @@ class ContainerLauncher(ProviderLauncher):
 
         if not result.valid:
             errors = "; ".join(e.message for e in result.errors)
-            raise ValidationError(message=f"Image validation failed: {errors}", field="image", value=image)
+            raise ValidationError(
+                message=f"Image validation failed: {errors}", field="image", value=image
+            )
 
         # Check blocked images
         image_name = image.split(":")[0].split("/")[-1]
         if image_name in self._blocked_images:
-            raise ValidationError(message=f"Image '{image_name}' is blocked", field="image", value=image)
+            raise ValidationError(
+                message=f"Image '{image_name}' is blocked", field="image", value=image
+            )
 
         # Check registry whitelist
         if self._allowed_registries:
@@ -858,7 +870,9 @@ class ContainerLauncher(ProviderLauncher):
                         os.makedirs(host_path, mode=0o755, exist_ok=True)
                         logger.info(f"Created volume directory: {host_path}")
                     except OSError as e:
-                        logger.warning(f"Could not create volume directory {host_path}: {e}")
+                        logger.warning(
+                            f"Could not create volume directory {host_path}: {e}"
+                        )
 
                 # CI helper: optionally relax permissions on writable bind mounts so
                 # container processes can write (GitHub Actions runners can mount
@@ -878,9 +892,13 @@ class ContainerLauncher(ProviderLauncher):
                             # 0o777 is intentionally permissive for CI stability; do not
                             # enable this in production environments.
                             os.chmod(host_path, 0o777)
-                            logger.info(f"Relaxed volume permissions (chmod 777): {host_path}")
+                            logger.info(
+                                f"Relaxed volume permissions (chmod 777): {host_path}"
+                            )
                     except OSError as e:
-                        logger.warning(f"Could not relax volume permissions for {host_path}: {e}")
+                        logger.warning(
+                            f"Could not relax volume permissions for {host_path}: {e}"
+                        )
 
                 cmd.extend(["-v", f"{host_path}:{container_path}:{mode}"])
             else:
@@ -944,7 +962,9 @@ class ContainerLauncher(ProviderLauncher):
             result = self._validator.validate_environment_variables(env)
             if not result.valid:
                 errors = "; ".join(e.message for e in result.errors)
-                raise ValidationError(message=f"Environment validation failed: {errors}", field="env")
+                raise ValidationError(
+                    message=f"Environment validation failed: {errors}", field="env"
+                )
 
         # Build config
         config = ContainerConfig(
@@ -966,7 +986,9 @@ class ContainerLauncher(ProviderLauncher):
         logger.info(f"Container full command: {' '.join(cmd)}")
 
         try:
-            inherit_stderr = os.getenv("MCP_CONTAINER_INHERIT_STDERR", "").strip().lower() in {
+            inherit_stderr = os.getenv(
+                "MCP_CONTAINER_INHERIT_STDERR", ""
+            ).strip().lower() in {
                 "1",
                 "true",
                 "yes",
@@ -1036,7 +1058,9 @@ def get_launcher(mode: str) -> ProviderLauncher:
     """
     launchers = {
         "subprocess": SubprocessLauncher,
-        "docker": lambda: ContainerLauncher(runtime="auto"),  # Use ContainerLauncher with auto-detection
+        "docker": lambda: ContainerLauncher(
+            runtime="auto"
+        ),  # Use ContainerLauncher with auto-detection
         "container": lambda: ContainerLauncher(runtime="auto"),
         "podman": lambda: ContainerLauncher(runtime="podman"),
     }

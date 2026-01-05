@@ -230,7 +230,9 @@ class TestQueryIntegration:
                     {"id": "p3", "state": "ready"},
                 ]
                 if query.state_filter:
-                    return [p for p in all_providers if p["state"] == query.state_filter]
+                    return [
+                        p for p in all_providers if p["state"] == query.state_filter
+                    ]
                 return all_providers
 
         bus.register(ListProvidersQuery, FilterHandler())

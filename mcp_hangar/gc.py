@@ -53,7 +53,9 @@ class BackgroundWorker:
         self.interval_s = interval_s
         self.task = task
         self._event_bus = event_bus or get_event_bus()
-        self.thread = threading.Thread(target=self._loop, daemon=True, name=f"worker-{task}")
+        self.thread = threading.Thread(
+            target=self._loop, daemon=True, name=f"worker-{task}"
+        )
         self.running = False
 
     def start(self):
@@ -64,7 +66,9 @@ class BackgroundWorker:
 
         self.running = True
         self.thread.start()
-        logger.info("background_worker_started", task=self.task, interval_s=self.interval_s)
+        logger.info(
+            "background_worker_started", task=self.task, interval_s=self.interval_s
+        )
 
     def stop(self):
         """Stop the background worker thread."""
@@ -112,7 +116,9 @@ class BackgroundWorker:
                         is_healthy = provider.health_check()
                         hc_duration = time.perf_counter() - hc_start
 
-                        consecutive = int(getattr(provider.health, "consecutive_failures", 0))
+                        consecutive = int(
+                            getattr(provider.health, "consecutive_failures", 0)
+                        )
 
                         observe_health_check(
                             provider=provider_id,
@@ -123,7 +129,9 @@ class BackgroundWorker:
                         )
 
                         if not is_healthy and not is_cold:
-                            logger.warning("health_check_unhealthy", provider_id=provider_id)
+                            logger.warning(
+                                "health_check_unhealthy", provider_id=provider_id
+                            )
 
                     # Publish any collected events
                     self._publish_events(provider)

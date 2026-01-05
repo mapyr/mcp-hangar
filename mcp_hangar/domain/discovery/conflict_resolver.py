@@ -132,14 +132,19 @@ class ConflictResolver:
                 f"Static wins. Discovery from {provider.source_type} ignored."
             )
             return ConflictResult(
-                resolution=ConflictResolution.STATIC_WINS, winner=None, reason="Static configuration takes precedence"
+                resolution=ConflictResolution.STATIC_WINS,
+                winner=None,
+                reason="Static configuration takes precedence",
             )
 
         # Rule 2: Check existing registered providers
         existing = self._registered.get(provider.name)
         if existing:
             # Same source, same fingerprint = no change
-            if existing.source_type == provider.source_type and existing.fingerprint == provider.fingerprint:
+            if (
+                existing.source_type == provider.source_type
+                and existing.fingerprint == provider.fingerprint
+            ):
                 return ConflictResult(
                     resolution=ConflictResolution.UNCHANGED,
                     winner=provider.with_updated_seen_time(),
@@ -153,7 +158,9 @@ class ConflictResolver:
                     f"(fingerprint {existing.fingerprint} -> {provider.fingerprint})"
                 )
                 return ConflictResult(
-                    resolution=ConflictResolution.UPDATED, winner=provider, reason="Provider configuration updated"
+                    resolution=ConflictResolution.UPDATED,
+                    winner=provider,
+                    reason="Provider configuration updated",
                 )
 
             # Different source = check priority
@@ -182,9 +189,13 @@ class ConflictResolver:
                 )
 
         # No conflict - new provider
-        logger.info(f"New provider discovered: {provider.name} from {provider.source_type}")
+        logger.info(
+            f"New provider discovered: {provider.name} from {provider.source_type}"
+        )
         return ConflictResult(
-            resolution=ConflictResolution.REGISTERED, winner=provider, reason="New provider registered"
+            resolution=ConflictResolution.REGISTERED,
+            winner=provider,
+            reason="New provider registered",
         )
 
     def register(self, provider: DiscoveredProvider) -> None:

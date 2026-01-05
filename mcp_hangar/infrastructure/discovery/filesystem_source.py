@@ -99,7 +99,8 @@ class FilesystemDiscoverySource(DiscoverySource):
 
         if not YAML_AVAILABLE:
             raise ImportError(
-                "PyYAML package is required for FilesystemDiscoverySource. " "Install with: pip install pyyaml"
+                "PyYAML package is required for FilesystemDiscoverySource. "
+                "Install with: pip install pyyaml"
             )
 
         self.path = Path(path or self.DEFAULT_PATH)
@@ -183,7 +184,9 @@ class FilesystemDiscoverySource(DiscoverySource):
         # Check if this looks like a provider definition (must have name or mode)
         # Skip files that look like docker-compose or k8s manifests
         if "services" in data or "apiVersion" in data or "kind" in data:
-            logger.debug(f"Skipping non-provider file (docker-compose or k8s): {file_path}")
+            logger.debug(
+                f"Skipping non-provider file (docker-compose or k8s): {file_path}"
+            )
             return None
 
         if not data.get("enabled", True):
@@ -204,7 +207,11 @@ class FilesystemDiscoverySource(DiscoverySource):
         connection_info = self._parse_connection(connection, mode)
 
         # Parse metadata
-        metadata = {"file_path": str(file_path), "file_name": file_path.name, **data.get("metadata", {})}
+        metadata = {
+            "file_path": str(file_path),
+            "file_name": file_path.name,
+            **data.get("metadata", {}),
+        }
 
         return DiscoveredProvider.create(
             name=name,
@@ -215,7 +222,9 @@ class FilesystemDiscoverySource(DiscoverySource):
             ttl_seconds=ttl,
         )
 
-    def _parse_connection(self, connection: Dict[str, Any], mode: str) -> Dict[str, Any]:
+    def _parse_connection(
+        self, connection: Dict[str, Any], mode: str
+    ) -> Dict[str, Any]:
         """Parse connection configuration.
 
         Args:
@@ -281,7 +290,9 @@ class FilesystemDiscoverySource(DiscoverySource):
         try:
             self._event_handler = _FileChangeHandler(self)
             self._observer = Observer()
-            self._observer.schedule(self._event_handler, str(self.path), recursive=False)
+            self._observer.schedule(
+                self._event_handler, str(self.path), recursive=False
+            )
             self._observer.start()
             logger.info(f"Filesystem discovery source started (watching {self.path})")
         except Exception as e:
@@ -324,7 +335,10 @@ class FilesystemDiscoverySource(DiscoverySource):
                 new_provider = self._parse_file(file_path)
                 if new_provider:
                     old_provider = self._cached_providers.get(new_provider.name)
-                    if old_provider and old_provider.fingerprint != new_provider.fingerprint:
+                    if (
+                        old_provider
+                        and old_provider.fingerprint != new_provider.fingerprint
+                    ):
                         await self.on_provider_changed(old_provider, new_provider)
                     elif not old_provider:
                         await self.on_provider_discovered(new_provider)
@@ -361,15 +375,21 @@ if WATCHDOG_AVAILABLE:
 
         def on_created(self, event):
             if not event.is_directory:
-                self._schedule_async(self.source._handle_file_change(Path(event.src_path), "created"))
+                self._schedule_async(
+                    self.source._handle_file_change(Path(event.src_path), "created")
+                )
 
         def on_modified(self, event):
             if not event.is_directory:
-                self._schedule_async(self.source._handle_file_change(Path(event.src_path), "modified"))
+                self._schedule_async(
+                    self.source._handle_file_change(Path(event.src_path), "modified")
+                )
 
         def on_deleted(self, event):
             if not event.is_directory:
-                self._schedule_async(self.source._handle_file_change(Path(event.src_path), "deleted"))
+                self._schedule_async(
+                    self.source._handle_file_change(Path(event.src_path), "deleted")
+                )
 
     # Make handler available when watchdog is installed
     FileChangeHandler = _FileChangeHandler
