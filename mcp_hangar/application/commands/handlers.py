@@ -112,9 +112,7 @@ class InvokeToolHandler(BaseProviderHandler):
         success = False
 
         try:
-            result = provider.invoke_tool(
-                command.tool_name, command.arguments, command.timeout
-            )
+            result = provider.invoke_tool(command.tool_name, command.arguments, command.timeout)
             success = True
             return result
 
@@ -170,9 +168,7 @@ class ShutdownIdleProvidersHandler(BaseProviderHandler):
         return shutdown_ids
 
 
-def register_all_handlers(
-    command_bus: CommandBus, repository: IProviderRepository, event_bus: EventBus
-) -> None:
+def register_all_handlers(command_bus: CommandBus, repository: IProviderRepository, event_bus: EventBus) -> None:
     """
     Register all command handlers with the command bus.
 
@@ -181,12 +177,8 @@ def register_all_handlers(
         repository: Provider repository
         event_bus: Event bus for publishing events
     """
-    command_bus.register(
-        StartProviderCommand, StartProviderHandler(repository, event_bus)
-    )
-    command_bus.register(
-        StopProviderCommand, StopProviderHandler(repository, event_bus)
-    )
+    command_bus.register(StartProviderCommand, StartProviderHandler(repository, event_bus))
+    command_bus.register(StopProviderCommand, StopProviderHandler(repository, event_bus))
     command_bus.register(InvokeToolCommand, InvokeToolHandler(repository, event_bus))
     command_bus.register(HealthCheckCommand, HealthCheckHandler(repository, event_bus))
     command_bus.register(

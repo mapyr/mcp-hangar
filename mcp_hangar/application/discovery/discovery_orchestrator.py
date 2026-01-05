@@ -190,10 +190,7 @@ class DiscoveryOrchestrator:
         # Start discovery loop
         self._discovery_task = asyncio.create_task(self._discovery_loop())
 
-        logger.info(
-            f"Discovery orchestrator started "
-            f"(refresh_interval={self.config.refresh_interval_s}s)"
-        )
+        logger.info(f"Discovery orchestrator started " f"(refresh_interval={self.config.refresh_interval_s}s)")
 
     async def stop(self) -> None:
         """Stop the discovery orchestrator."""
@@ -228,9 +225,7 @@ class DiscoveryOrchestrator:
                 break
             except Exception as e:
                 logger.error(f"Error in discovery loop: {e}")
-                self._metrics.inc_errors(
-                    source="orchestrator", error_type=type(e).__name__
-                )
+                self._metrics.inc_errors(source="orchestrator", error_type=type(e).__name__)
 
     async def run_discovery_cycle(self) -> DiscoveryCycleResult:
         """Run a single discovery cycle.
@@ -326,9 +321,7 @@ class DiscoveryOrchestrator:
 
         if not validation_report.is_passed:
             # Handle validation failure
-            logger.warning(
-                f"Provider '{provider.name}' failed validation: {validation_report.reason}"
-            )
+            logger.warning(f"Provider '{provider.name}' failed validation: {validation_report.reason}")
 
             self._metrics.inc_validation_failures(
                 source=provider.source_type,
@@ -338,9 +331,7 @@ class DiscoveryOrchestrator:
             if self.config.security.quarantine_on_failure:
                 self._lifecycle_manager.quarantine(provider, validation_report.reason)
                 self._metrics.inc_quarantine(reason=validation_report.result.value)
-                main_metrics.record_discovery_quarantine(
-                    reason=validation_report.result.value
-                )
+                main_metrics.record_discovery_quarantine(reason=validation_report.result.value)
                 return "quarantined"
 
             return "skipped"
@@ -377,12 +368,8 @@ class DiscoveryOrchestrator:
         provider = self._lifecycle_manager.get_provider(name)
         if provider:
             self._validator.record_deregistration(provider)
-            self._metrics.inc_deregistrations(
-                source=provider.source_type, reason=reason
-            )
-            main_metrics.record_discovery_deregistration(
-                source_type=provider.source_type, reason=reason
-            )
+            self._metrics.inc_deregistrations(source=provider.source_type, reason=reason)
+            main_metrics.record_discovery_deregistration(source_type=provider.source_type, reason=reason)
 
         if self.on_deregister:
             try:

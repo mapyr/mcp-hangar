@@ -165,14 +165,10 @@ def _validate_provider_id(provider: str) -> None:
     if not result.valid:
         SECURITY_HANDLER.log_validation_failed(
             field="provider",
-            message=(
-                result.errors[0].message if result.errors else "Invalid provider ID"
-            ),
+            message=(result.errors[0].message if result.errors else "Invalid provider ID"),
             provider_id=provider,
         )
-        raise ValueError(
-            f"invalid_provider_id: {result.errors[0].message if result.errors else 'validation failed'}"
-        )
+        raise ValueError(f"invalid_provider_id: {result.errors[0].message if result.errors else 'validation failed'}")
 
 
 def _validate_tool_name_input(tool: str) -> None:
@@ -183,9 +179,7 @@ def _validate_tool_name_input(tool: str) -> None:
             field="tool",
             message=result.errors[0].message if result.errors else "Invalid tool name",
         )
-        raise ValueError(
-            f"invalid_tool_name: {result.errors[0].message if result.errors else 'validation failed'}"
-        )
+        raise ValueError(f"invalid_tool_name: {result.errors[0].message if result.errors else 'validation failed'}")
 
 
 def _validate_arguments_input(arguments: dict) -> None:
@@ -196,9 +190,7 @@ def _validate_arguments_input(arguments: dict) -> None:
             field="arguments",
             message=result.errors[0].message if result.errors else "Invalid arguments",
         )
-        raise ValueError(
-            f"invalid_arguments: {result.errors[0].message if result.errors else 'validation failed'}"
-        )
+        raise ValueError(f"invalid_arguments: {result.errors[0].message if result.errors else 'validation failed'}")
 
 
 def _validate_timeout_input(timeout: float) -> None:
@@ -209,9 +201,7 @@ def _validate_timeout_input(timeout: float) -> None:
             field="timeout",
             message=result.errors[0].message if result.errors else "Invalid timeout",
         )
-        raise ValueError(
-            f"invalid_timeout: {result.errors[0].message if result.errors else 'validation failed'}"
-        )
+        raise ValueError(f"invalid_timeout: {result.errors[0].message if result.errors else 'validation failed'}")
 
 
 @mcp.tool(name="registry_list")
@@ -408,25 +398,15 @@ def registry_tools(provider: str) -> dict:
     rate_limit_key=key_registry_invoke,
     check_rate_limit=_check_rate_limit,
     validate=chain_validators(
-        lambda provider, tool, arguments=None, timeout=30.0: _validate_provider_id(
-            provider
-        ),
-        lambda provider, tool, arguments=None, timeout=30.0: _validate_tool_name_input(
-            tool
-        ),
-        lambda provider, tool, arguments=None, timeout=30.0: _validate_arguments_input(
-            arguments or {}
-        ),
-        lambda provider, tool, arguments=None, timeout=30.0: _validate_timeout_input(
-            timeout
-        ),
+        lambda provider, tool, arguments=None, timeout=30.0: _validate_provider_id(provider),
+        lambda provider, tool, arguments=None, timeout=30.0: _validate_tool_name_input(tool),
+        lambda provider, tool, arguments=None, timeout=30.0: _validate_arguments_input(arguments or {}),
+        lambda provider, tool, arguments=None, timeout=30.0: _validate_timeout_input(timeout),
     ),
     error_mapper=lambda exc: _tool_error_mapper(exc),
     on_error=lambda exc, ctx: _tool_error_hook(exc, ctx),
 )
-def registry_invoke(
-    provider: str, tool: str, arguments: Optional[dict] = None, timeout: float = 30.0
-) -> dict:
+def registry_invoke(provider: str, tool: str, arguments: Optional[dict] = None, timeout: float = 30.0) -> dict:
     """
     Invoke a tool on a provider or provider group.
 
@@ -485,9 +465,7 @@ def _invoke_on_group(group_id: str, tool: str, arguments: dict, timeout: float) 
     return _invoke_with_retry(group, tool, arguments, timeout, max_attempts=2)
 
 
-def _invoke_with_retry(
-    group: ProviderGroup, tool: str, arguments: dict, timeout: float, max_attempts: int
-) -> dict:
+def _invoke_with_retry(group: ProviderGroup, tool: str, arguments: dict, timeout: float, max_attempts: int) -> dict:
     """Invoke tool with retry on different members."""
     first_error = None
     tried_members: set = set()
@@ -637,14 +615,10 @@ def registry_discover() -> dict:
             import concurrent.futures
 
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(
-                    asyncio.run, _DISCOVERY_ORCHESTRATOR.trigger_discovery()
-                )
+                future = executor.submit(asyncio.run, _DISCOVERY_ORCHESTRATOR.trigger_discovery())
                 result = future.result(timeout=60)
         else:
-            result = loop.run_until_complete(
-                _DISCOVERY_ORCHESTRATOR.trigger_discovery()
-            )
+            result = loop.run_until_complete(_DISCOVERY_ORCHESTRATOR.trigger_discovery())
     except RuntimeError:
         result = asyncio.run(_DISCOVERY_ORCHESTRATOR.trigger_discovery())
 
@@ -754,14 +728,10 @@ def registry_approve(provider: str) -> dict:
             import concurrent.futures
 
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(
-                    asyncio.run, _DISCOVERY_ORCHESTRATOR.approve_provider(provider)
-                )
+                future = executor.submit(asyncio.run, _DISCOVERY_ORCHESTRATOR.approve_provider(provider))
                 result = future.result(timeout=60)
         else:
-            result = loop.run_until_complete(
-                _DISCOVERY_ORCHESTRATOR.approve_provider(provider)
-            )
+            result = loop.run_until_complete(_DISCOVERY_ORCHESTRATOR.approve_provider(provider))
     except RuntimeError:
         result = asyncio.run(_DISCOVERY_ORCHESTRATOR.approve_provider(provider))
 
@@ -798,14 +768,10 @@ def registry_sources() -> dict:
             import concurrent.futures
 
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(
-                    asyncio.run, _DISCOVERY_ORCHESTRATOR.get_sources_status()
-                )
+                future = executor.submit(asyncio.run, _DISCOVERY_ORCHESTRATOR.get_sources_status())
                 sources = future.result(timeout=30)
         else:
-            sources = loop.run_until_complete(
-                _DISCOVERY_ORCHESTRATOR.get_sources_status()
-            )
+            sources = loop.run_until_complete(_DISCOVERY_ORCHESTRATOR.get_sources_status())
     except RuntimeError:
         sources = asyncio.run(_DISCOVERY_ORCHESTRATOR.get_sources_status())
 
@@ -913,16 +879,12 @@ def registry_metrics(format: str = "summary") -> dict:
                             result["discovery"][source]["cycles"] = int(value)
                         elif "providers" in name:
                             status = labels.get("status", "total")
-                            result["discovery"][source][f"providers_{status}"] = int(
-                                value
-                            )
+                            result["discovery"][source][f"providers_{status}"] = int(value)
 
                 # Error metrics
                 if "error" in name.lower():
                     error_type = labels.get("error_type", labels.get("type", name))
-                    result["errors"][error_type] = result["errors"].get(
-                        error_type, 0
-                    ) + int(value)
+                    result["errors"][error_type] = result["errors"].get(error_type, 0) + int(value)
         except Exception:
             # Skip problematic collectors
             continue
@@ -939,17 +901,11 @@ def registry_metrics(format: str = "summary") -> dict:
     # Summary stats
     result["summary"] = {
         "total_providers": len(PROVIDERS),
-        "ready_providers": sum(
-            1 for p in PROVIDERS.values() if str(p.state) == "ready"
-        ),
+        "ready_providers": sum(1 for p in PROVIDERS.values() if str(p.state) == "ready"),
         "total_groups": len(GROUPS),
         "healthy_groups": sum(1 for g in GROUPS.values() if g.state.value == "healthy"),
-        "total_tool_calls": sum(
-            tc.get("count", 0) for tc in result["tool_calls"].values()
-        ),
-        "total_errors": sum(
-            tc.get("errors", 0) for tc in result["tool_calls"].values()
-        ),
+        "total_tool_calls": sum(tc.get("count", 0) for tc in result["tool_calls"].values()),
+        "total_errors": sum(tc.get("errors", 0) for tc in result["tool_calls"].values()),
     }
 
     if format == "detailed":
@@ -959,8 +915,7 @@ def registry_metrics(format: str = "summary") -> dict:
     return {
         "summary": result["summary"],
         "providers": {
-            k: {"state": v["state"], "invocations": v["invocations"]}
-            for k, v in result["providers"].items()
+            k: {"state": v["state"], "invocations": v["invocations"]} for k, v in result["providers"].items()
         },
         "groups": result["groups"],
         "top_tools": dict(
@@ -1057,9 +1012,7 @@ def load_config_from_file(config_path: str) -> Dict[str, Any]:
         config = yaml.safe_load(f)
 
     if not config or "providers" not in config:
-        raise ValueError(
-            f"Invalid configuration: missing 'providers' section in {config_path}"
-        )
+        raise ValueError(f"Invalid configuration: missing 'providers' section in {config_path}")
 
     return config
 
@@ -1152,12 +1105,8 @@ def _load_provider_config(provider_id: str, spec_dict: Dict[str, Any]) -> Provid
                 {
                     "name": tool_spec.get("name"),
                     "description": tool_spec.get("description", ""),
-                    "inputSchema": tool_spec.get(
-                        "inputSchema", tool_spec.get("input_schema", {})
-                    ),
-                    "outputSchema": tool_spec.get(
-                        "outputSchema", tool_spec.get("output_schema")
-                    ),
+                    "inputSchema": tool_spec.get("inputSchema", tool_spec.get("input_schema", {})),
+                    "outputSchema": tool_spec.get("outputSchema", tool_spec.get("output_schema")),
                 }
             )
 
@@ -1228,15 +1177,9 @@ def _parse_args():
 
     parser = argparse.ArgumentParser(description="MCP Registry Server")
     parser.add_argument("--http", action="store_true", help="Run HTTP server mode")
-    parser.add_argument(
-        "--host", type=str, default=None, help="HTTP server host (default: 0.0.0.0)"
-    )
-    parser.add_argument(
-        "--port", type=int, default=None, help="HTTP server port (default: 8000)"
-    )
-    parser.add_argument(
-        "--config", type=str, default=None, help="Path to config.yaml file"
-    )
+    parser.add_argument("--host", type=str, default=None, help="HTTP server host (default: 0.0.0.0)")
+    parser.add_argument("--port", type=int, default=None, help="HTTP server port (default: 8000)")
+    parser.add_argument("--config", type=str, default=None, help="Path to config.yaml file")
     return parser.parse_args()
 
 
@@ -1275,9 +1218,7 @@ def _init_event_handlers(event_bus, security_handler, log: Any) -> None:
 
 def _init_cqrs(runtime, log: Any) -> None:
     """Initialize CQRS command and query handlers."""
-    register_command_handlers(
-        runtime.command_bus, PROVIDER_REPOSITORY, runtime.event_bus
-    )
+    register_command_handlers(runtime.command_bus, PROVIDER_REPOSITORY, runtime.event_bus)
     register_query_handlers(runtime.query_bus, PROVIDER_REPOSITORY)
     logger.info("cqrs_handlers_registered")
 
@@ -1309,9 +1250,7 @@ async def _init_discovery(config: Dict[str, Any], log: Any) -> None:
     orchestrator_config = DiscoveryConfig.from_dict(discovery_config)
 
     # Create orchestrator
-    _DISCOVERY_ORCHESTRATOR = DiscoveryOrchestrator(
-        config=orchestrator_config, static_providers=static_providers
-    )
+    _DISCOVERY_ORCHESTRATOR = DiscoveryOrchestrator(config=orchestrator_config, static_providers=static_providers)
 
     # Register discovery sources based on config
     sources_config = discovery_config.get("sources", [])
@@ -1322,13 +1261,9 @@ async def _init_discovery(config: Dict[str, Any], log: Any) -> None:
             if source:
                 _DISCOVERY_ORCHESTRATOR.add_source(source)
         except ImportError as e:
-            logger.warning(
-                "discovery_source_unavailable", source_type=source_type, error=str(e)
-            )
+            logger.warning("discovery_source_unavailable", source_type=source_type, error=str(e))
         except Exception as e:
-            logger.error(
-                "discovery_source_error", source_type=source_type, error=str(e)
-            )
+            logger.error("discovery_source_error", source_type=source_type, error=str(e))
 
     # Set up registration callback
     async def on_register(provider):
@@ -1470,13 +1405,9 @@ async def _init_discovery(config: Dict[str, Any], log: Any) -> None:
                 if provider:
                     provider.stop()
                 del PROVIDERS._repo._providers[name]  # Access internal storage
-                logger.info(
-                    "discovery_deregistered_provider", provider_name=name, reason=reason
-                )
+                logger.info("discovery_deregistered_provider", provider_name=name, reason=reason)
         except Exception as e:
-            logger.error(
-                "discovery_deregistration_failed", provider_name=name, error=str(e)
-            )
+            logger.error("discovery_deregistration_failed", provider_name=name, error=str(e))
 
     _DISCOVERY_ORCHESTRATOR.on_register = on_register
     _DISCOVERY_ORCHESTRATOR.on_deregister = on_deregister
@@ -1493,11 +1424,7 @@ def _create_discovery_source(source_type: str, config: Dict[str, Any]):
     from .domain.discovery import DiscoveryMode
 
     mode_str = config.get("mode", "additive")
-    mode = (
-        DiscoveryMode.AUTHORITATIVE
-        if mode_str == "authoritative"
-        else DiscoveryMode.ADDITIVE
-    )
+    mode = DiscoveryMode.AUTHORITATIVE if mode_str == "authoritative" else DiscoveryMode.ADDITIVE
 
     if source_type == "kubernetes":
         from .infrastructure.discovery import KubernetesDiscoverySource

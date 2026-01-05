@@ -70,9 +70,7 @@ def find_container_socket() -> Optional[str]:
     # 2. Platform-specific detection
     if platform.system() == "Darwin":
         # macOS: Check Podman Machine symlink first
-        podman_symlink = (
-            Path.home() / ".local/share/containers/podman/machine/podman.sock"
-        )
+        podman_symlink = Path.home() / ".local/share/containers/podman/machine/podman.sock"
         if podman_symlink.exists():
             try:
                 resolved = podman_symlink.resolve()
@@ -130,9 +128,7 @@ class DockerDiscoverySource(DiscoverySource):
         super().__init__(mode)
 
         if not DOCKER_AVAILABLE:
-            raise ImportError(
-                "docker package required. Install with: pip install docker"
-            )
+            raise ImportError("docker package required. Install with: pip install docker")
 
         self._socket_path = socket_path
         self._default_ttl = default_ttl
@@ -165,9 +161,7 @@ class DockerDiscoverySource(DiscoverySource):
 
         try:
             # Get all containers with MCP label (including stopped)
-            containers = self._client.containers.list(
-                all=True, filters={"label": f"{self.LABEL_PREFIX}enabled=true"}
-            )
+            containers = self._client.containers.list(all=True, filters={"label": f"{self.LABEL_PREFIX}enabled=true"})
 
             for container in containers:
                 provider = self._parse_container(container)

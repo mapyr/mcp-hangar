@@ -99,9 +99,7 @@ class SecurityConfig:
     """
 
     allowed_namespaces: Set[str] = field(default_factory=set)
-    denied_namespaces: Set[str] = field(
-        default_factory=lambda: {"kube-system", "default"}
-    )
+    denied_namespaces: Set[str] = field(default_factory=lambda: {"kube-system", "default"})
     require_health_check: bool = True
     require_mcp_schema: bool = False
     max_providers_per_source: int = 100
@@ -114,9 +112,7 @@ class SecurityConfig:
         """Create from dictionary."""
         return cls(
             allowed_namespaces=set(data.get("allowed_namespaces", [])),
-            denied_namespaces=set(
-                data.get("denied_namespaces", ["kube-system", "default"])
-            ),
+            denied_namespaces=set(data.get("denied_namespaces", ["kube-system", "default"])),
             require_health_check=data.get("require_health_check", True),
             require_mcp_schema=data.get("require_mcp_schema", False),
             max_providers_per_source=data.get("max_providers_per_source", 100),
@@ -210,9 +206,7 @@ class SecurityValidator:
             duration_ms=duration_ms,
         )
 
-    def _validate_source(
-        self, provider: DiscoveredProvider
-    ) -> Optional[ValidationReport]:
+    def _validate_source(self, provider: DiscoveredProvider) -> Optional[ValidationReport]:
         """Validate source is trusted.
 
         Args:
@@ -238,10 +232,7 @@ class SecurityValidator:
                 )
 
             # If allowed list is specified, check it
-            if (
-                self.config.allowed_namespaces
-                and namespace not in self.config.allowed_namespaces
-            ):
+            if self.config.allowed_namespaces and namespace not in self.config.allowed_namespaces:
                 return ValidationReport(
                     result=ValidationResult.FAILED_SOURCE,
                     provider=provider,
@@ -254,9 +245,7 @@ class SecurityValidator:
 
         return None
 
-    def _check_rate_limit(
-        self, provider: DiscoveredProvider
-    ) -> Optional[ValidationReport]:
+    def _check_rate_limit(self, provider: DiscoveredProvider) -> Optional[ValidationReport]:
         """Check registration rate limit.
 
         Args:
@@ -274,9 +263,7 @@ class SecurityValidator:
             self._registration_counts[source] = []
 
         # Clean old entries
-        self._registration_counts[source] = [
-            t for t in self._registration_counts[source] if now - t < window
-        ]
+        self._registration_counts[source] = [t for t in self._registration_counts[source] if now - t < window]
 
         # Check rate
         if len(self._registration_counts[source]) >= self.config.max_registration_rate:
@@ -296,9 +283,7 @@ class SecurityValidator:
         self._registration_counts[source].append(now)
         return None
 
-    def _check_provider_count(
-        self, provider: DiscoveredProvider
-    ) -> Optional[ValidationReport]:
+    def _check_provider_count(self, provider: DiscoveredProvider) -> Optional[ValidationReport]:
         """Check provider count per source.
 
         Args:
@@ -324,9 +309,7 @@ class SecurityValidator:
 
         return None
 
-    async def _validate_health(
-        self, provider: DiscoveredProvider
-    ) -> Optional[ValidationReport]:
+    async def _validate_health(self, provider: DiscoveredProvider) -> Optional[ValidationReport]:
         """Validate provider health endpoint.
 
         Args:
@@ -340,9 +323,7 @@ class SecurityValidator:
             return None
 
         if not AIOHTTP_AVAILABLE:
-            logger.debug(
-                f"Skipping health check for {provider.name} (aiohttp not available)"
-            )
+            logger.debug(f"Skipping health check for {provider.name} (aiohttp not available)")
             return None
 
         host = provider.connection_info.get("host")
@@ -389,9 +370,7 @@ class SecurityValidator:
 
         return None
 
-    async def _validate_schema(
-        self, provider: DiscoveredProvider
-    ) -> Optional[ValidationReport]:
+    async def _validate_schema(self, provider: DiscoveredProvider) -> Optional[ValidationReport]:
         """Validate MCP tools schema.
 
         Args:

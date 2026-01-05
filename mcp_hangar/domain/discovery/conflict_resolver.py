@@ -141,10 +141,7 @@ class ConflictResolver:
         existing = self._registered.get(provider.name)
         if existing:
             # Same source, same fingerprint = no change
-            if (
-                existing.source_type == provider.source_type
-                and existing.fingerprint == provider.fingerprint
-            ):
+            if existing.source_type == provider.source_type and existing.fingerprint == provider.fingerprint:
                 return ConflictResult(
                     resolution=ConflictResolution.UNCHANGED,
                     winner=provider.with_updated_seen_time(),
@@ -189,9 +186,7 @@ class ConflictResolver:
                 )
 
         # No conflict - new provider
-        logger.info(
-            f"New provider discovered: {provider.name} from {provider.source_type}"
-        )
+        logger.info(f"New provider discovered: {provider.name} from {provider.source_type}")
         return ConflictResult(
             resolution=ConflictResolution.REGISTERED,
             winner=provider,

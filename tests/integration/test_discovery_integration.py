@@ -192,9 +192,7 @@ async def run_filesystem_discovery_source():
     # Check if example files exist
     examples_path = project_root / "examples" / "discovery"
 
-    print_result(
-        "Example discovery files exist", examples_path.exists(), f"path={examples_path}"
-    )
+    print_result("Example discovery files exist", examples_path.exists(), f"path={examples_path}")
 
     if not examples_path.exists():
         print("  ⚠️  Skipping filesystem tests - no example files")
@@ -332,9 +330,7 @@ async def run_discovery_orchestrator():
     # Create orchestrator
     config = DiscoveryConfig(enabled=True, refresh_interval_s=30, auto_register=True)
 
-    orchestrator = DiscoveryOrchestrator(
-        config=config, static_providers={"static-provider"}
-    )
+    orchestrator = DiscoveryOrchestrator(config=config, static_providers={"static-provider"})
 
     orchestrator.add_source(MockSource())
 
@@ -504,9 +500,7 @@ async def run_full_integration():
 
     # Check sources
     sources = await orchestrator.get_sources_status()
-    fs_source_status = next(
-        (s for s in sources if s["source_type"] == "filesystem"), None
-    )
+    fs_source_status = next((s for s in sources if s["source_type"] == "filesystem"), None)
 
     print_result(
         "Filesystem source healthy",

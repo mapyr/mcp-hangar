@@ -115,9 +115,7 @@ class TestProviderRecoverySaga:
 
     def test_backoff_calculation(self):
         """Test exponential backoff calculation."""
-        saga = ProviderRecoverySaga(
-            initial_backoff_s=5.0, max_backoff_s=60.0, backoff_multiplier=2.0
-        )
+        saga = ProviderRecoverySaga(initial_backoff_s=5.0, max_backoff_s=60.0, backoff_multiplier=2.0)
 
         assert saga._calculate_backoff(1) == 5.0
         assert saga._calculate_backoff(2) == 10.0
@@ -191,9 +189,7 @@ class TestProviderFailoverSaga:
         """Test configuring failover with custom options."""
         saga = ProviderFailoverSaga()
 
-        saga.configure_failover(
-            "primary", "backup", auto_failback=False, failback_delay_s=60.0
-        )
+        saga.configure_failover("primary", "backup", auto_failback=False, failback_delay_s=60.0)
 
         config = saga.get_failover_config("primary")
         assert config.auto_failback is False
@@ -286,10 +282,7 @@ class TestProviderFailoverSaga:
         commands = saga.handle(ProviderStarted("primary", "subprocess", 5, 100.0))
 
         # Should stop backup
-        assert any(
-            isinstance(c, StopProviderCommand) and c.provider_id == "backup"
-            for c in commands
-        )
+        assert any(isinstance(c, StopProviderCommand) and c.provider_id == "backup" for c in commands)
 
         # Failover should be cleared
         assert len(saga.get_active_failovers()) == 0
@@ -344,10 +337,7 @@ class TestProviderFailoverSaga:
         # Force failback
         commands = saga.force_failback("primary")
 
-        assert any(
-            isinstance(c, StopProviderCommand) and c.provider_id == "backup"
-            for c in commands
-        )
+        assert any(isinstance(c, StopProviderCommand) and c.provider_id == "backup" for c in commands)
 
     def test_cancel_failover(self):
         """Test canceling failover (keeps backup running)."""

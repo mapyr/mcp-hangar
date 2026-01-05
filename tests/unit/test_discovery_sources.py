@@ -13,12 +13,8 @@ class TestDockerDiscoverySource:
     @pytest.fixture
     def mock_docker_client(self):
         """Create a mock Docker client."""
-        with patch(
-            "mcp_hangar.infrastructure.discovery.docker_source.DOCKER_AVAILABLE", True
-        ):
-            with patch(
-                "mcp_hangar.infrastructure.discovery.docker_source.docker"
-            ) as mock_docker:
+        with patch("mcp_hangar.infrastructure.discovery.docker_source.DOCKER_AVAILABLE", True):
+            with patch("mcp_hangar.infrastructure.discovery.docker_source.docker") as mock_docker:
                 mock_client = MagicMock()
                 mock_docker.from_env.return_value = mock_client
                 mock_docker.DockerClient.return_value = mock_client
@@ -83,9 +79,7 @@ class TestDockerDiscoverySource:
             "mcp.hangar.mode": "http",
             "mcp.hangar.port": "8080",
         }
-        mock_container.attrs = {
-            "NetworkSettings": {"Networks": {"bridge": {"IPAddress": "172.17.0.2"}}}
-        }
+        mock_container.attrs = {"NetworkSettings": {"Networks": {"bridge": {"IPAddress": "172.17.0.2"}}}}
         # Use real values instead of MagicMock to avoid JSON serialization issues
         mock_container.image = MagicMock()
         mock_container.image.tags = ["my-image:latest"]
@@ -164,12 +158,8 @@ class TestKubernetesDiscoverySource:
             "mcp_hangar.infrastructure.discovery.kubernetes_source.KUBERNETES_AVAILABLE",
             True,
         ):
-            with patch(
-                "mcp_hangar.infrastructure.discovery.kubernetes_source.config"
-            ) as mock_config:
-                with patch(
-                    "mcp_hangar.infrastructure.discovery.kubernetes_source.client"
-                ) as mock_client:
+            with patch("mcp_hangar.infrastructure.discovery.kubernetes_source.config") as mock_config:
+                with patch("mcp_hangar.infrastructure.discovery.kubernetes_source.client") as mock_client:
                     mock_v1 = MagicMock()
                     mock_client.CoreV1Api.return_value = mock_v1
                     yield mock_v1, mock_config
@@ -198,9 +188,7 @@ class TestKubernetesDiscoverySource:
             KubernetesDiscoverySource,
         )
 
-        source = KubernetesDiscoverySource(
-            namespaces=["mcp-providers", "production"], in_cluster=False
-        )
+        source = KubernetesDiscoverySource(namespaces=["mcp-providers", "production"], in_cluster=False)
         assert source.namespaces == ["mcp-providers", "production"]
 
     def test_label_selector(self, mock_k8s_client):
@@ -209,9 +197,7 @@ class TestKubernetesDiscoverySource:
             KubernetesDiscoverySource,
         )
 
-        source = KubernetesDiscoverySource(
-            label_selector="app.kubernetes.io/component=mcp-provider", in_cluster=False
-        )
+        source = KubernetesDiscoverySource(label_selector="app.kubernetes.io/component=mcp-provider", in_cluster=False)
         assert source.label_selector == "app.kubernetes.io/component=mcp-provider"
 
     @pytest.mark.asyncio
@@ -233,9 +219,7 @@ class TestKubernetesDiscoverySource:
         assert providers == []
 
     @pytest.mark.asyncio
-    @pytest.mark.skip(
-        reason="Mock setup complex - discovery logic tested in integration tests"
-    )
+    @pytest.mark.skip(reason="Mock setup complex - discovery logic tested in integration tests")
     async def test_discover_annotated_pod(self, mock_k8s_client):
         """Test discovery of pod with MCP annotations."""
         from mcp_hangar.infrastructure.discovery.kubernetes_source import (
@@ -262,9 +246,7 @@ class TestKubernetesDiscoverySource:
         mock_pods.items = [mock_pod]
         mock_v1.list_namespaced_pod.return_value = mock_pods
 
-        source = KubernetesDiscoverySource(
-            namespaces=["mcp-providers"], in_cluster=False
-        )
+        source = KubernetesDiscoverySource(namespaces=["mcp-providers"], in_cluster=False)
         providers = await source.discover()
 
         assert len(providers) == 1
@@ -370,20 +352,12 @@ class TestDiscoveryMetricsIntegration:
 
         # Record some discovery activity
         update_discovery_source("docker", "additive", True, 3)
-        record_discovery_cycle(
-            "docker", 0.05, discovered=3, registered=2, quarantined=1
-        )
+        record_discovery_cycle("docker", 0.05, discovered=3, registered=2, quarantined=1)
 
         metrics_output = get_metrics()
 
-        assert (
-            'mcp_registry_discovery_cycles_total{source_type="docker"}'
-            in metrics_output
-        )
-        assert (
-            'mcp_registry_discovery_providers{source_type="docker",status="discovered"} 3'
-            in metrics_output
-        )
+        assert 'mcp_registry_discovery_cycles_total{source_type="docker"}' in metrics_output
+        assert 'mcp_registry_discovery_providers{source_type="docker",status="discovered"} 3' in metrics_output
 
     def test_kubernetes_specific_metrics(self):
         """Test Kubernetes-specific metrics."""
@@ -403,7 +377,4 @@ class TestDiscoveryMetricsIntegration:
             'mcp_registry_discovery_deregistrations_total{reason="ttl_expired",source_type="kubernetes"}'
             in metrics_output
         )
-        assert (
-            'mcp_registry_discovery_quarantine_total{reason="namespace_denied"}'
-            in metrics_output
-        )
+        assert 'mcp_registry_discovery_quarantine_total{reason="namespace_denied"}' in metrics_output

@@ -138,9 +138,7 @@ class DiscoverySource(ABC):
         if handler:
             await handler(provider_name)
 
-    async def on_provider_changed(
-        self, old: DiscoveredProvider, new: DiscoveredProvider
-    ) -> None:
+    async def on_provider_changed(self, old: DiscoveredProvider, new: DiscoveredProvider) -> None:
         """Hook called when provider config changes (fingerprint mismatch).
 
         Args:

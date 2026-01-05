@@ -63,10 +63,7 @@ class Counter:
     def collect(self) -> List[MetricSample]:
         """Collect all samples."""
         with self._lock:
-            return [
-                MetricSample(value=v, labels=dict(zip(self.label_names, k)))
-                for k, v in self._values.items()
-            ]
+            return [MetricSample(value=v, labels=dict(zip(self.label_names, k))) for k, v in self._values.items()]
 
 
 class Gauge:
@@ -115,10 +112,7 @@ class Gauge:
     def collect(self) -> List[MetricSample]:
         """Collect all samples."""
         with self._lock:
-            return [
-                MetricSample(value=v, labels=dict(zip(self.label_names, k)))
-                for k, v in self._values.items()
-            ]
+            return [MetricSample(value=v, labels=dict(zip(self.label_names, k))) for k, v in self._values.items()]
 
 
 class Histogram:
@@ -160,9 +154,7 @@ class Histogram:
         self.label_names = labels or []
         self.buckets = tuple(sorted(buckets or self.DEFAULT_BUCKETS)) + (float("inf"),)
         self._lock = threading.Lock()
-        self._buckets: Dict[tuple, Dict[float, int]] = defaultdict(
-            lambda: {b: 0 for b in self.buckets}
-        )
+        self._buckets: Dict[tuple, Dict[float, int]] = defaultdict(lambda: {b: 0 for b in self.buckets})
         self._sums: Dict[tuple, float] = defaultdict(float)
         self._counts: Dict[tuple, int] = defaultdict(int)
 
@@ -202,9 +194,7 @@ class Histogram:
                 for bucket in self.buckets:
                     cumulative += bucket_values.get(bucket, 0)
                     le = "+Inf" if bucket == float("inf") else str(bucket)
-                    buckets.append(
-                        MetricSample(value=cumulative, labels={**base_labels, "le": le})
-                    )
+                    buckets.append(MetricSample(value=cumulative, labels={**base_labels, "le": le}))
                 sums.append(MetricSample(value=self._sums[key], labels=base_labels))
                 counts.append(MetricSample(value=self._counts[key], labels=base_labels))
 
@@ -811,9 +801,7 @@ def init_metrics(version: str = "1.0.0"):
     PROCESS_START_TIME.set(time.time())
 
 
-def observe_tool_call(
-    provider: str, tool: str, duration: float, success: bool, error_type: str = None
-):
+def observe_tool_call(provider: str, tool: str, duration: float, success: bool, error_type: str = None):
     """Record a tool call observation."""
     status = "success" if success else "error"
     TOOL_CALLS_TOTAL.inc(provider=provider, tool=tool, status=status)
@@ -917,9 +905,7 @@ def record_error(component: str, error_type: str):
 # =============================================================================
 
 
-def update_discovery_source(
-    source_type: str, mode: str, is_healthy: bool, providers_count: int
-):
+def update_discovery_source(source_type: str, mode: str, is_healthy: bool, providers_count: int):
     """Update discovery source metrics.
 
     Args:
@@ -930,9 +916,7 @@ def update_discovery_source(
     """
     DISCOVERY_SOURCES_TOTAL.set(1, source_type=source_type, mode=mode)
     DISCOVERY_SOURCES_HEALTHY.set(1 if is_healthy else 0, source_type=source_type)
-    DISCOVERY_PROVIDERS_TOTAL.set(
-        providers_count, source_type=source_type, status="discovered"
-    )
+    DISCOVERY_PROVIDERS_TOTAL.set(providers_count, source_type=source_type, status="discovered")
 
 
 def record_discovery_cycle(
@@ -956,15 +940,9 @@ def record_discovery_cycle(
     DISCOVERY_LAST_CYCLE_TIMESTAMP.set(time.time(), source_type=source_type)
 
     # Update provider counts
-    DISCOVERY_PROVIDERS_TOTAL.set(
-        discovered, source_type=source_type, status="discovered"
-    )
-    DISCOVERY_PROVIDERS_TOTAL.set(
-        registered, source_type=source_type, status="registered"
-    )
-    DISCOVERY_PROVIDERS_TOTAL.set(
-        quarantined, source_type=source_type, status="quarantined"
-    )
+    DISCOVERY_PROVIDERS_TOTAL.set(discovered, source_type=source_type, status="discovered")
+    DISCOVERY_PROVIDERS_TOTAL.set(registered, source_type=source_type, status="registered")
+    DISCOVERY_PROVIDERS_TOTAL.set(quarantined, source_type=source_type, status="quarantined")
 
 
 def record_discovery_registration(source_type: str):

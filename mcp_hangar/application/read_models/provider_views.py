@@ -68,9 +68,7 @@ class ProviderSummary:
     tools_count: int
     health_status: str  # healthy, degraded, unhealthy
     description: Optional[str] = None
-    tools_predefined: bool = (
-        False  # True if tools were defined in config (no startup needed)
-    )
+    tools_predefined: bool = False  # True if tools were defined in config (no startup needed)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""

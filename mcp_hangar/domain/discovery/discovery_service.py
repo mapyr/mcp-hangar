@@ -83,9 +83,7 @@ class SourceStatus:
             "mode": self.mode.value,
             "is_healthy": self.is_healthy,
             "is_enabled": self.is_enabled,
-            "last_discovery": (
-                self.last_discovery.isoformat() if self.last_discovery else None
-            ),
+            "last_discovery": (self.last_discovery.isoformat() if self.last_discovery else None),
             "providers_count": self.providers_count,
             "error_message": self.error_message,
         }
@@ -219,9 +217,7 @@ class DiscoveryService:
 
                 # Update source status
                 self._source_status[source_type].is_healthy = True
-                self._source_status[source_type].last_discovery = datetime.now(
-                    timezone.utc
-                )
+                self._source_status[source_type].last_discovery = datetime.now(timezone.utc)
                 self._source_status[source_type].providers_count = len(providers)
                 self._source_status[source_type].error_message = None
 

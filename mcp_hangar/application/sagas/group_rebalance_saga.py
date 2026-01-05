@@ -120,9 +120,7 @@ class GroupRebalanceSaga(EventTriggeredSaga):
 
         elif isinstance(event, (ProviderStopped, ProviderDegraded)):
             reason = getattr(event, "reason", "unknown")
-            logger.info(
-                f"Member {provider_id} unavailable in group {group_id}: {reason}"
-            )
+            logger.info(f"Member {provider_id} unavailable in group {group_id}: {reason}")
             if group:
                 group.report_failure(provider_id)
 

@@ -98,9 +98,7 @@ def create_fastmcp_server():
         """
         if _registry_invoke is None:
             return {"error": "Registry not initialized"}
-        return _registry_invoke(
-            provider=provider, tool=tool, arguments=arguments or {}, timeout=timeout
-        )
+        return _registry_invoke(provider=provider, tool=tool, arguments=arguments or {}, timeout=timeout)
 
     @mcp.tool()
     def registry_tools(provider: str) -> dict:
@@ -243,9 +241,7 @@ def setup_fastmcp_server(
     _registry_sources = registry_sources_fn
     _registry_metrics = registry_metrics_fn
 
-    logger.info(
-        "fastmcp_server_configured", discovery_enabled=registry_discover_fn is not None
-    )
+    logger.info("fastmcp_server_configured", discovery_enabled=registry_discover_fn is not None)
 
 
 def run_fastmcp_server():
@@ -290,9 +286,7 @@ def run_fastmcp_server():
                 logger.debug(f"Could not update provider metrics: {e}")
 
         metrics_output = get_metrics()
-        return PlainTextResponse(
-            metrics_output, media_type="text/plain; version=0.0.4; charset=utf-8"
-        )
+        return PlainTextResponse(metrics_output, media_type="text/plain; version=0.0.4; charset=utf-8")
 
     # Health endpoint (liveness)
     async def health_endpoint(request):
