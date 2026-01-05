@@ -1,6 +1,5 @@
 """Command handlers implementation."""
 
-import logging
 import time
 from typing import Any, Dict, List
 
@@ -9,6 +8,7 @@ from ...domain.exceptions import ProviderNotFoundError
 from ...domain.repository import IProviderRepository
 from ...infrastructure.command_bus import CommandBus, CommandHandler
 from ...infrastructure.event_bus import EventBus
+from ...logging_config import get_logger
 from ...metrics import (
     observe_tool_call,
     record_error,
@@ -23,7 +23,7 @@ from .commands import (
     StopProviderCommand,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class BaseProviderHandler(CommandHandler):
@@ -186,4 +186,4 @@ def register_all_handlers(command_bus: CommandBus, repository: IProviderReposito
         ShutdownIdleProvidersHandler(repository, event_bus),
     )
 
-    logger.info("All command handlers registered")
+    logger.info("command_handlers_registered")

@@ -10,13 +10,14 @@ Example pyproject.toml:
     my_provider = "my_package.mcp_server:create_server"
 """
 
-import logging
 from typing import Any, Dict, List, Optional
 
 from mcp_hangar.domain.discovery.discovered_provider import DiscoveredProvider
 from mcp_hangar.domain.discovery.discovery_source import DiscoveryMode, DiscoverySource
 
-logger = logging.getLogger(__name__)
+from ...logging_config import get_logger
+
+logger = get_logger(__name__)
 
 # Import metadata handling
 try:
@@ -61,7 +62,12 @@ class EntrypointDiscoverySource(DiscoverySource):
 
     DEFAULT_GROUP = "mcp.providers"
 
-    def __init__(self, group: str = DEFAULT_GROUP, mode: DiscoveryMode = DiscoveryMode.ADDITIVE, default_ttl: int = 90):
+    def __init__(
+        self,
+        group: str = DEFAULT_GROUP,
+        mode: DiscoveryMode = DiscoveryMode.ADDITIVE,
+        default_ttl: int = 90,
+    ):
         """Initialize entrypoint discovery source.
 
         Args:

@@ -1,10 +1,7 @@
 """Registry server with FastMCP integration, CQRS, security hardening, and structured logging."""
 
-import json
-import logging
 import os
 from pathlib import Path
-import sys
 from typing import Any, Dict, List, Optional
 
 from mcp.server.fastmcp import FastMCP
@@ -41,7 +38,6 @@ from .domain.security.input_validator import (
     validate_timeout,
     validate_tool_name,
 )
-from .domain.security.sanitizer import sanitize_log_message
 from .gc import BackgroundWorker
 from .infrastructure.query_bus import (
     GetProviderQuery,
@@ -49,49 +45,10 @@ from .infrastructure.query_bus import (
     ListProvidersQuery,
 )
 from .infrastructure.saga_manager import get_saga_manager
+from .logging_config import get_logger, setup_logging
 
-
-# Structured JSON logging to stderr
-class JSONFormatter(logging.Formatter):
-    """Format log records as JSON for structured logging."""
-
-    def format(self, record):
-        log_obj = {
-            "timestamp": self.formatTime(record, datefmt="%Y-%m-%d %H:%M:%S"),
-            "level": record.levelname,
-            "message": sanitize_log_message(record.getMessage()),
-            "module": record.module,
-            "function": record.funcName,
-        }
-        if record.exc_info:
-            log_obj["exception"] = self.formatException(record.exc_info)
-        return json.dumps(log_obj)
-
-
-def setup_logging(level=logging.INFO, log_file: Optional[str] = None):
-    """Set up structured JSON logging to stderr and optionally to file."""
-    root_logger = logging.getLogger()
-    root_logger.handlers.clear()  # Remove any existing handlers
-    root_logger.setLevel(level)
-
-    # Always log to stderr (for Claude Desktop)
-    stderr_handler = logging.StreamHandler(sys.stderr)
-    stderr_handler.setFormatter(JSONFormatter())
-    root_logger.addHandler(stderr_handler)
-
-    # Optionally log to file
-    if log_file:
-        try:
-            # Ensure directory exists
-            log_dir = Path(log_file).parent
-            log_dir.mkdir(parents=True, exist_ok=True)
-
-            file_handler = logging.FileHandler(log_file, mode="a", encoding="utf-8")
-            file_handler.setFormatter(JSONFormatter())
-            root_logger.addHandler(file_handler)
-            root_logger.info(f"Logging to file: {log_file}")
-        except Exception as e:
-            root_logger.warning(f"Could not setup file logging: {e}")
+# Module logger
+logger = get_logger(__name__)
 
 
 # Initialize MCP server
@@ -961,7 +918,13 @@ def registry_metrics(format: str = "summary") -> dict:
             k: {"state": v["state"], "invocations": v["invocations"]} for k, v in result["providers"].items()
         },
         "groups": result["groups"],
-        "top_tools": dict(sorted(result["tool_calls"].items(), key=lambda x: x[1].get("count", 0), reverse=True)[:10]),
+        "top_tools": dict(
+            sorted(
+                result["tool_calls"].items(),
+                key=lambda x: x[1].get("count", 0),
+                reverse=True,
+            )[:10]
+        ),
         "discovery": result["discovery"],
     }
 
@@ -1063,13 +1026,11 @@ def load_config(config: Dict[str, Any]) -> None:
     Args:
         config: Dictionary mapping provider IDs to provider spec dictionaries
     """
-    logger = logging.getLogger(__name__)
-
     for provider_id, spec_dict in config.items():
         # Validate provider ID
         result = validate_provider_id(provider_id)
         if not result.valid:
-            logger.warning(f"Skipping provider with invalid ID: {provider_id}")
+            logger.warning("skipping_invalid_provider_id", provider_id=provider_id)
             continue
 
         mode = spec_dict.get("mode", "subprocess")
@@ -1080,15 +1041,20 @@ def load_config(config: Dict[str, Any]) -> None:
             continue
 
         # Regular provider
-        _load_provider_config(provider_id, spec_dict, logger)
+        _load_provider_config(provider_id, spec_dict)
 
 
-def _parse_strategy(strategy_str: str, group_id: str, logger: logging.Logger) -> LoadBalancerStrategy:
+def _parse_strategy(strategy_str: str, group_id: str) -> LoadBalancerStrategy:
     """Parse load balancer strategy string."""
     try:
         return LoadBalancerStrategy(strategy_str)
     except ValueError:
-        logger.warning(f"Unknown strategy '{strategy_str}' for group {group_id}, using round_robin")
+        logger.warning(
+            "unknown_strategy_using_default",
+            strategy=strategy_str,
+            group_id=group_id,
+            default="round_robin",
+        )
         return LoadBalancerStrategy.ROUND_ROBIN
 
 
@@ -1096,7 +1062,6 @@ def _load_group_members(
     group: ProviderGroup,
     group_id: str,
     members: List[Dict[str, Any]],
-    logger: logging.Logger,
 ) -> None:
     """Load group members from configuration."""
     global _GROUP_REBALANCE_SAGA
@@ -1104,15 +1069,15 @@ def _load_group_members(
     for member_spec in members:
         member_id = member_spec.get("id")
         if not member_id:
-            logger.warning(f"Skipping group member without 'id' in group {group_id}")
+            logger.warning("skipping_group_member_without_id", group_id=group_id)
             continue
 
         result = validate_provider_id(member_id)
         if not result.valid:
-            logger.warning(f"Skipping member with invalid ID: {member_id}")
+            logger.warning("skipping_invalid_member_id", member_id=member_id)
             continue
 
-        member_provider = _load_provider_config(member_id, member_spec, logger)
+        member_provider = _load_provider_config(member_id, member_spec)
         group.add_member(
             member_provider,
             weight=member_spec.get("weight", 1),
@@ -1123,7 +1088,7 @@ def _load_group_members(
             _GROUP_REBALANCE_SAGA.register_member(member_id, group_id)
 
 
-def _load_provider_config(provider_id: str, spec_dict: Dict[str, Any], logger: logging.Logger) -> Provider:
+def _load_provider_config(provider_id: str, spec_dict: Dict[str, Any]) -> Provider:
     """Load a single provider configuration."""
     # Resolve user if set to "current"
     user = spec_dict.get("user")
@@ -1167,14 +1132,19 @@ def _load_provider_config(provider_id: str, spec_dict: Dict[str, Any], logger: l
         tools=tools,
     )
     PROVIDERS[provider_id] = provider
+    logger.debug(
+        "provider_loaded",
+        provider_id=provider_id,
+        mode=spec_dict.get("mode", "subprocess"),
+    )
     return provider
 
 
-def _load_group_config(group_id: str, spec_dict: Dict[str, Any], logger: logging.Logger) -> None:
+def _load_group_config(group_id: str, spec_dict: Dict[str, Any], log: Any) -> None:
     """Load a provider group configuration."""
     global _GROUP_REBALANCE_SAGA
 
-    strategy = _parse_strategy(spec_dict.get("strategy", "round_robin"), group_id, logger)
+    strategy = _parse_strategy(spec_dict.get("strategy", "round_robin"), group_id)
     health_config = spec_dict.get("health", {})
     circuit_config = spec_dict.get("circuit_breaker", {})
 
@@ -1190,10 +1160,15 @@ def _load_group_config(group_id: str, spec_dict: Dict[str, Any], logger: logging
         description=spec_dict.get("description"),
     )
 
-    _load_group_members(group, group_id, spec_dict.get("members", []), logger)
+    _load_group_members(group, group_id, spec_dict.get("members", []))
 
     GROUPS[group_id] = group
-    logger.info(f"Loaded group {group_id} with {group.total_count} members, " f"strategy={strategy.value}")
+    logger.info(
+        "group_loaded",
+        group_id=group_id,
+        member_count=group.total_count,
+        strategy=strategy.value,
+    )
 
 
 def _parse_args():
@@ -1208,18 +1183,18 @@ def _parse_args():
     return parser.parse_args()
 
 
-def _ensure_data_dir(logger: logging.Logger) -> None:
+def _ensure_data_dir(log: Any) -> None:
     """Ensure data directory exists for persistent storage."""
     data_dir = Path("./data")
     if not data_dir.exists():
         try:
             data_dir.mkdir(mode=0o755, parents=True, exist_ok=True)
-            logger.info(f"Created data directory: {data_dir.absolute()}")
+            logger.info("data_directory_created", path=str(data_dir.absolute()))
         except OSError as e:
-            logger.warning(f"Could not create data directory: {e}")
+            logger.warning("data_directory_creation_failed", error=str(e))
 
 
-def _init_event_handlers(event_bus, security_handler, logger: logging.Logger) -> None:
+def _init_event_handlers(event_bus, security_handler, log: Any) -> None:
     """Initialize and register event handlers."""
     logging_handler = LoggingEventHandler()
     event_bus.subscribe_to_all(logging_handler.handle)
@@ -1235,17 +1210,20 @@ def _init_event_handlers(event_bus, security_handler, logger: logging.Logger) ->
 
     event_bus.subscribe_to_all(security_handler.handle)
 
-    logger.info("event_handlers_registered: logging, metrics, alert, audit, security")
+    logger.info(
+        "event_handlers_registered",
+        handlers=["logging", "metrics", "alert", "audit", "security"],
+    )
 
 
-def _init_cqrs(runtime, logger: logging.Logger) -> None:
+def _init_cqrs(runtime, log: Any) -> None:
     """Initialize CQRS command and query handlers."""
     register_command_handlers(runtime.command_bus, PROVIDER_REPOSITORY, runtime.event_bus)
     register_query_handlers(runtime.query_bus, PROVIDER_REPOSITORY)
     logger.info("cqrs_handlers_registered")
 
 
-def _init_saga(logger: logging.Logger) -> None:
+def _init_saga(log: Any) -> None:
     """Initialize group rebalance saga."""
     global _GROUP_REBALANCE_SAGA
     _GROUP_REBALANCE_SAGA = GroupRebalanceSaga(groups=GROUPS)
@@ -1254,13 +1232,13 @@ def _init_saga(logger: logging.Logger) -> None:
     logger.info("group_rebalance_saga_registered")
 
 
-async def _init_discovery(config: Dict[str, Any], logger: logging.Logger) -> None:
+async def _init_discovery(config: Dict[str, Any], log: Any) -> None:
     """Initialize provider discovery if enabled in config."""
     global _DISCOVERY_ORCHESTRATOR
 
     discovery_config = config.get("discovery", {})
     if not discovery_config.get("enabled", False):
-        logger.info("discovery_disabled: discovery not enabled in config")
+        logger.info("discovery_disabled")
         return
 
     logger.info("discovery_initializing")
@@ -1279,19 +1257,18 @@ async def _init_discovery(config: Dict[str, Any], logger: logging.Logger) -> Non
     for source_config in sources_config:
         source_type = source_config.get("type")
         try:
-            source = _create_discovery_source(source_type, source_config, logger)
+            source = _create_discovery_source(source_type, source_config)
             if source:
                 _DISCOVERY_ORCHESTRATOR.add_source(source)
         except ImportError as e:
-            logger.warning(f"discovery_source_unavailable: {source_type} - {e}")
+            logger.warning("discovery_source_unavailable", source_type=source_type, error=str(e))
         except Exception as e:
-            logger.error(f"discovery_source_error: {source_type} - {e}")
+            logger.error("discovery_source_error", source_type=source_type, error=str(e))
 
     # Set up registration callback
     async def on_register(provider):
         """Callback when discovery wants to register a provider."""
         try:
-
             conn_info = provider.connection_info
             mode = provider.mode
 
@@ -1303,7 +1280,11 @@ async def _init_discovery(config: Dict[str, Any], logger: logging.Logger) -> Non
             elif mode in ("subprocess", "docker", "remote"):
                 provider_mode = mode
             else:
-                logger.warning(f"Unknown mode '{mode}' for provider {provider.name}, skipping")
+                logger.warning(
+                    "unknown_provider_mode_skipping",
+                    mode=mode,
+                    provider_name=provider.name,
+                )
                 return False
 
             # Build provider kwargs based on mode
@@ -1317,7 +1298,10 @@ async def _init_discovery(config: Dict[str, Any], logger: logging.Logger) -> Non
                 # Container mode - need image
                 image = conn_info.get("image")
                 if not image:
-                    logger.warning(f"Container provider {provider.name} has no image, skipping")
+                    logger.warning(
+                        "container_provider_no_image_skipping",
+                        provider_name=provider.name,
+                    )
                     return False
                 provider_kwargs["image"] = image
                 # Use read_only from discovery labels, default to False for writable containers
@@ -1330,7 +1314,11 @@ async def _init_discovery(config: Dict[str, Any], logger: logging.Logger) -> Non
 
                 # If volumes already specified in labels, use them directly
                 if volumes:
-                    logger.info(f"Using volumes from labels for {provider.name}: {volumes}")
+                    logger.info(
+                        "using_volumes_from_labels",
+                        provider_name=provider.name,
+                        volumes=volumes,
+                    )
                 else:
                     # Auto-add persistent volumes for known stateful providers
                     provider_name_lower = provider.name.lower()
@@ -1343,7 +1331,11 @@ async def _init_discovery(config: Dict[str, Any], logger: logging.Logger) -> Non
                         # Podman rootless needs 777 permissions on host dirs
                         memory_dir.chmod(0o777)
                         volumes.append(f"{memory_dir}:/app/data:rw")
-                        logger.info(f"Auto-added memory volume for {provider.name}: {memory_dir}:/app/data")
+                        logger.info(
+                            "auto_added_memory_volume",
+                            provider_name=provider.name,
+                            volume=f"{memory_dir}:/app/data",
+                        )
 
                     elif "filesystem" in provider_name_lower:
                         # Filesystem provider needs access to data directory
@@ -1351,7 +1343,11 @@ async def _init_discovery(config: Dict[str, Any], logger: logging.Logger) -> Non
                         fs_dir.mkdir(parents=True, exist_ok=True)
                         fs_dir.chmod(0o777)
                         volumes.append(f"{fs_dir}:/data:rw")
-                        logger.info(f"Auto-added filesystem volume for {provider.name}: {fs_dir}:/data")
+                        logger.info(
+                            "auto_added_filesystem_volume",
+                            provider_name=provider.name,
+                            volume=f"{fs_dir}:/data",
+                        )
 
                 if volumes:
                     provider_kwargs["volumes"] = volumes
@@ -1366,14 +1362,20 @@ async def _init_discovery(config: Dict[str, Any], logger: logging.Logger) -> Non
                 elif host and port:
                     provider_kwargs["endpoint"] = f"http://{host}:{port}"
                 else:
-                    logger.warning(f"HTTP provider {provider.name} has no endpoint, skipping")
+                    logger.warning(
+                        "http_provider_no_endpoint_skipping",
+                        provider_name=provider.name,
+                    )
                     return False
 
             else:
                 # Subprocess mode - need command
                 command = conn_info.get("command")
                 if not command:
-                    logger.warning(f"Subprocess provider {provider.name} has no command, skipping")
+                    logger.warning(
+                        "subprocess_provider_no_command_skipping",
+                        provider_name=provider.name,
+                    )
                     return False
                 provider_kwargs["command"] = command
 
@@ -1381,10 +1383,18 @@ async def _init_discovery(config: Dict[str, Any], logger: logging.Logger) -> Non
 
             new_provider = Provider(**provider_kwargs)
             PROVIDERS[provider.name] = new_provider
-            logger.info(f"discovery_registered_provider: {provider.name} mode={provider_mode}")
+            logger.info(
+                "discovery_registered_provider",
+                provider_name=provider.name,
+                mode=provider_mode,
+            )
             return True
         except Exception as e:
-            logger.error(f"discovery_registration_failed: {provider.name} - {e}")
+            logger.error(
+                "discovery_registration_failed",
+                provider_name=provider.name,
+                error=str(e),
+            )
             return False
 
     async def on_deregister(name: str, reason: str):
@@ -1395,9 +1405,9 @@ async def _init_discovery(config: Dict[str, Any], logger: logging.Logger) -> Non
                 if provider:
                     provider.stop()
                 del PROVIDERS._repo._providers[name]  # Access internal storage
-                logger.info(f"discovery_deregistered_provider: {name} reason={reason}")
+                logger.info("discovery_deregistered_provider", provider_name=name, reason=reason)
         except Exception as e:
-            logger.error(f"discovery_deregistration_failed: {name} - {e}")
+            logger.error("discovery_deregistration_failed", provider_name=name, error=str(e))
 
     _DISCOVERY_ORCHESTRATOR.on_register = on_register
     _DISCOVERY_ORCHESTRATOR.on_deregister = on_deregister
@@ -1406,10 +1416,10 @@ async def _init_discovery(config: Dict[str, Any], logger: logging.Logger) -> Non
     await _DISCOVERY_ORCHESTRATOR.start()
 
     stats = _DISCOVERY_ORCHESTRATOR.get_stats()
-    logger.info(f"discovery_started: sources={stats['sources_count']}")
+    logger.info("discovery_started", sources_count=stats["sources_count"])
 
 
-def _create_discovery_source(source_type: str, config: Dict[str, Any], logger: logging.Logger):
+def _create_discovery_source(source_type: str, config: Dict[str, Any]):
     """Create a discovery source based on type and config."""
     from .domain.discovery import DiscoveryMode
 
@@ -1440,7 +1450,7 @@ def _create_discovery_source(source_type: str, config: Dict[str, Any], logger: l
         resolved_path = Path(path)
         if not resolved_path.is_absolute():
             resolved_path = Path.cwd() / resolved_path
-        logger.debug(f"Filesystem discovery path: {resolved_path}")
+        logger.debug("filesystem_discovery_path", path=str(resolved_path))
         return FilesystemDiscoverySource(
             mode=mode,
             path=str(resolved_path),
@@ -1455,11 +1465,11 @@ def _create_discovery_source(source_type: str, config: Dict[str, Any], logger: l
             group=config.get("group", "mcp.providers"),
         )
     else:
-        logger.warning(f"discovery_unknown_source_type: {source_type}")
+        logger.warning("discovery_unknown_source_type", source_type=source_type)
         return None
 
 
-def _load_configuration(logger: logging.Logger, config_path: Optional[str] = None) -> Dict[str, Any]:
+def _load_configuration(log: Any, config_path: Optional[str] = None) -> Dict[str, Any]:
     """Load provider configuration from file or use defaults.
 
     Returns:
@@ -1470,12 +1480,12 @@ def _load_configuration(logger: logging.Logger, config_path: Optional[str] = Non
         config_path = os.getenv("MCP_CONFIG", "config.yaml")
 
     if Path(config_path).exists():
-        logger.info(f"loading_config_from_file: {config_path}")
+        logger.info("loading_config_from_file", config_path=config_path)
         full_config = load_config_from_file(config_path)
         load_config(full_config.get("providers", {}))
         return full_config
     else:
-        logger.info(f"config_not_found: {config_path}, using_default_config")
+        logger.info("config_not_found_using_default", config_path=config_path)
         default_config = {
             "math_subprocess": {
                 "mode": "subprocess",
@@ -1487,7 +1497,7 @@ def _load_configuration(logger: logging.Logger, config_path: Optional[str] = Non
         return {"providers": default_config}
 
 
-def _start_background_workers(logger: logging.Logger) -> None:
+def _start_background_workers(log: Any) -> None:
     """Start GC and health check background workers."""
     gc_worker = BackgroundWorker(PROVIDERS, interval_s=30, task="gc")
     gc_worker.start()
@@ -1495,12 +1505,12 @@ def _start_background_workers(logger: logging.Logger) -> None:
     health_worker = BackgroundWorker(PROVIDERS, interval_s=60, task="health_check")
     health_worker.start()
 
-    logger.info("background_workers_started: gc, health_check")
+    logger.info("background_workers_started", workers=["gc", "health_check"])
 
 
-def _run_http_server(http_host: str, http_port: int, logger: logging.Logger) -> None:
+def _run_http_server(http_host: str, http_port: int, log: Any) -> None:
     """Run HTTP server mode."""
-    logger.info(f"Starting HTTP server on {http_host}:{http_port}")
+    logger.info("starting_http_server", host=http_host, port=http_port)
     from .fastmcp_server import run_fastmcp_server, setup_fastmcp_server
 
     setup_fastmcp_server(
@@ -1521,13 +1531,13 @@ def _run_http_server(http_host: str, http_port: int, logger: logging.Logger) -> 
     run_fastmcp_server()
 
 
-def _run_stdio_server(logger: logging.Logger) -> None:
+def _run_stdio_server(log: Any) -> None:
     """Run stdio server mode."""
-    logger.info("Starting stdio server (FastMCP)")
+    logger.info("starting_stdio_server")
     try:
         mcp.run()
     except Exception as e:
-        logger.error(f"mcp_server_error: {e}")
+        logger.error("mcp_server_error", error=str(e), error_type=type(e).__name__)
         import time
 
         while True:
@@ -1544,22 +1554,22 @@ def main():
     config_path = args.config  # May be None
 
     # Load config first to get logging settings
-    log_level = logging.INFO
+    log_level = "INFO"
     log_file = None
+    json_format = os.getenv("MCP_JSON_LOGS", "false").lower() == "true"
 
     if config_path and Path(config_path).exists():
         try:
             full_config = load_config_from_file(config_path)
             logging_config = full_config.get("logging", {})
-            level_str = logging_config.get("level", "INFO").upper()
-            log_level = getattr(logging, level_str, logging.INFO)
+            log_level = logging_config.get("level", "INFO").upper()
             log_file = logging_config.get("file")
+            json_format = logging_config.get("json_format", json_format)
         except Exception:
             pass  # Will use defaults
 
-    setup_logging(level=log_level, log_file=log_file)
-    logger = logging.getLogger(__name__)
-    logger.info(f"mcp_registry_starting mode={'http' if http_mode else 'stdio'}")
+    setup_logging(level=log_level, json_format=json_format, log_file=log_file)
+    logger.info("mcp_registry_starting", mode="http" if http_mode else "stdio")
 
     _ensure_data_dir(logger)
 
@@ -1575,8 +1585,9 @@ def main():
     _init_saga(logger)
 
     logger.info(
-        f"security_config: rate_limit_rps={runtime.rate_limit_config.requests_per_second}, "
-        f"burst_size={runtime.rate_limit_config.burst_size}"
+        "security_config_loaded",
+        rate_limit_rps=runtime.rate_limit_config.requests_per_second,
+        burst_size=runtime.rate_limit_config.burst_size,
     )
 
     # Load configuration and start workers
@@ -1586,21 +1597,17 @@ def main():
     # Initialize discovery if enabled
     import asyncio
 
-    try:
-        asyncio.get_event_loop().run_until_complete(_init_discovery(full_config, logger))
-    except RuntimeError:
-        # No event loop, create one
-        asyncio.run(_init_discovery(full_config, logger))
+    asyncio.run(_init_discovery(full_config, logger))
 
     # Log ready state
     provider_ids = list(PROVIDERS.keys())
     group_ids = list(GROUPS.keys())
     discovery_status = "enabled" if _DISCOVERY_ORCHESTRATOR else "disabled"
-    logger.info(f"mcp_registry_ready: providers={provider_ids}, groups={group_ids}, discovery={discovery_status}")
-    print(
-        f"mcp_registry_ready: providers={provider_ids}, groups={group_ids}, discovery={discovery_status}",
-        file=sys.stderr,
-        flush=True,
+    logger.info(
+        "mcp_registry_ready",
+        providers=provider_ids,
+        groups=group_ids,
+        discovery=discovery_status,
     )
 
     # Run server

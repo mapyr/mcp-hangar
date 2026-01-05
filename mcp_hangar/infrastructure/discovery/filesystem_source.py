@@ -25,14 +25,15 @@ Example Provider File:
 """
 
 import asyncio
-import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from mcp_hangar.domain.discovery.discovered_provider import DiscoveredProvider
 from mcp_hangar.domain.discovery.discovery_source import DiscoveryMode, DiscoverySource
 
-logger = logging.getLogger(__name__)
+from ...logging_config import get_logger
+
+logger = get_logger(__name__)
 
 # Optional dependencies
 try:
@@ -203,7 +204,11 @@ class FilesystemDiscoverySource(DiscoverySource):
         connection_info = self._parse_connection(connection, mode)
 
         # Parse metadata
-        metadata = {"file_path": str(file_path), "file_name": file_path.name, **data.get("metadata", {})}
+        metadata = {
+            "file_path": str(file_path),
+            "file_name": file_path.name,
+            **data.get("metadata", {}),
+        }
 
         return DiscoveredProvider.create(
             name=name,

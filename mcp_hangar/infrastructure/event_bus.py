@@ -3,13 +3,13 @@
 The event bus allows decoupled communication between components via domain events.
 """
 
-import logging
 import threading
 from typing import Callable, Dict, List, Type
 
 from mcp_hangar.domain.events import DomainEvent
+from mcp_hangar.logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class EventHandler:
@@ -92,25 +92,31 @@ class EventBus:
             all_handlers = self._handlers.get(DomainEvent, [])
             handlers = specific_handlers + all_handlers
 
-        logger.debug(f"Publishing {event.__class__.__name__} to {len(handlers)} handlers")
+        logger.debug(
+            "event_publishing",
+            event_type=event.__class__.__name__,
+            handlers_count=len(handlers),
+        )
 
         # Call handlers outside the lock
         for handler in handlers:
             try:
                 handler(event)
             except Exception as e:
-                logger.error(
-                    f"Error in event handler for {event.__class__.__name__}: {e}",
-                    exc_info=True,
+                logger.exception(
+                    "event_handler_error",
+                    event_type=event.__class__.__name__,
+                    error=str(e),
                 )
                 # Call error handlers
                 for error_handler in self._error_handlers:
                     try:
                         error_handler(e, event)
                     except Exception as eh:
-                        logger.error(
-                            f"Error in event bus error handler for {event.__class__.__name__}: {eh}",
-                            exc_info=True,
+                        logger.exception(
+                            "event_error_handler_failed",
+                            event_type=event.__class__.__name__,
+                            error=str(eh),
                         )
 
     def on_error(self, handler: Callable[[Exception, DomainEvent], None]) -> None:

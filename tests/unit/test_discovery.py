@@ -54,7 +54,11 @@ class TestDiscoveredProvider:
         """Test TTL expiration check."""
         # Create provider with 1 second TTL
         provider = DiscoveredProvider.create(
-            name="test", source_type="docker", mode="http", connection_info={}, ttl_seconds=1
+            name="test",
+            source_type="docker",
+            mode="http",
+            connection_info={},
+            ttl_seconds=1,
         )
 
         assert not provider.is_expired()
@@ -288,7 +292,12 @@ class TestConflictResolver:
 class MockDiscoverySource(DiscoverySource):
     """Mock discovery source for testing."""
 
-    def __init__(self, source_type: str = "mock", providers: list = None, mode: DiscoveryMode = DiscoveryMode.ADDITIVE):
+    def __init__(
+        self,
+        source_type: str = "mock",
+        providers: list = None,
+        mode: DiscoveryMode = DiscoveryMode.ADDITIVE,
+    ):
         super().__init__(mode)
         self._source_type = source_type
         self._providers = providers or []

@@ -6,12 +6,13 @@ quarantine management, and graceful deregistration.
 
 import asyncio
 from datetime import datetime, timezone
-import logging
 from typing import Awaitable, Callable, Dict, List, Optional, Set
 
 from mcp_hangar.domain.discovery.discovered_provider import DiscoveredProvider
 
-logger = logging.getLogger(__name__)
+from ...logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 # Type alias for registry callback
@@ -284,7 +285,11 @@ class DiscoveryLifecycleManager:
         Returns:
             Dictionary with counts
         """
-        return {"active": len(self._providers), "quarantined": len(self._quarantine), "draining": len(self._draining)}
+        return {
+            "active": len(self._providers),
+            "quarantined": len(self._quarantine),
+            "draining": len(self._draining),
+        }
 
     def get_expiring_soon(self, threshold_seconds: int = 30) -> List[DiscoveredProvider]:
         """Get providers expiring soon.

@@ -7,7 +7,6 @@ Manages discovery sources, validation, and integration with the registry.
 import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-import logging
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Set
 
 from mcp_hangar.domain.discovery.conflict_resolver import ConflictResolver
@@ -17,6 +16,7 @@ from mcp_hangar.domain.discovery.discovery_service import (
     DiscoveryService,
 )
 from mcp_hangar.domain.discovery.discovery_source import DiscoverySource
+from mcp_hangar.logging_config import get_logger
 
 # Import main metrics for unified observability
 from mcp_hangar import metrics as main_metrics
@@ -25,7 +25,7 @@ from .discovery_metrics import get_discovery_metrics
 from .lifecycle_manager import DiscoveryLifecycleManager
 from .security_validator import SecurityConfig, SecurityValidator
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -104,7 +104,11 @@ class DiscoveryOrchestrator:
         await orchestrator.start()
     """
 
-    def __init__(self, config: Optional[DiscoveryConfig] = None, static_providers: Optional[Set[str]] = None):
+    def __init__(
+        self,
+        config: Optional[DiscoveryConfig] = None,
+        static_providers: Optional[Set[str]] = None,
+    ):
         """Initialize discovery orchestrator.
 
         Args:
@@ -116,7 +120,8 @@ class DiscoveryOrchestrator:
         # Core components
         self._conflict_resolver = ConflictResolver(static_providers)
         self._discovery_service = DiscoveryService(
-            conflict_resolver=self._conflict_resolver, auto_register=self.config.auto_register
+            conflict_resolver=self._conflict_resolver,
+            auto_register=self.config.auto_register,
         )
         self._validator = SecurityValidator(self.config.security)
         self._lifecycle_manager = DiscoveryLifecycleManager(
@@ -310,7 +315,8 @@ class DiscoveryOrchestrator:
         validation_report = await self._validator.validate(provider)
 
         self._metrics.observe_validation_duration(
-            source=provider.source_type, duration_seconds=validation_report.duration_ms / 1000
+            source=provider.source_type,
+            duration_seconds=validation_report.duration_ms / 1000,
         )
 
         if not validation_report.is_passed:
@@ -318,7 +324,8 @@ class DiscoveryOrchestrator:
             logger.warning(f"Provider '{provider.name}' failed validation: {validation_report.reason}")
 
             self._metrics.inc_validation_failures(
-                source=provider.source_type, validation_type=validation_report.result.value
+                source=provider.source_type,
+                validation_type=validation_report.result.value,
             )
 
             if self.config.security.quarantine_on_failure:
@@ -397,7 +404,11 @@ class DiscoveryOrchestrator:
         """
         quarantined = self._lifecycle_manager.get_quarantined()
         return {
-            name: {"provider": provider.to_dict(), "reason": reason, "quarantine_time": qtime.isoformat()}
+            name: {
+                "provider": provider.to_dict(),
+                "reason": reason,
+                "quarantine_time": qtime.isoformat(),
+            }
             for name, (provider, reason, qtime) in quarantined.items()
         }
 
@@ -426,7 +437,11 @@ class DiscoveryOrchestrator:
 
             return {"approved": True, "provider": name, "status": "registered"}
 
-        return {"approved": False, "provider": name, "error": "Provider not found in quarantine"}
+        return {
+            "approved": False,
+            "provider": name,
+            "error": "Provider not found in quarantine",
+        }
 
     async def reject_provider(self, name: str) -> Dict[str, Any]:
         """Reject a quarantined provider.
@@ -442,7 +457,11 @@ class DiscoveryOrchestrator:
         if provider:
             return {"rejected": True, "provider": name}
 
-        return {"rejected": False, "provider": name, "error": "Provider not found in quarantine"}
+        return {
+            "rejected": False,
+            "provider": name,
+            "error": "Provider not found in quarantine",
+        }
 
     async def get_sources_status(self) -> List[Dict[str, Any]]:
         """Get status of all discovery sources.

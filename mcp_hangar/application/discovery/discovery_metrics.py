@@ -5,11 +5,12 @@ Tracks discovery cycles, registrations, conflicts, and validation times.
 """
 
 from functools import wraps
-import logging
 import time
 from typing import Callable
 
-logger = logging.getLogger(__name__)
+from ...logging_config import get_logger
+
+logger = get_logger(__name__)
 
 # Optional prometheus dependency
 try:
@@ -18,7 +19,7 @@ try:
     PROMETHEUS_AVAILABLE = True
 except ImportError:
     PROMETHEUS_AVAILABLE = False
-    logger.debug("prometheus_client not installed, metrics will be no-ops")
+    # Note: No logging here - module is imported before setup_logging() is called
 
 
 class DiscoveryMetrics:
@@ -50,16 +51,22 @@ class DiscoveryMetrics:
 
         # Gauges
         self.providers_total = Gauge(
-            f"{prefix}_providers_total", "Number of discovered providers", ["source", "status"]
+            f"{prefix}_providers_total",
+            "Number of discovered providers",
+            ["source", "status"],
         )
 
         # Counters
         self.registrations_total = Counter(
-            f"{prefix}_registrations_total", "Total provider registrations from discovery", ["source"]
+            f"{prefix}_registrations_total",
+            "Total provider registrations from discovery",
+            ["source"],
         )
 
         self.deregistrations_total = Counter(
-            f"{prefix}_deregistrations_total", "Total provider deregistrations", ["source", "reason"]
+            f"{prefix}_deregistrations_total",
+            "Total provider deregistrations",
+            ["source", "reason"],
         )
 
         self.errors_total = Counter(f"{prefix}_errors_total", "Total discovery errors", ["source", "error_type"])
@@ -69,7 +76,9 @@ class DiscoveryMetrics:
         self.quarantine_total = Counter(f"{prefix}_quarantine_total", "Total quarantined providers", ["reason"])
 
         self.validation_failures_total = Counter(
-            f"{prefix}_validation_failures_total", "Total validation failures", ["source", "validation_type"]
+            f"{prefix}_validation_failures_total",
+            "Total validation failures",
+            ["source", "validation_type"],
         )
 
         # Histograms

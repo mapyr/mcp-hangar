@@ -8,8 +8,9 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from ...domain.events import DomainEvent
+from ...logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

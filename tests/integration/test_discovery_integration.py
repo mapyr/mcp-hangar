@@ -24,9 +24,9 @@ sys.path.insert(0, str(project_root))
 
 def print_header(text: str):
     """Print a section header."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  {text}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
 
 def print_result(test_name: str, passed: bool, details: str = ""):
@@ -215,7 +215,11 @@ async def run_filesystem_discovery_source():
     # Test discovery
     providers = await source.discover()
 
-    print_result("Discovers providers from YAML files", len(providers) >= 2, f"found {len(providers)} providers")
+    print_result(
+        "Discovers providers from YAML files",
+        len(providers) >= 2,
+        f"found {len(providers)} providers",
+    )
 
     # List discovered providers
     for p in providers:
@@ -288,7 +292,11 @@ async def run_discovery_service():
     # Check registered providers
     registered = service.get_registered_providers()
 
-    print_result("Providers are registered", len(registered) == 2, f"registered providers: {list(registered.keys())}")
+    print_result(
+        "Providers are registered",
+        len(registered) == 2,
+        f"registered providers: {list(registered.keys())}",
+    )
 
     return True
 
@@ -326,17 +334,29 @@ async def run_discovery_orchestrator():
 
     orchestrator.add_source(MockSource())
 
-    print_result("Orchestrator created with source", True, f"sources={orchestrator.get_stats()['sources_count']}")
+    print_result(
+        "Orchestrator created with source",
+        True,
+        f"sources={orchestrator.get_stats()['sources_count']}",
+    )
 
     # Run discovery
     result = await orchestrator.trigger_discovery()
 
-    print_result("Discovery triggered successfully", result.get("discovered_count", 0) >= 0, f"result={result}")
+    print_result(
+        "Discovery triggered successfully",
+        result.get("discovered_count", 0) >= 0,
+        f"result={result}",
+    )
 
     # Check sources status
     sources = await orchestrator.get_sources_status()
 
-    print_result("Source status available", len(sources) == 1, f"sources={[s['source_type'] for s in sources]}")
+    print_result(
+        "Source status available",
+        len(sources) == 1,
+        f"sources={[s['source_type'] for s in sources]}",
+    )
 
     return True
 
@@ -374,7 +394,9 @@ async def run_security_validator():
     result = await validator.validate(valid_provider)
 
     print_result(
-        "Valid provider passes validation", result.result == ValidationResult.PASSED, f"result={result.result.value}"
+        "Valid provider passes validation",
+        result.result == ValidationResult.PASSED,
+        f"result={result.result.value}",
     )
 
     # Test denied namespace
@@ -427,13 +449,19 @@ async def run_lifecycle_manager():
 
     quarantined = manager.get_quarantined()
 
-    print_result("Provider quarantined", "lifecycle-test" in quarantined, f"quarantined={list(quarantined.keys())}")
+    print_result(
+        "Provider quarantined",
+        "lifecycle-test" in quarantined,
+        f"quarantined={list(quarantined.keys())}",
+    )
 
     # Test approval
     approved = manager.approve("lifecycle-test")
 
     print_result(
-        "Provider approved from quarantine", approved is not None, f"approved={approved.name if approved else None}"
+        "Provider approved from quarantine",
+        approved is not None,
+        f"approved={approved.name if approved else None}",
     )
 
     return True
@@ -483,12 +511,20 @@ async def run_full_integration():
     # Check pending (should be empty with auto_register=True)
     pending = orchestrator.get_pending_providers()
 
-    print_result("No pending providers (auto_register=True)", len(pending) == 0, f"pending={len(pending)}")
+    print_result(
+        "No pending providers (auto_register=True)",
+        len(pending) == 0,
+        f"pending={len(pending)}",
+    )
 
     # Check quarantine (should be empty for valid providers)
     quarantined = orchestrator.get_quarantined()
 
-    print_result("No quarantined providers", len(quarantined) == 0, f"quarantined={len(quarantined)}")
+    print_result(
+        "No quarantined providers",
+        len(quarantined) == 0,
+        f"quarantined={len(quarantined)}",
+    )
 
     return True
 

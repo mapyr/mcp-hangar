@@ -21,7 +21,6 @@ Label Reference:
     mcp.hangar.volumes: "/data:/data"    # Optional - additional volumes
 """
 
-import logging
 import os
 from pathlib import Path
 import platform
@@ -30,7 +29,9 @@ from typing import List, Optional
 from mcp_hangar.domain.discovery.discovered_provider import DiscoveredProvider
 from mcp_hangar.domain.discovery.discovery_source import DiscoveryMode, DiscoverySource
 
-logger = logging.getLogger(__name__)
+from ...logging_config import get_logger
+
+logger = get_logger(__name__)
 
 # Optional Docker dependency (works with Podman too via Docker API compatibility)
 try:

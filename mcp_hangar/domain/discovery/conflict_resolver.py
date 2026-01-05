@@ -9,12 +9,12 @@ This ensures explicit operator intent is never overridden by automated discovery
 
 from dataclasses import dataclass
 from enum import Enum
-import logging
 from typing import Dict, Optional, Set
 
+from ...logging_config import get_logger
 from .discovered_provider import DiscoveredProvider
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ConflictResolution(Enum):
@@ -132,7 +132,9 @@ class ConflictResolver:
                 f"Static wins. Discovery from {provider.source_type} ignored."
             )
             return ConflictResult(
-                resolution=ConflictResolution.STATIC_WINS, winner=None, reason="Static configuration takes precedence"
+                resolution=ConflictResolution.STATIC_WINS,
+                winner=None,
+                reason="Static configuration takes precedence",
             )
 
         # Rule 2: Check existing registered providers
@@ -153,7 +155,9 @@ class ConflictResolver:
                     f"(fingerprint {existing.fingerprint} -> {provider.fingerprint})"
                 )
                 return ConflictResult(
-                    resolution=ConflictResolution.UPDATED, winner=provider, reason="Provider configuration updated"
+                    resolution=ConflictResolution.UPDATED,
+                    winner=provider,
+                    reason="Provider configuration updated",
                 )
 
             # Different source = check priority
@@ -184,7 +188,9 @@ class ConflictResolver:
         # No conflict - new provider
         logger.info(f"New provider discovered: {provider.name} from {provider.source_type}")
         return ConflictResult(
-            resolution=ConflictResolution.REGISTERED, winner=provider, reason="New provider registered"
+            resolution=ConflictResolution.REGISTERED,
+            winner=provider,
+            reason="New provider registered",
         )
 
     def register(self, provider: DiscoveredProvider) -> None:

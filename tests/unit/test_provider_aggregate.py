@@ -340,8 +340,16 @@ class TestProviderPredefinedTools:
     def test_create_provider_with_predefined_tools(self):
         """Test creating a provider with pre-defined tools."""
         tools = [
-            {"name": "add", "description": "Add numbers", "inputSchema": {"type": "object"}},
-            {"name": "multiply", "description": "Multiply numbers", "inputSchema": {"type": "object"}},
+            {
+                "name": "add",
+                "description": "Add numbers",
+                "inputSchema": {"type": "object"},
+            },
+            {
+                "name": "multiply",
+                "description": "Multiply numbers",
+                "inputSchema": {"type": "object"},
+            },
         ]
         provider = Provider(
             provider_id="test",

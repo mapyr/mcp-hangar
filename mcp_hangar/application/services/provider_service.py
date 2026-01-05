@@ -1,14 +1,14 @@
 """Provider application service - orchestrates use cases."""
 
-import logging
 from typing import Any, Dict, List
 
 from ...domain.exceptions import ProviderNotFoundError
 from ...domain.model import Provider
 from ...domain.repository import IProviderRepository
 from ...infrastructure.event_bus import EventBus
+from ...logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ProviderService:

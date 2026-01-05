@@ -14,13 +14,14 @@ Example Pod Annotations:
     mcp.hangar.io/health-path: "/health"
 """
 
-import logging
 from typing import List, Optional
 
 from mcp_hangar.domain.discovery.discovered_provider import DiscoveredProvider
 from mcp_hangar.domain.discovery.discovery_source import DiscoveryMode, DiscoverySource
 
-logger = logging.getLogger(__name__)
+from ...logging_config import get_logger
+
+logger = get_logger(__name__)
 
 # Optional Kubernetes dependency
 try:
@@ -175,7 +176,11 @@ class KubernetesDiscoverySource(DiscoverySource):
             return None
 
         # Build connection info
-        connection_info = {"host": pod_ip, "port": int(port), "health_path": health_path}
+        connection_info = {
+            "host": pod_ip,
+            "port": int(port),
+            "health_path": health_path,
+        }
 
         # Handle subprocess mode
         if mode == "subprocess" or mode == "stdio":

@@ -3,17 +3,17 @@
 Stores providers by persisting their domain events and rebuilding state on load.
 """
 
-import logging
 import threading
 from typing import Any, Dict, List, Optional
 
 from ..domain.events import DomainEvent
 from ..domain.model.event_sourced_provider import EventSourcedProvider, ProviderSnapshot
 from ..domain.repository import IProviderRepository, ProviderLike
+from ..logging_config import get_logger
 from .event_bus import EventBus, get_event_bus
 from .event_store import EventStore, EventStoreSnapshot, get_event_store, StoredEvent
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ProviderConfigStore:

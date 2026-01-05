@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass
 import json
-import logging
 from queue import Empty, Queue
 import subprocess
 import threading
@@ -11,8 +10,9 @@ from typing import Any, Dict
 import uuid
 
 from .domain.exceptions import ClientError
+from .logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -49,13 +49,13 @@ class StdioClient:
         Read stdout and dispatch responses to waiting callers.
         Runs in a dedicated daemon thread.
         """
-        logger.info(f"stdio_client: reader_loop started, process pid={self.process.pid}")
+        logger.info("stdio_client_reader_started", pid=self.process.pid)
         while not self.closed:
             try:
                 line = self.process.stdout.readline()
                 if not line:
                     # EOF reached, process died
-                    logger.warning("stdio_client: EOF on stdout, process died")
+                    logger.warning("stdio_client_eof_on_stdout")
                     self._capture_process_stderr()
                     break
 
@@ -66,7 +66,7 @@ class StdioClient:
                 try:
                     msg = json.loads(line)
                 except json.JSONDecodeError as e:
-                    logger.error(f"stdio_client: malformed JSON: {line[:100]}, error={e}")
+                    logger.error("stdio_client_malformed_json", preview=line[:100], error=str(e))
                     continue
 
                 msg_id = msg.get("id")
@@ -79,13 +79,13 @@ class StdioClient:
                     if pending:
                         pending.result_queue.put(msg)
                     else:
-                        logger.warning(f"stdio_client: received response for unknown request: {msg_id}")
+                        logger.warning("stdio_client_unknown_request", request_id=msg_id)
                 else:
                     # Unsolicited notification - log and ignore
-                    logger.debug(f"stdio_client: unsolicited notification: {msg}")
+                    logger.debug("stdio_client_notification", message=msg)
 
             except Exception as e:
-                logger.error(f"stdio_client: reader loop error: {e}")
+                logger.error("stdio_client_reader_error", error=str(e))
                 break
 
         # Clean up on exit
@@ -97,7 +97,7 @@ class StdioClient:
             # Log exit code
             rc = self.process.poll()
             if rc is not None:
-                logger.error(f"stdio_client: process exited with code {rc}")
+                logger.error("stdio_client_process_exited", exit_code=rc)
 
             # Try to read stderr if available
             stderr = getattr(self.process, "stderr", None)
@@ -113,11 +113,11 @@ class StdioClient:
                             # Log first 2000 chars to avoid log spam
                             if len(err_text) > 2000:
                                 err_text = err_text[:2000] + "... (truncated)"
-                            logger.error(f"stdio_client: process stderr:\n{err_text}")
+                            logger.error("stdio_client_process_stderr", stderr=err_text)
                 except Exception as read_err:
-                    logger.debug(f"stdio_client: could not read stderr: {read_err}")
+                    logger.debug("stdio_client_stderr_read_failed", error=str(read_err))
         except Exception as e:
-            logger.debug(f"stdio_client: error capturing process info: {e}")
+            logger.debug("stdio_client_capture_error", error=str(e))
 
     def _cleanup_pending(self, error_msg: str):
         """Clean up all pending requests on shutdown or error."""
@@ -163,13 +163,16 @@ class StdioClient:
         try:
             request_str = json.dumps(request) + "\n"
             logger.info(
-                f"stdio_client: sending request method={method}, pid={self.process.pid}, alive={self.process.poll() is None}"
+                "stdio_client_sending_request",
+                method=method,
+                pid=self.process.pid,
+                alive=self.process.poll() is None,
             )
             self.process.stdin.write(request_str)
             self.process.stdin.flush()
-            logger.info("stdio_client: request sent successfully")
+            logger.debug("stdio_client_request_sent")
         except Exception as e:
-            logger.error(f"stdio_client: write failed: {e}")
+            logger.error("stdio_client_write_failed", error=str(e))
             with self.pending_lock:
                 self.pending.pop(request_id, None)
             raise ClientError(f"write_failed: {e}")
@@ -200,7 +203,7 @@ class StdioClient:
         try:
             self.call("shutdown", {}, timeout=3.0)
         except Exception as e:
-            logger.debug(f"stdio_client: shutdown RPC failed (expected): {e}")
+            logger.debug("stdio_client_shutdown_rpc_failed", error=str(e))
 
         # Terminate process
         try:
@@ -209,11 +212,11 @@ class StdioClient:
                 try:
                     self.process.wait(timeout=5.0)
                 except subprocess.TimeoutExpired:
-                    logger.warning("stdio_client: process didn't terminate, killing")
+                    logger.warning("stdio_client_process_terminate_timeout")
                     self.process.kill()
                     self.process.wait()
         except Exception as e:
-            logger.error(f"stdio_client: error during process cleanup: {e}")
+            logger.error("stdio_client_cleanup_error", error=str(e))
 
         # Clean up any remaining pending requests
         self._cleanup_pending("client_closed")

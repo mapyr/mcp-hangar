@@ -6,14 +6,14 @@ and applies business rules for registration and lifecycle management.
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-import logging
 from typing import Dict, List, Optional, Set
 
+from ...logging_config import get_logger
 from .conflict_resolver import ConflictResolution, ConflictResolver
 from .discovered_provider import DiscoveredProvider
 from .discovery_source import DiscoveryMode, DiscoverySource
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -83,7 +83,7 @@ class SourceStatus:
             "mode": self.mode.value,
             "is_healthy": self.is_healthy,
             "is_enabled": self.is_enabled,
-            "last_discovery": self.last_discovery.isoformat() if self.last_discovery else None,
+            "last_discovery": (self.last_discovery.isoformat() if self.last_discovery else None),
             "providers_count": self.providers_count,
             "error_message": self.error_message,
         }
@@ -104,7 +104,11 @@ class DiscoveryService:
         - Manage pending and quarantined providers
     """
 
-    def __init__(self, conflict_resolver: Optional[ConflictResolver] = None, auto_register: bool = True):
+    def __init__(
+        self,
+        conflict_resolver: Optional[ConflictResolver] = None,
+        auto_register: bool = True,
+    ):
         """Initialize discovery service.
 
         Args:
@@ -140,7 +144,10 @@ class DiscoveryService:
         self._sources[source_type] = source
         self._providers_by_source[source_type] = set()
         self._source_status[source_type] = SourceStatus(
-            source_type=source_type, mode=source.mode, is_healthy=False, is_enabled=source.is_enabled
+            source_type=source_type,
+            mode=source.mode,
+            is_healthy=False,
+            is_enabled=source.is_enabled,
         )
 
         logger.info(f"Registered discovery source: {source_type} (mode={source.mode})")

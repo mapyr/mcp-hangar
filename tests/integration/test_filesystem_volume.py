@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Test filesystem volume persistence."""
+
 from pathlib import Path
 import sys
 
@@ -24,28 +25,39 @@ def test_filesystem_volume():
     print(f"Volumes: {volumes}")
 
     client = launcher.launch(
-        image="mcp-filesystem:latest", volumes=volumes, read_only=False, network="none", memory_limit="256m"
+        image="mcp-filesystem:latest",
+        volumes=volumes,
+        read_only=False,
+        network="none",
+        memory_limit="256m",
     )
     print("Container started!")
 
     resp = client.call(
         "initialize",
-        {"protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "test", "version": "1.0"}},
+        {
+            "protocolVersion": "2024-11-05",
+            "capabilities": {},
+            "clientInfo": {"name": "test", "version": "1.0"},
+        },
         timeout=10,
     )
-    print(f'Init: {resp.get("result", {}).get("serverInfo", {})}')
+    print(f"Init: {resp.get('result', {}).get('serverInfo', {})}")
 
     write_resp = client.call(
         "tools/call",
         {
             "name": "write_file",
-            "arguments": {"path": "/data/test_persistence.txt", "content": "This file should persist!"},
+            "arguments": {
+                "path": "/data/test_persistence.txt",
+                "content": "This file should persist!",
+            },
         },
         timeout=10,
     )
 
     if "error" in write_resp:
-        print(f'Write ERROR: {write_resp["error"]}')
+        print(f"Write ERROR: {write_resp['error']}")
     else:
         print("Write: OK")
 

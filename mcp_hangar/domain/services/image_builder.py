@@ -2,16 +2,16 @@
 
 from dataclasses import dataclass
 import hashlib
-import logging
 import os
 from pathlib import Path
 import shutil
 import subprocess
 from typing import Optional
 
+from ...logging_config import get_logger
 from ..exceptions import ProviderStartError
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

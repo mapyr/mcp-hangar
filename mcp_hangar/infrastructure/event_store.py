@@ -6,15 +6,15 @@ Provides append-only storage of domain events with optimistic concurrency contro
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 import json
-import logging
 from pathlib import Path
 import threading
 import time
 from typing import Any, Callable, Dict, List, Optional
 
 from ..domain.events import DomainEvent
+from ..logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

@@ -13,13 +13,14 @@ Validation Pipeline:
 import asyncio
 from dataclasses import dataclass, field
 from enum import Enum
-import logging
 import time
 from typing import Any, Dict, List, Optional, Set
 
 from mcp_hangar.domain.discovery.discovered_provider import DiscoveredProvider
 
-logger = logging.getLogger(__name__)
+from ...logging_config import get_logger
+
+logger = get_logger(__name__)
 
 # Optional aiohttp dependency
 try:
@@ -28,7 +29,7 @@ try:
     AIOHTTP_AVAILABLE = True
 except ImportError:
     AIOHTTP_AVAILABLE = False
-    logger.debug("aiohttp not installed, health checks will be limited")
+    # Note: No logging here - module is imported before setup_logging() is called
 
 
 class ValidationResult(Enum):
@@ -224,7 +225,10 @@ class SecurityValidator:
                     result=ValidationResult.FAILED_SOURCE,
                     provider=provider,
                     reason=f"Namespace '{namespace}' is in denied list",
-                    details={"namespace": namespace, "denied_namespaces": list(self.config.denied_namespaces)},
+                    details={
+                        "namespace": namespace,
+                        "denied_namespaces": list(self.config.denied_namespaces),
+                    },
                 )
 
             # If allowed list is specified, check it
@@ -233,7 +237,10 @@ class SecurityValidator:
                     result=ValidationResult.FAILED_SOURCE,
                     provider=provider,
                     reason=f"Namespace '{namespace}' is not in allowed list",
-                    details={"namespace": namespace, "allowed_namespaces": list(self.config.allowed_namespaces)},
+                    details={
+                        "namespace": namespace,
+                        "allowed_namespaces": list(self.config.allowed_namespaces),
+                    },
                 )
 
         return None
