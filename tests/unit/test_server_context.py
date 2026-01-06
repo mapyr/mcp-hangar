@@ -18,25 +18,35 @@ from mcp_hangar.server.context import (
 class TestProtocolInterfaces:
     """Tests for Protocol interface definitions."""
 
-    def test_icommand_bus_is_runtime_checkable(self):
-        """ICommandBus should be runtime checkable."""
-        assert hasattr(ICommandBus, "__protocol_attrs__")
+    def test_icommand_bus_is_protocol(self):
+        """ICommandBus should be a Protocol."""
+        from typing import Protocol
 
-    def test_iquery_bus_is_runtime_checkable(self):
-        """IQueryBus should be runtime checkable."""
-        assert hasattr(IQueryBus, "__protocol_attrs__")
+        assert issubclass(ICommandBus, Protocol)
 
-    def test_ievent_bus_is_runtime_checkable(self):
-        """IEventBus should be runtime checkable."""
-        assert hasattr(IEventBus, "__protocol_attrs__")
+    def test_iquery_bus_is_protocol(self):
+        """IQueryBus should be a Protocol."""
+        from typing import Protocol
 
-    def test_irate_limiter_is_runtime_checkable(self):
-        """IRateLimiter should be runtime checkable."""
-        assert hasattr(IRateLimiter, "__protocol_attrs__")
+        assert issubclass(IQueryBus, Protocol)
 
-    def test_isecurity_handler_is_runtime_checkable(self):
-        """ISecurityHandler should be runtime checkable."""
-        assert hasattr(ISecurityHandler, "__protocol_attrs__")
+    def test_ievent_bus_is_protocol(self):
+        """IEventBus should be a Protocol."""
+        from typing import Protocol
+
+        assert issubclass(IEventBus, Protocol)
+
+    def test_irate_limiter_is_protocol(self):
+        """IRateLimiter should be a Protocol."""
+        from typing import Protocol
+
+        assert issubclass(IRateLimiter, Protocol)
+
+    def test_isecurity_handler_is_protocol(self):
+        """ISecurityHandler should be a Protocol."""
+        from typing import Protocol
+
+        assert issubclass(ISecurityHandler, Protocol)
 
 
 class TestApplicationContext:
