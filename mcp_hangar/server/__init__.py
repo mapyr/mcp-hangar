@@ -113,6 +113,7 @@ def _init_event_handlers() -> None:
 
     # Knowledge base handler (PostgreSQL persistence)
     from ..application.event_handlers.knowledge_base_handler import KnowledgeBaseEventHandler
+
     kb_handler = KnowledgeBaseEventHandler()
     runtime.event_bus.subscribe_to_all(kb_handler.handle)
 

@@ -1,8 +1,8 @@
 """SQLite implementation of IKnowledgeBase."""
 
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -137,9 +137,7 @@ class SQLiteKnowledgeBase(IKnowledgeBase):
         """Run pending migrations."""
         # Get current version
         try:
-            async with db.execute(
-                "SELECT MAX(version) FROM schema_migrations"
-            ) as cursor:
+            async with db.execute("SELECT MAX(version) FROM schema_migrations") as cursor:
                 row = await cursor.fetchone()
                 current_version = row[0] if row and row[0] else 0
         except Exception:
@@ -163,9 +161,7 @@ class SQLiteKnowledgeBase(IKnowledgeBase):
             await db.commit()
 
         # Get final version
-        async with db.execute(
-            "SELECT MAX(version) FROM schema_migrations"
-        ) as cursor:
+        async with db.execute("SELECT MAX(version) FROM schema_migrations") as cursor:
             row = await cursor.fetchone()
             final_version = row[0] if row and row[0] else 0
 
@@ -193,9 +189,7 @@ class SQLiteKnowledgeBase(IKnowledgeBase):
 
     # === Cache Operations ===
 
-    async def cache_get(
-        self, provider: str, tool: str, arguments: dict
-    ) -> Optional[dict]:
+    async def cache_get(self, provider: str, tool: str, arguments: dict) -> Optional[dict]:
         args_hash = self._hash_arguments(arguments)
         now = datetime.now(timezone.utc).isoformat()
 
@@ -249,9 +243,7 @@ class SQLiteKnowledgeBase(IKnowledgeBase):
             logger.warning("cache_set_failed", error=str(e))
             return False
 
-    async def cache_invalidate(
-        self, provider: Optional[str] = None, tool: Optional[str] = None
-    ) -> int:
+    async def cache_invalidate(self, provider: Optional[str] = None, tool: Optional[str] = None) -> int:
         try:
             async with aiosqlite.connect(self._db_path) as db:
                 if provider and tool:
@@ -260,9 +252,7 @@ class SQLiteKnowledgeBase(IKnowledgeBase):
                         (provider, tool),
                     )
                 elif provider:
-                    cursor = await db.execute(
-                        "DELETE FROM tool_cache WHERE provider = ?", (provider,)
-                    )
+                    cursor = await db.execute("DELETE FROM tool_cache WHERE provider = ?", (provider,))
                 else:
                     cursor = await db.execute("DELETE FROM tool_cache")
                 await db.commit()
@@ -276,9 +266,7 @@ class SQLiteKnowledgeBase(IKnowledgeBase):
 
         try:
             async with aiosqlite.connect(self._db_path) as db:
-                cursor = await db.execute(
-                    "DELETE FROM tool_cache WHERE expires_at < ?", (now,)
-                )
+                cursor = await db.execute("DELETE FROM tool_cache WHERE expires_at < ?", (now,))
                 await db.commit()
                 logger.info("cache_cleanup", deleted=cursor.rowcount)
                 return cursor.rowcount
@@ -430,9 +418,7 @@ class SQLiteKnowledgeBase(IKnowledgeBase):
             logger.warning("record_state_failed", error=str(e))
             return False
 
-    async def get_state_history(
-        self, provider_id: str, limit: int = 100
-    ) -> list[ProviderStateEntry]:
+    async def get_state_history(self, provider_id: str, limit: int = 100) -> list[ProviderStateEntry]:
         try:
             async with aiosqlite.connect(self._db_path) as db:
                 async with db.execute(
@@ -529,4 +515,3 @@ class SQLiteKnowledgeBase(IKnowledgeBase):
         except Exception as e:
             logger.warning("get_metrics_failed", error=str(e))
             return []
-

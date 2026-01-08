@@ -121,9 +121,7 @@ class IKnowledgeBase(ABC):
     # === Cache Operations ===
 
     @abstractmethod
-    async def cache_get(
-        self, provider: str, tool: str, arguments: dict
-    ) -> Optional[dict]:
+    async def cache_get(self, provider: str, tool: str, arguments: dict) -> Optional[dict]:
         """Get cached tool result. Returns None if not found or expired."""
         pass
 
@@ -140,9 +138,7 @@ class IKnowledgeBase(ABC):
         pass
 
     @abstractmethod
-    async def cache_invalidate(
-        self, provider: Optional[str] = None, tool: Optional[str] = None
-    ) -> int:
+    async def cache_invalidate(self, provider: Optional[str] = None, tool: Optional[str] = None) -> int:
         """Invalidate cache entries. Returns count of invalidated entries."""
         pass
 
@@ -183,9 +179,7 @@ class IKnowledgeBase(ABC):
         pass
 
     @abstractmethod
-    async def get_state_history(
-        self, provider_id: str, limit: int = 100
-    ) -> list[ProviderStateEntry]:
+    async def get_state_history(self, provider_id: str, limit: int = 100) -> list[ProviderStateEntry]:
         """Get provider state history."""
         pass
 
@@ -206,4 +200,3 @@ class IKnowledgeBase(ABC):
     ) -> list[MetricEntry]:
         """Get provider metrics."""
         pass
-

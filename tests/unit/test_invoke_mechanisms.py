@@ -32,10 +32,7 @@ class TestExtractErrorText:
 
     def test_extract_from_multiple_items(self):
         """Test extracting error from multiple content items."""
-        content = [
-            {"type": "text", "text": "Error:"},
-            {"type": "text", "text": "division by zero"}
-        ]
+        content = [{"type": "text", "text": "Error:"}, {"type": "text", "text": "division by zero"}]
         result = _extract_error_text(content)
         assert "Error:" in result
         assert "division by zero" in result
@@ -207,8 +204,6 @@ class TestInvokeResponseParity:
 
     def test_success_response_keys(self):
         """Test successful response has consistent keys."""
-        # Expected keys for success
-        required_keys = {"_retry_metadata", "_progress"}
 
         # Simulate invoke_ex response
         invoke_ex_response = {
@@ -243,7 +238,9 @@ class TestInvokeResponseParity:
         }
 
         # Both should have same metadata keys
-        assert set(invoke_ex_response["_retry_metadata"].keys()) == set(invoke_stream_response["_retry_metadata"].keys())
+        assert set(invoke_ex_response["_retry_metadata"].keys()) == set(
+            invoke_stream_response["_retry_metadata"].keys()
+        )
 
         # Both should have _progress
         assert "_progress" in invoke_ex_response
@@ -429,5 +426,3 @@ class TestProviderReturnedErrorEnrichment:
         assert expected_response["_retry_metadata"]["final_error_reason"].startswith("permanent:")
         assert isinstance(expected_response["_retry_metadata"]["recovery_hints"], list)
         assert len(expected_response["_retry_metadata"]["recovery_hints"]) > 0
-
-

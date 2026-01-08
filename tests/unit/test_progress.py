@@ -1,22 +1,19 @@
 """Tests for progress tracking module."""
 
 import asyncio
-import time
 import threading
-from unittest.mock import MagicMock
+import time
 
 import pytest
 
 from mcp_hangar.progress import (
-    ProgressStage,
-    ProgressEvent,
-    EventType,
-    ProgressTracker,
-    ProgressOperation,
-    ProgressCallback,
     create_progress_tracker,
+    EventType,
     get_stage_message,
-    PROGRESS_MESSAGES,
+    ProgressEvent,
+    ProgressOperation,
+    ProgressStage,
+    ProgressTracker,
 )
 
 
@@ -433,11 +430,13 @@ class TestProgressCallbackTypes:
         received_args = []
 
         def callback(stage, message, elapsed_ms):
-            received_args.append({
-                "stage": stage,
-                "message": message,
-                "elapsed_ms": elapsed_ms,
-            })
+            received_args.append(
+                {
+                    "stage": stage,
+                    "message": message,
+                    "elapsed_ms": elapsed_ms,
+                }
+            )
 
         tracker = ProgressTracker(callback=callback)
         tracker.report(ProgressStage.READY, "Test message")
@@ -449,6 +448,7 @@ class TestProgressCallbackTypes:
 
     def test_callback_exception_does_not_break_tracker(self):
         """Test that callback exception doesn't break tracker."""
+
         def bad_callback(stage, message, elapsed_ms):
             raise ValueError("Callback error")
 
@@ -458,5 +458,3 @@ class TestProgressCallbackTypes:
         tracker.complete({"result": "ok"})
 
         assert tracker._completed is True
-
-

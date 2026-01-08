@@ -1,9 +1,9 @@
 """In-memory implementation of IKnowledgeBase for testing."""
 
-import hashlib
-import json
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
+import hashlib
+import json
 from typing import Any, Optional
 
 from ...logging_config import get_logger
@@ -54,9 +54,7 @@ class MemoryKnowledgeBase(IKnowledgeBase):
 
     # === Cache Operations ===
 
-    async def cache_get(
-        self, provider: str, tool: str, arguments: dict
-    ) -> Optional[dict]:
+    async def cache_get(self, provider: str, tool: str, arguments: dict) -> Optional[dict]:
         key = self._cache_key(provider, tool, arguments)
         if key in self._cache:
             result, expires_at = self._cache[key]
@@ -81,19 +79,14 @@ class MemoryKnowledgeBase(IKnowledgeBase):
         self._cache[key] = (result, expires_at)
         return True
 
-    async def cache_invalidate(
-        self, provider: Optional[str] = None, tool: Optional[str] = None
-    ) -> int:
+    async def cache_invalidate(self, provider: Optional[str] = None, tool: Optional[str] = None) -> int:
         if not provider and not tool:
             count = len(self._cache)
             self._cache.clear()
             return count
 
         prefix = f"{provider}:" if provider else ""
-        keys_to_delete = [
-            k for k in self._cache
-            if k.startswith(prefix) and (not tool or f":{tool}:" in k)
-        ]
+        keys_to_delete = [k for k in self._cache if k.startswith(prefix) and (not tool or f":{tool}:" in k)]
         for k in keys_to_delete:
             del self._cache[k]
         return len(keys_to_delete)
@@ -158,9 +151,7 @@ class MemoryKnowledgeBase(IKnowledgeBase):
         self._state_history[entry.provider_id].append(entry)
         return True
 
-    async def get_state_history(
-        self, provider_id: str, limit: int = 100
-    ) -> list[ProviderStateEntry]:
+    async def get_state_history(self, provider_id: str, limit: int = 100) -> list[ProviderStateEntry]:
         history = self._state_history.get(provider_id, [])
         return list(reversed(history[-limit:]))
 
@@ -190,4 +181,3 @@ class MemoryKnowledgeBase(IKnowledgeBase):
             if len(results) >= limit:
                 break
         return results
-

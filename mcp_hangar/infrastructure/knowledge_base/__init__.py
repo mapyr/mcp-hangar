@@ -89,14 +89,17 @@ async def init_knowledge_base(config: KnowledgeBaseConfig) -> Optional[IKnowledg
     # Create driver based on config
     if config.driver == KnowledgeBaseDriver.POSTGRES:
         from .postgres import PostgresKnowledgeBase
+
         _instance = PostgresKnowledgeBase(config)
 
     elif config.driver == KnowledgeBaseDriver.SQLITE:
         from .sqlite import SQLiteKnowledgeBase
+
         _instance = SQLiteKnowledgeBase(config)
 
     elif config.driver == KnowledgeBaseDriver.MEMORY:
         from .memory import MemoryKnowledgeBase
+
         _instance = MemoryKnowledgeBase(config)
 
     else:
@@ -140,6 +143,7 @@ async def close_knowledge_base() -> None:
 
 
 # Convenience functions that use global instance
+
 
 async def audit_log(
     event_type: str,
@@ -253,4 +257,3 @@ __all__ = [
     "cache_get",
     "cache_set",
 ]
-

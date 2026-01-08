@@ -203,12 +203,12 @@ def register_registry_tools(mcp: FastMCP) -> None:
             # Add additional context based on state
             if state == "ready":
                 healthy_count += 1
-                if hasattr(summary, 'last_used_ago_s'):
+                if hasattr(summary, "last_used_ago_s"):
                     provider_info["last_used"] = _format_time_ago(summary.last_used_ago_s)
             elif state == "cold":
                 provider_info["note"] = "Will start on first request"
             elif state == "degraded":
-                if hasattr(summary, 'consecutive_failures'):
+                if hasattr(summary, "consecutive_failures"):
                     provider_info["consecutive_failures"] = summary.consecutive_failures
 
             providers_status.append(provider_info)
@@ -318,4 +318,3 @@ def _format_status_dashboard(
     lines.append("╰─────────────────────────────────────────────────╯")
 
     return "\n".join(lines)
-

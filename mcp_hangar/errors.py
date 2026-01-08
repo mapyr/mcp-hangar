@@ -397,6 +397,7 @@ class ProviderDegradedError(HangarError):
 # Error Mapping Utilities
 # =============================================================================
 
+
 def map_exception_to_hangar_error(
     exc: Exception,
     provider: str = "",
@@ -470,6 +471,7 @@ def map_exception_to_hangar_error(
         signal_name = None
         if exit_code and exit_code < 0:
             import signal as sig
+
             try:
                 signal_name = sig.Signals(-exit_code).name
             except (ValueError, AttributeError):
@@ -589,8 +591,15 @@ def is_retryable(error: Exception) -> bool:
     exc_type = type(error).__name__.lower()
 
     retryable_patterns = [
-        "timeout", "timed out", "connection", "json", "malformed",
-        "temporary", "transient", "retry", "network",
+        "timeout",
+        "timed out",
+        "connection",
+        "json",
+        "malformed",
+        "temporary",
+        "transient",
+        "retry",
+        "network",
     ]
 
     for pattern in retryable_patterns:
@@ -728,5 +737,3 @@ class ErrorClassifier:
         if is_transient:
             return ["Retry the operation", "Check provider logs for details"]
         return ["Review the error message", "Check input arguments", "Verify provider configuration"]
-
-

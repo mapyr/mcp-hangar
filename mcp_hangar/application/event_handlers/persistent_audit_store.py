@@ -49,11 +49,7 @@ class PersistentAuditStore(AuditStore):
         """
         entry = self._record_to_entry(audit_record)
 
-        submit_async(
-            self._async_record(entry),
-            on_error=lambda e: logger.error(f"Failed to persist audit record: {e}")
-        )
-
+        submit_async(self._async_record(entry), on_error=lambda e: logger.error(f"Failed to persist audit record: {e}"))
 
     async def _async_record(self, entry: AuditEntry) -> None:
         """Async record method."""

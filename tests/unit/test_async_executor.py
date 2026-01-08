@@ -2,9 +2,6 @@
 
 import asyncio
 import time
-from unittest.mock import MagicMock
-
-import pytest
 
 from mcp_hangar.infrastructure.async_executor import AsyncExecutor, submit_async
 
@@ -165,4 +162,3 @@ class TestAsyncExecutorThreadSafety:
         assert set(results) == set(range(10))
 
         executor.shutdown()
-

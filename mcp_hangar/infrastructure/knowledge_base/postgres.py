@@ -1,8 +1,8 @@
 """PostgreSQL implementation of IKnowledgeBase."""
 
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
-from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from ...logging_config import get_logger
@@ -148,9 +148,7 @@ class PostgresKnowledgeBase(IKnowledgeBase):
         async with self._pool.acquire() as conn:
             # Get current version
             try:
-                version = await conn.fetchval(
-                    "SELECT MAX(version) FROM schema_migrations"
-                )
+                version = await conn.fetchval("SELECT MAX(version) FROM schema_migrations")
             except Exception:
                 version = 0
 
@@ -173,9 +171,7 @@ class PostgresKnowledgeBase(IKnowledgeBase):
                     migration["name"],
                 )
 
-            final_version = await conn.fetchval(
-                "SELECT MAX(version) FROM schema_migrations"
-            )
+            final_version = await conn.fetchval("SELECT MAX(version) FROM schema_migrations")
             logger.info("postgres_kb_schema_ready", version=final_version)
 
     async def close(self) -> None:
@@ -204,9 +200,7 @@ class PostgresKnowledgeBase(IKnowledgeBase):
 
     # === Cache Operations ===
 
-    async def cache_get(
-        self, provider: str, tool: str, arguments: dict
-    ) -> Optional[dict]:
+    async def cache_get(self, provider: str, tool: str, arguments: dict) -> Optional[dict]:
         if not self._pool:
             return None
 
@@ -267,9 +261,7 @@ class PostgresKnowledgeBase(IKnowledgeBase):
             logger.warning("cache_set_failed", error=str(e))
             return False
 
-    async def cache_invalidate(
-        self, provider: Optional[str] = None, tool: Optional[str] = None
-    ) -> int:
+    async def cache_invalidate(self, provider: Optional[str] = None, tool: Optional[str] = None) -> int:
         if not self._pool:
             return 0
 
@@ -282,9 +274,7 @@ class PostgresKnowledgeBase(IKnowledgeBase):
                         tool,
                     )
                 elif provider:
-                    result = await conn.execute(
-                        "DELETE FROM tool_cache WHERE provider = $1", provider
-                    )
+                    result = await conn.execute("DELETE FROM tool_cache WHERE provider = $1", provider)
                 else:
                     result = await conn.execute("DELETE FROM tool_cache")
                 # Parse "DELETE N" to get count
@@ -452,9 +442,7 @@ class PostgresKnowledgeBase(IKnowledgeBase):
             logger.warning("record_state_failed", error=str(e))
             return False
 
-    async def get_state_history(
-        self, provider_id: str, limit: int = 100
-    ) -> list[ProviderStateEntry]:
+    async def get_state_history(self, provider_id: str, limit: int = 100) -> list[ProviderStateEntry]:
         if not self._pool:
             return []
 
@@ -559,4 +547,3 @@ class PostgresKnowledgeBase(IKnowledgeBase):
         except Exception as e:
             logger.warning("get_metrics_failed", error=str(e))
             return []
-

@@ -61,10 +61,7 @@ class AsyncExecutor:
     def _ensure_started(self) -> None:
         """Ensure the thread pool is started."""
         if not self._started:
-            self._executor = ThreadPoolExecutor(
-                max_workers=self._max_workers,
-                thread_name_prefix="async-executor-"
-            )
+            self._executor = ThreadPoolExecutor(max_workers=self._max_workers, thread_name_prefix="async-executor-")
             self._started = True
             # Register cleanup on exit
             atexit.register(self.shutdown)
@@ -133,4 +130,3 @@ def submit_async(
         on_error: Optional error callback
     """
     async_executor.submit(coro, on_error=on_error)
-

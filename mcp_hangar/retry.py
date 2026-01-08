@@ -25,9 +25,9 @@ See docs/guides/UX_IMPROVEMENTS.md for more examples.
 """
 
 import asyncio
-import time
 from dataclasses import dataclass, field
 from enum import Enum
+import time
 from typing import Any, Callable, Dict, List, Optional, TypeVar
 
 from .errors import is_retryable
@@ -64,17 +64,19 @@ class RetryPolicy:
     backoff: BackoffStrategy = BackoffStrategy.EXPONENTIAL
     initial_delay: float = 1.0
     max_delay: float = 30.0
-    retry_on: List[str] = field(default_factory=lambda: [
-        "MalformedJSON",
-        "JSONDecodeError",
-        "Timeout",
-        "TimeoutError",
-        "ConnectionError",
-        "ProviderNotResponding",
-        "TransientError",
-        "ProviderProtocolError",
-        "NetworkError",
-    ])
+    retry_on: List[str] = field(
+        default_factory=lambda: [
+            "MalformedJSON",
+            "JSONDecodeError",
+            "Timeout",
+            "TimeoutError",
+            "ConnectionError",
+            "ProviderNotResponding",
+            "TransientError",
+            "ProviderProtocolError",
+            "NetworkError",
+        ]
+    )
     jitter: bool = True
     jitter_factor: float = 0.25
 
@@ -188,7 +190,7 @@ def calculate_backoff(
     """
     if strategy == BackoffStrategy.EXPONENTIAL:
         # min(initial_delay * 2^attempt, max_delay)
-        delay = min(initial_delay * (2 ** attempt), max_delay)
+        delay = min(initial_delay * (2**attempt), max_delay)
     elif strategy == BackoffStrategy.LINEAR:
         # initial_delay * (attempt + 1), capped at max_delay
         delay = min(initial_delay * (attempt + 1), max_delay)
@@ -197,6 +199,7 @@ def calculate_backoff(
 
     if jitter and jitter_factor > 0:
         import random
+
         jitter_range = delay * jitter_factor
         delay += random.uniform(-jitter_range, jitter_range)
         delay = max(0, delay)  # Ensure non-negative
@@ -299,12 +302,14 @@ async def retry_async(
                 )
 
                 # Record attempt
-                attempts.append(RetryAttempt(
-                    attempt_number=attempt + 1,
-                    error_type=error_type,
-                    error_message=str(e),
-                    delay_before=delay,
-                ))
+                attempts.append(
+                    RetryAttempt(
+                        attempt_number=attempt + 1,
+                        error_type=error_type,
+                        error_message=str(e),
+                        delay_before=delay,
+                    )
+                )
 
                 # Log retry
                 logger.info(
@@ -411,12 +416,14 @@ def retry_sync(
                     jitter_factor=policy.jitter_factor,
                 )
 
-                attempts.append(RetryAttempt(
-                    attempt_number=attempt + 1,
-                    error_type=error_type,
-                    error_message=str(e),
-                    delay_before=delay,
-                ))
+                attempts.append(
+                    RetryAttempt(
+                        attempt_number=attempt + 1,
+                        error_type=error_type,
+                        error_message=str(e),
+                        delay_before=delay,
+                    )
+                )
 
                 logger.info(
                     "retry_attempt_failed",
@@ -460,6 +467,7 @@ def retry_sync(
 # =============================================================================
 # Retry Configuration Store
 # =============================================================================
+
 
 class RetryConfigStore:
     """Stores retry configurations per provider.
@@ -550,6 +558,7 @@ def get_retry_policy(provider_id: str) -> RetryPolicy:
 # Decorator
 # =============================================================================
 
+
 def with_retry(
     policy: Optional[RetryPolicy] = None,
     provider: str = "",
@@ -567,6 +576,7 @@ def with_retry(
         async def risky_operation():
             ...
     """
+
     def decorator(func: Callable) -> Callable:
         import functools
 
@@ -601,4 +611,3 @@ def with_retry(
         return sync_wrapper
 
     return decorator
-

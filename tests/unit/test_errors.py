@@ -1,26 +1,21 @@
 """Tests for UX improvements: errors, retry, and progress modules."""
 
-import asyncio
 import json
-import time
-from unittest.mock import MagicMock, patch
-
-import pytest
 
 from mcp_hangar.errors import (
-    HangarError,
-    TransientError,
-    ProviderProtocolError,
-    ProviderCrashError,
-    NetworkError,
     ConfigurationError,
-    ProviderNotFoundError,
-    ToolNotFoundError,
-    TimeoutError,
-    RateLimitError,
-    ProviderDegradedError,
-    map_exception_to_hangar_error,
+    HangarError,
     is_retryable,
+    map_exception_to_hangar_error,
+    NetworkError,
+    ProviderCrashError,
+    ProviderDegradedError,
+    ProviderNotFoundError,
+    ProviderProtocolError,
+    RateLimitError,
+    TimeoutError,
+    ToolNotFoundError,
+    TransientError,
 )
 
 
@@ -135,7 +130,6 @@ class TestProviderProtocolError:
             raw_response="SELECT * FROM users",
         )
         assert error.raw_response == "SELECT * FROM users"
-
 
 
 class TestProviderCrashError:
@@ -374,75 +368,57 @@ class TestMapExceptionToHangarError:
     def test_json_decode_error_mapping(self):
         """Test that JSON errors are mapped to ProviderProtocolError."""
         original = json.JSONDecodeError("msg", "doc", 0)
-        result = map_exception_to_hangar_error(
-            original, provider="test", operation="invoke"
-        )
+        result = map_exception_to_hangar_error(original, provider="test", operation="invoke")
         assert isinstance(result, ProviderProtocolError)
 
     def test_timeout_error_mapping(self):
         """Test that timeout errors are mapped correctly."""
         original = Exception("timeout after 30s")
-        result = map_exception_to_hangar_error(
-            original, provider="test", operation="invoke"
-        )
+        result = map_exception_to_hangar_error(original, provider="test", operation="invoke")
         assert isinstance(result, TimeoutError)
 
     def test_connection_error_mapping(self):
         """Test that connection errors are mapped to NetworkError."""
         original = ConnectionError("Connection refused")
-        result = map_exception_to_hangar_error(
-            original, provider="test", operation="invoke"
-        )
+        result = map_exception_to_hangar_error(original, provider="test", operation="invoke")
         assert isinstance(result, NetworkError)
 
     def test_generic_error_mapping(self):
         """Test that unknown errors get wrapped in HangarError."""
         original = ValueError("Some value error")
-        result = map_exception_to_hangar_error(
-            original, provider="test", operation="invoke"
-        )
+        result = map_exception_to_hangar_error(original, provider="test", operation="invoke")
         assert isinstance(result, HangarError)
         assert result.original_exception == original
 
     def test_dns_error_mapping(self):
         """Test DNS errors are mapped to NetworkError."""
         original = Exception("DNS resolution failed: EAI_AGAIN")
-        result = map_exception_to_hangar_error(
-            original, provider="fetch", operation="request"
-        )
+        result = map_exception_to_hangar_error(original, provider="fetch", operation="request")
         assert isinstance(result, NetworkError)
 
     def test_exit_code_error_mapping(self):
         """Test exit code errors are mapped to ProviderCrashError."""
         original = Exception("Process died with exit code -9")
-        result = map_exception_to_hangar_error(
-            original, provider="test", operation="invoke",
-            context={"exit_code": -9}
-        )
+        result = map_exception_to_hangar_error(original, provider="test", operation="invoke", context={"exit_code": -9})
         assert isinstance(result, ProviderCrashError)
 
     def test_rate_limit_error_mapping(self):
         """Test rate limit errors are mapped correctly."""
         original = Exception("Rate limit exceeded")
-        result = map_exception_to_hangar_error(
-            original, provider="test", operation="invoke"
-        )
+        result = map_exception_to_hangar_error(original, provider="test", operation="invoke")
         assert isinstance(result, RateLimitError)
 
     def test_provider_not_found_mapping(self):
         """Test provider not found errors."""
         original = Exception("Provider 'unknown' not found")
-        result = map_exception_to_hangar_error(
-            original, provider="unknown", operation="invoke"
-        )
+        result = map_exception_to_hangar_error(original, provider="unknown", operation="invoke")
         assert isinstance(result, ProviderNotFoundError)
 
     def test_tool_not_found_mapping(self):
         """Test tool not found errors."""
         original = Exception("Tool 'missing' not found")
         result = map_exception_to_hangar_error(
-            original, provider="math", operation="invoke",
-            context={"tool_name": "missing"}
+            original, provider="math", operation="invoke", context={"tool_name": "missing"}
         )
         assert isinstance(result, ToolNotFoundError)
 
@@ -450,27 +426,22 @@ class TestMapExceptionToHangarError:
         """Test client malformed JSON errors are mapped to ProviderProtocolError."""
         # JSON errors in exception message map to ProviderProtocolError
         original = Exception("ClientError: malformed JSON response")
-        result = map_exception_to_hangar_error(
-            original, provider="test", operation="invoke"
-        )
+        result = map_exception_to_hangar_error(original, provider="test", operation="invoke")
         # JSON-related errors map to ProviderProtocolError, which is retryable
         assert isinstance(result, (ProviderProtocolError, TransientError))
 
     def test_socket_timeout_mapping(self):
         """Test socket timeout is mapped to TimeoutError."""
         import socket
+
         original = socket.timeout("timed out")
-        result = map_exception_to_hangar_error(
-            original, provider="test", operation="invoke"
-        )
+        result = map_exception_to_hangar_error(original, provider="test", operation="invoke")
         assert isinstance(result, TimeoutError)
 
     def test_oserror_network_mapping(self):
         """Test OSError network errors are mapped."""
         original = OSError("Network is unreachable")
-        result = map_exception_to_hangar_error(
-            original, provider="test", operation="invoke"
-        )
+        result = map_exception_to_hangar_error(original, provider="test", operation="invoke")
         assert isinstance(result, NetworkError)
 
     def test_already_hangar_error_passthrough(self):
@@ -480,9 +451,7 @@ class TestMapExceptionToHangarError:
             provider="test",
             operation="invoke",
         )
-        result = map_exception_to_hangar_error(
-            original, provider="other", operation="other"
-        )
+        result = map_exception_to_hangar_error(original, provider="other", operation="other")
         assert result is original
 
 
@@ -690,5 +659,3 @@ class TestErrorClassifier:
         assert result["is_transient"] is False
         assert result["should_retry"] is False
         assert "permanent" in result["final_error_reason"]
-
-

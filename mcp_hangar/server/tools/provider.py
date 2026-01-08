@@ -6,8 +6,8 @@ Separates commands (write) from queries (read) following CQRS.
 
 import asyncio
 import time
-import uuid
 from typing import Any, Dict, Optional
+import uuid
 
 from mcp.server.fastmcp import Context, FastMCP
 
@@ -15,19 +15,19 @@ from ...application.commands import InvokeToolCommand, StartProviderCommand
 from ...application.mcp.tooling import chain_validators, key_registry_invoke, mcp_tool_wrapper
 from ...domain.model import ProviderGroup
 from ...errors import (
-    ProviderNotFoundError as HangarProviderNotFoundError,
     map_exception_to_hangar_error,
+    ProviderNotFoundError as HangarProviderNotFoundError,
 )
 from ...infrastructure.async_executor import submit_async
 from ...infrastructure.query_bus import GetProviderQuery, GetProviderToolsQuery
 from ...progress import (
+    create_progress_tracker,
+    get_stage_message,
     ProgressCallback,
     ProgressStage,
     ProgressTracker,
-    create_progress_tracker,
-    get_stage_message,
 )
-from ...retry import RetryPolicy, get_retry_policy, retry_sync
+from ...retry import get_retry_policy, retry_sync, RetryPolicy
 from ..context import get_context
 from ..validation import (
     check_rate_limit,
@@ -114,7 +114,7 @@ def _submit_audit_log(
         error_message: Optional error message (truncated)
         correlation_id: Optional correlation ID for tracing
     """
-    from ...infrastructure.knowledge_base import is_available, audit_log
+    from ...infrastructure.knowledge_base import audit_log, is_available
 
     if not is_available():
         return
@@ -209,10 +209,7 @@ def _invoke_on_provider(
         progress.report(ProgressStage.READY, "Provider ready")
 
     if progress:
-        progress.report(
-            ProgressStage.EXECUTING,
-            get_stage_message(ProgressStage.EXECUTING, tool=tool)
-        )
+        progress.report(ProgressStage.EXECUTING, get_stage_message(ProgressStage.EXECUTING, tool=tool))
 
     command = InvokeToolCommand(
         provider_id=provider,
@@ -283,7 +280,7 @@ def _invoke_with_retry(
                         ProgressStage.RETRYING,
                         attempt=attempt + 2,
                         max_attempts=max_attempts,
-                    )
+                    ),
                 )
 
     raise first_error or ValueError("no_healthy_members_in_group")
@@ -402,8 +399,9 @@ def register_provider_tools(mcp: FastMCP) -> None:
         Progress is always tracked and logged. If include_progress=True,
         progress events are included in the response under _progress key.
         """
-        from ...logging_config import get_logger
         from ...errors import ErrorClassifier
+        from ...logging_config import get_logger
+
         logger = get_logger(__name__)
 
         ctx = get_context()
@@ -571,11 +569,15 @@ def register_provider_tools(mcp: FastMCP) -> None:
             lambda provider, tool, arguments=None, timeout=DEFAULT_TIMEOUT_SECONDS, **kw: validate_provider_id_input(
                 provider
             ),
-            lambda provider, tool, arguments=None, timeout=DEFAULT_TIMEOUT_SECONDS, **kw: validate_tool_name_input(tool),
+            lambda provider, tool, arguments=None, timeout=DEFAULT_TIMEOUT_SECONDS, **kw: validate_tool_name_input(
+                tool
+            ),
             lambda provider, tool, arguments=None, timeout=DEFAULT_TIMEOUT_SECONDS, **kw: validate_arguments_input(
                 arguments or {}
             ),
-            lambda provider, tool, arguments=None, timeout=DEFAULT_TIMEOUT_SECONDS, **kw: validate_timeout_input(timeout),
+            lambda provider, tool, arguments=None, timeout=DEFAULT_TIMEOUT_SECONDS, **kw: validate_timeout_input(
+                timeout
+            ),
         ),
         error_mapper=tool_error_mapper,
         on_error=lambda exc, ctx_dict: tool_error_hook(exc, ctx_dict),
@@ -672,6 +674,7 @@ def register_provider_tools(mcp: FastMCP) -> None:
             during execution.
         """
         from ...logging_config import get_logger
+
         logger = get_logger(__name__)
 
         app_ctx = get_context()
@@ -798,6 +801,7 @@ def register_provider_tools(mcp: FastMCP) -> None:
             # Check if result contains isError: true (provider returned error in response)
             if result.result.get("isError"):
                 from ...errors import ErrorClassifier
+
                 error_text = _extract_error_text(result.result.get("content", []))
                 error_classification = ErrorClassifier.classify(Exception(error_text))
 
@@ -942,4 +946,3 @@ def register_provider_tools(mcp: FastMCP) -> None:
             "failed": failed,
             "summary": f"Warmed {len(warmed)} providers, {len(already_warm)} already warm, {len(failed)} failed",
         }
-

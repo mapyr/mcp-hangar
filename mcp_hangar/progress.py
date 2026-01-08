@@ -23,11 +23,11 @@ See docs/guides/UX_IMPROVEMENTS.md for more examples.
 """
 
 import asyncio
-import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Optional
 import threading
+import time
+from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Optional
 
 from .logging_config import get_logger
 
@@ -335,6 +335,7 @@ class ProgressTracker:
 # Progress-Aware Operation Wrapper
 # =============================================================================
 
+
 class ProgressOperation:
     """Context manager for progress-tracked operations.
 
@@ -419,6 +420,7 @@ def get_stage_message(
 # =============================================================================
 # Event Bus Integration
 # =============================================================================
+
 
 class ProgressEventHandler:
     """Event handler that forwards domain events to progress tracker.
@@ -538,4 +540,3 @@ def create_progress_tracker(
         handler.register_tracker(correlation_id, tracker)
 
     return tracker
-

@@ -1,25 +1,22 @@
 """Tests for retry module."""
 
-import asyncio
-import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
+from mcp_hangar.errors import ConfigurationError, TransientError
 from mcp_hangar.retry import (
-    RetryPolicy,
     BackoffStrategy,
-    RetryResult,
-    RetryAttempt,
     calculate_backoff,
-    should_retry,
-    retry_sync,
-    retry_async,
     get_retry_store,
-    get_retry_policy,
+    retry_async,
+    retry_sync,
+    RetryAttempt,
+    RetryPolicy,
+    RetryResult,
+    should_retry,
     with_retry,
 )
-from mcp_hangar.errors import TransientError, ProviderProtocolError, ConfigurationError
 
 
 class TestRetryPolicy:
@@ -100,9 +97,7 @@ class TestCalculateBackoff:
         """Test that jitter is applied to delays."""
         delays = set()
         for _ in range(10):
-            delay = calculate_backoff(
-                1, BackoffStrategy.EXPONENTIAL, 1.0, 30.0, jitter=True, jitter_factor=0.5
-            )
+            delay = calculate_backoff(1, BackoffStrategy.EXPONENTIAL, 1.0, 30.0, jitter=True, jitter_factor=0.5)
             delays.add(round(delay, 2))
 
         # With jitter, we should get varying delays
@@ -270,6 +265,7 @@ class TestRetryAsyncExecution:
 
     async def test_async_success(self):
         """Test successful async operation."""
+
         async def operation():
             return {"result": "async_success"}
 
@@ -316,6 +312,7 @@ class TestWithRetryDecorator:
 
     def test_decorator_raises_on_exhausted_retries(self):
         """Test that decorator raises when retries exhausted."""
+
         @with_retry(RetryPolicy(max_attempts=2, initial_delay=0.01))
         def always_fails():
             raise TransientError(message="Always fails")
@@ -335,7 +332,6 @@ class TestRetryConfigStoreAdvanced:
 
         retrieved = store.get_policy("custom-provider")
         assert retrieved.max_attempts == 10
-
 
 
 class TestRetrySyncAdvanced:
@@ -379,4 +375,3 @@ class TestRetrySyncAdvanced:
         assert result.success is True
         assert result.attempts == []
         assert result.attempt_count == 1
-

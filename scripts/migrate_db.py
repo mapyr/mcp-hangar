@@ -10,8 +10,8 @@ Creates required tables for:
 """
 
 import asyncio
-import sys
 from datetime import datetime
+import sys
 
 # SQL migrations in order
 MIGRATIONS = [

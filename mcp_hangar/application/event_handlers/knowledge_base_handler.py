@@ -3,12 +3,12 @@
 Persists domain events to knowledge base (PostgreSQL, SQLite, etc.).
 """
 
-from typing import Dict, Type, Callable
+from typing import Callable, Dict, Type
 
 from ...domain.events import (
     DomainEvent,
-    ProviderStateChanged,
     ProviderStarted,
+    ProviderStateChanged,
     ProviderStopped,
     ToolInvocationCompleted,
     ToolInvocationFailed,
@@ -58,7 +58,7 @@ class KnowledgeBaseEventHandler:
         # Submit async persistence using executor (fire-and-forget)
         submit_async(
             handler(event),
-            on_error=lambda e: logger.debug("kb_persist_error", error=str(e), event_type=type(event).__name__)
+            on_error=lambda e: logger.debug("kb_persist_error", error=str(e), event_type=type(event).__name__),
         )
 
     async def _persist_state_change(self, event: ProviderStateChanged) -> None:
@@ -118,6 +118,3 @@ class KnowledgeBaseEventHandler:
             success=False,
             error_message=event.error[:500] if hasattr(event, "error") else None,
         )
-
-
-
