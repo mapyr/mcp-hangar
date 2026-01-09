@@ -44,6 +44,23 @@ from .domain.value_objects import (
     ToolName,
 )
 
+# UX Improvements - Rich errors, retry, progress
+from .errors import (
+    ConfigurationError as HangarConfigurationError,
+    HangarError,
+    is_retryable,
+    map_exception_to_hangar_error,
+    NetworkError,
+    ProviderCrashError,
+    ProviderDegradedError as HangarProviderDegradedError,
+    ProviderNotFoundError as HangarProviderNotFoundError,
+    ProviderProtocolError,
+    RateLimitError,
+    TimeoutError as HangarTimeoutError,
+    ToolNotFoundError as HangarToolNotFoundError,
+    TransientError,
+)
+
 # Legacy imports - for backward compatibility
 from .models import (
     InvocationContext,
@@ -52,7 +69,23 @@ from .models import (
     ProviderSpec,
     ToolSchema,
 )
+from .progress import (
+    create_progress_tracker,
+    get_stage_message,
+    ProgressCallback,
+    ProgressEvent,
+    ProgressStage,
+    ProgressTracker,
+)
 from .provider_manager import ProviderManager
+from .retry import (
+    BackoffStrategy,
+    get_retry_policy,
+    get_retry_store,
+    RetryPolicy,
+    RetryResult,
+    with_retry,
+)
 from .stdio_client import StdioClient
 
 __all__ = [
@@ -86,6 +119,34 @@ __all__ = [
     "ValidationError",
     "ConfigurationError",
     "RateLimitExceeded",
+    # UX - Rich Errors
+    "HangarError",
+    "TransientError",
+    "ProviderProtocolError",
+    "ProviderCrashError",
+    "NetworkError",
+    "HangarConfigurationError",
+    "HangarProviderNotFoundError",
+    "HangarToolNotFoundError",
+    "HangarTimeoutError",
+    "RateLimitError",
+    "HangarProviderDegradedError",
+    "map_exception_to_hangar_error",
+    "is_retryable",
+    # UX - Retry
+    "RetryPolicy",
+    "BackoffStrategy",
+    "RetryResult",
+    "get_retry_policy",
+    "get_retry_store",
+    "with_retry",
+    # UX - Progress
+    "ProgressStage",
+    "ProgressEvent",
+    "ProgressTracker",
+    "ProgressCallback",
+    "create_progress_tracker",
+    "get_stage_message",
     # Legacy - for backward compatibility
     "ProviderSpec",
     "ToolSchema",
