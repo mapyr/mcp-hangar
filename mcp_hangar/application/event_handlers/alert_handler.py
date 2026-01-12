@@ -61,7 +61,7 @@ class LogAlertSink(AlertSink):
         }.get(alert.level, logger.info)
 
         log_method(
-            f"ALERT [{alert.level.upper()}] {alert.message} " f"provider={alert.provider_id} event={alert.event_type}"
+            f"ALERT [{alert.level.upper()}] {alert.message} provider={alert.provider_id} event={alert.event_type}"
         )
 
 

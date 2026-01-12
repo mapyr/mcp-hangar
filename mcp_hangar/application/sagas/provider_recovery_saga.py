@@ -94,7 +94,7 @@ class ProviderRecoverySaga(EventTriggeredSaga):
 
         # Check if max retries exceeded
         if state["retries"] > self._max_retries:
-            logger.warning(f"Provider {provider_id} exceeded max retries ({self._max_retries}), " f"stopping recovery")
+            logger.warning(f"Provider {provider_id} exceeded max retries ({self._max_retries}), stopping recovery")
             # Stop the provider permanently
             return [StopProviderCommand(provider_id=provider_id, reason="max_retries_exceeded")]
 
@@ -128,7 +128,7 @@ class ProviderRecoverySaga(EventTriggeredSaga):
                 "next_retry": 0,
             }
             if old_retries > 0:
-                logger.info(f"Provider {provider_id} recovered successfully after " f"{old_retries} retries")
+                logger.info(f"Provider {provider_id} recovered successfully after {old_retries} retries")
 
         return []
 

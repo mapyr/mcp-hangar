@@ -115,9 +115,7 @@ class DiscoveryLifecycleManager:
         for name, provider in list(self._providers.items()):
             if provider.is_expired():
                 expired.append(name)
-                logger.info(
-                    f"Provider '{name}' expired (last seen: {provider.last_seen_at}). " f"Starting deregistration."
-                )
+                logger.info(f"Provider '{name}' expired (last seen: {provider.last_seen_at}). Starting deregistration.")
                 await self._deregister(name, "ttl_expired")
 
         return expired

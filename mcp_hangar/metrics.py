@@ -411,7 +411,7 @@ class CollectorRegistry:
                 lines.append(f"{name}_count{labels} {int(sample.value)}")
 
         elif isinstance(collector, Info):
-            lines.append(f"# TYPE {name} info")
+            lines.append(f"# TYPE {name}_info gauge")
             for sample in collector.collect():
                 labels = self._format_labels(sample.labels)
                 lines.append(f"{name}_info{labels} 1")

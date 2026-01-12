@@ -7,6 +7,7 @@ This guide covers MCP Hangar's observability features: metrics, tracing, logging
 - [Quick Start](#quick-start)
 - [Metrics](#metrics)
 - [Tracing](#tracing)
+- [Langfuse Integration](#langfuse-integration)
 - [Logging](#logging)
 - [Health Checks](#health-checks)
 - [Alerting](#alerting)
@@ -202,6 +203,151 @@ span_id = get_current_span_id()    # Returns hex string or None
 2. Select service `mcp-hangar` from dropdown
 3. Set time range and click **Find Traces**
 4. Click on a trace to see the span tree
+
+## Langfuse Integration
+
+MCP Hangar integrates with [Langfuse](https://langfuse.com) for LLM-specific observability, providing end-to-end tracing of tool invocations from your LLM application through MCP Hangar to individual providers.
+
+### Why Langfuse?
+
+| Feature | Benefit |
+|---------|---------|
+| **End-to-end traces** | See the complete journey from LLM prompt → tool call → provider response |
+| **Cost attribution** | Track costs per provider, tool, user, or session |
+| **Latency analysis** | Identify slow providers and optimize performance |
+| **Quality scoring** | Correlate provider health with LLM response quality |
+| **Evals** | Run automated evaluations on tool outputs |
+
+### Installation
+
+```bash
+pip install mcp-hangar[observability]
+```
+
+### Configuration
+
+#### Via Environment Variables
+
+```bash
+export HANGAR_LANGFUSE_ENABLED=true
+export LANGFUSE_PUBLIC_KEY=pk-lf-...
+export LANGFUSE_SECRET_KEY=sk-lf-...
+export LANGFUSE_HOST=https://cloud.langfuse.com  # or self-hosted URL
+```
+
+#### Via config.yaml
+
+```yaml
+observability:
+  langfuse:
+    enabled: true
+    public_key: ${LANGFUSE_PUBLIC_KEY}
+    secret_key: ${LANGFUSE_SECRET_KEY}
+    host: https://cloud.langfuse.com
+    sample_rate: 1.0          # 0.0-1.0, fraction of traces to sample
+    scrub_inputs: false       # Redact sensitive input data
+    scrub_outputs: false      # Redact sensitive output data
+```
+
+### Trace Propagation
+
+To correlate traces from your LLM application with MCP Hangar, pass a `trace_id` when invoking tools:
+
+```python
+from mcp_hangar.application.services import TracedProviderService
+
+# Invoke with trace context from your LLM application
+result = traced_service.invoke_tool(
+    provider_id="math",
+    tool_name="add",
+    arguments={"a": 1, "b": 2},
+    trace_id="your-langfuse-trace-id",    # Correlates with LLM trace
+    user_id="user-123",                    # For cost attribution
+    session_id="session-456",              # For grouping related calls
+)
+```
+
+### What Gets Traced
+
+| Event | Recorded Data |
+|-------|---------------|
+| **Tool invocation** | Provider, tool, input params, output, latency, success/error |
+| **Health check** | Provider, healthy status, latency |
+
+### Recorded Scores
+
+| Score Name | Description |
+|------------|-------------|
+| `tool_success` | 1.0 for success, 0.0 for error |
+| `tool_latency_ms` | Invocation latency in milliseconds |
+| `provider_healthy` | 1.0 if healthy, 0.0 if unhealthy |
+| `health_check_latency_ms` | Health check latency |
+
+### Using TracedProviderService
+
+The `TracedProviderService` wraps `ProviderService` to automatically trace operations:
+
+```python
+from mcp_hangar.application.services import ProviderService, TracedProviderService
+from mcp_hangar.infrastructure.observability import LangfuseObservabilityAdapter, LangfuseConfig
+
+# Create the observability adapter
+langfuse_config = LangfuseConfig(
+    enabled=True,
+    public_key="pk-lf-...",
+    secret_key="sk-lf-...",
+)
+observability = LangfuseObservabilityAdapter(langfuse_config)
+
+# Wrap your existing service
+traced_service = TracedProviderService(
+    provider_service=provider_service,
+    observability=observability,
+)
+
+# All tool invocations are now traced
+result = traced_service.invoke_tool("math", "add", {"a": 1, "b": 2})
+```
+
+### GDPR Compliance
+
+Enable input/output scrubbing to avoid sending sensitive data to Langfuse:
+
+```yaml
+observability:
+  langfuse:
+    enabled: true
+    scrub_inputs: true    # Only sends parameter keys, not values
+    scrub_outputs: true   # Only sends output structure, not content
+```
+
+### Viewing Traces in Langfuse
+
+1. Open Langfuse dashboard at https://cloud.langfuse.com
+2. Navigate to **Traces**
+3. Filter by:
+   - `metadata.mcp_hangar = true` for MCP Hangar traces
+   - `metadata.provider = math` for specific providers
+4. Click on a trace to see:
+   - Input parameters
+   - Output results
+   - Latency breakdown
+   - Recorded scores
+
+### Combining with OpenTelemetry
+
+Langfuse and OpenTelemetry can run simultaneously. Langfuse focuses on LLM-specific observability while OpenTelemetry provides infrastructure-level tracing:
+
+```yaml
+observability:
+  tracing:
+    enabled: true
+    otlp_endpoint: http://localhost:4317
+  langfuse:
+    enabled: true
+    public_key: ${LANGFUSE_PUBLIC_KEY}
+    secret_key: ${LANGFUSE_SECRET_KEY}
+```
 
 ## Logging
 

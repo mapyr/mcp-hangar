@@ -72,7 +72,7 @@ class KubernetesDiscoverySource(DiscoverySource):
 
         if not KUBERNETES_AVAILABLE:
             raise ImportError(
-                "kubernetes package is required for KubernetesDiscoverySource. " "Install with: pip install kubernetes"
+                "kubernetes package is required for KubernetesDiscoverySource. Install with: pip install kubernetes"
             )
 
         self.namespaces = namespaces or []

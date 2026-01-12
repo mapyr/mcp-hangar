@@ -190,7 +190,7 @@ class DiscoveryOrchestrator:
         # Start discovery loop
         self._discovery_task = asyncio.create_task(self._discovery_loop())
 
-        logger.info(f"Discovery orchestrator started " f"(refresh_interval={self.config.refresh_interval_s}s)")
+        logger.info(f"Discovery orchestrator started (refresh_interval={self.config.refresh_interval_s}s)")
 
     async def stop(self) -> None:
         """Stop the discovery orchestrator."""

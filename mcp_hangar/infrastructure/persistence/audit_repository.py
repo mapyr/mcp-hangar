@@ -42,7 +42,7 @@ class InMemoryAuditRepository:
             if len(self._entries) > self._max_entries:
                 self._entries = self._entries[-self._max_entries :]
 
-            logger.debug(f"Audit: {entry.action.value} on {entry.entity_type}/{entry.entity_id} " f"by {entry.actor}")
+            logger.debug(f"Audit: {entry.action.value} on {entry.entity_type}/{entry.entity_id} by {entry.actor}")
 
     async def get_by_entity(
         self,
@@ -141,7 +141,7 @@ class SQLiteAuditRepository:
                     ),
                 )
 
-            logger.debug(f"Audit: {entry.action.value} on {entry.entity_type}/{entry.entity_id} " f"by {entry.actor}")
+            logger.debug(f"Audit: {entry.action.value} on {entry.entity_type}/{entry.entity_id} by {entry.actor}")
 
         except Exception as e:
             logger.error(f"Failed to append audit entry: {e}")

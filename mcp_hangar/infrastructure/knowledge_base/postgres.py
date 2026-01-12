@@ -524,7 +524,7 @@ class PostgresKnowledgeBase(IKnowledgeBase):
                     f"""
                     SELECT provider_id, metric_name, metric_value, labels, timestamp
                     FROM provider_metrics
-                    WHERE {' AND '.join(conditions)}
+                    WHERE {" AND ".join(conditions)}
                     ORDER BY timestamp DESC
                     LIMIT ${param_idx}
                     """,

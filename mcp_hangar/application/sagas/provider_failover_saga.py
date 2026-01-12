@@ -188,7 +188,7 @@ class ProviderFailoverSaga(EventTriggeredSaga):
                 failback_time = time.time() + config.failback_delay_s
                 self._pending_failbacks[provider_id] = failback_time
 
-                logger.info(f"Primary {provider_id} recovered, scheduling failback in " f"{config.failback_delay_s}s")
+                logger.info(f"Primary {provider_id} recovered, scheduling failback in {config.failback_delay_s}s")
 
                 # In a real implementation, you'd use a scheduler
                 # For now, immediately trigger failback commands

@@ -13,14 +13,14 @@ alerting:
 
 # Load rules
 rule_files:
-  - /etc/prometheus/alerts/*.yaml
+  - /etc/prometheus/alerts.yaml
 
 # Scrape configs
 scrape_configs:
   # MCP Hangar metrics
   - job_name: 'mcp-hangar'
     static_configs:
-      - targets: ['mcp-hangar:8000']
+      - targets: ['host.docker.internal:8000']
     metrics_path: /metrics
     scrape_interval: 10s
     scrape_timeout: 5s

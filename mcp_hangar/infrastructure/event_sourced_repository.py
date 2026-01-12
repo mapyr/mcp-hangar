@@ -148,8 +148,7 @@ class EventSourcedProviderRepository(IProviderRepository):
                     self._event_bus.publish(event)
 
                 logger.debug(
-                    f"Saved {len(events)} events for provider {provider_id}, "
-                    f"version {current_version} -> {new_version}"
+                    f"Saved {len(events)} events for provider {provider_id}, version {current_version} -> {new_version}"
                 )
 
             # Update cache

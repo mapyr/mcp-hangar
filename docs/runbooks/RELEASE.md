@@ -261,7 +261,7 @@ docker buildx build --platform linux/amd64,linux/arm64 \
 | Role | Contact |
 |------|---------|
 | Release Manager | @maintainer |
-| Security Issues | security@mcp-hangar.io |
+| Security Issues | [GitHub Security](https://github.com/mapyr/mcp-hangar/security) |
 | Infrastructure | @infra-team |
 
 ---

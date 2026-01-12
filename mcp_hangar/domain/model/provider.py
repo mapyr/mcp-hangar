@@ -535,7 +535,7 @@ class Provider(AggregateRoot):
             self._state = ProviderState.DEGRADED
             self._increment_version()
 
-            logger.warning(f"provider_degraded: {self.provider_id}, " f"failures={self._health.consecutive_failures}")
+            logger.warning(f"provider_degraded: {self.provider_id}, failures={self._health.consecutive_failures}")
 
             self._record_event(
                 ProviderDegraded(
@@ -641,7 +641,7 @@ class Provider(AggregateRoot):
                     )
                 )
 
-                logger.debug(f"tool_invoked: {correlation_id}, " f"provider={self.provider_id}, tool={tool_name}")
+                logger.debug(f"tool_invoked: {correlation_id}, provider={self.provider_id}, tool={tool_name}")
 
                 return result
 

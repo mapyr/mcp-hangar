@@ -99,7 +99,7 @@ class FilesystemDiscoverySource(DiscoverySource):
 
         if not YAML_AVAILABLE:
             raise ImportError(
-                "PyYAML package is required for FilesystemDiscoverySource. " "Install with: pip install pyyaml"
+                "PyYAML package is required for FilesystemDiscoverySource. Install with: pip install pyyaml"
             )
 
         self.path = Path(path or self.DEFAULT_PATH)
