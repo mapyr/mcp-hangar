@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-01-13
+
+### Added
+- **Langfuse Integration**: Optional LLM observability with Langfuse
+  - Full trace lifecycle management (start, end, error handling)
+  - Span nesting for tool invocations and provider operations
+  - Automatic score recording for health checks and success rates
+  - Graceful degradation when Langfuse is unavailable
+  - Configuration via environment variables or config file
+
+- **Testcontainers Support**: Production-grade integration testing
+  - PostgreSQL, Redis, Prometheus, Langfuse container fixtures
+  - Custom MCP provider container fixtures
+  - Conditional loading - tests work without testcontainers installed
+
+### Changed
+- **Monitoring Stack Simplified**: Cleaner configuration structure
+  - Combined critical/warning alerts into single `alerts.yaml`
+  - Added Grafana datasource provisioning
+  - Removed obsolete `version` attribute from docker-compose
+
+### Fixed
+- Fixed testcontainers import error in CI when library not installed
+- Fixed Prometheus metrics `info` type (changed to `gauge` for compatibility)
+- Fixed import sorting across all modules (ruff isort)
+- Fixed documentation links to point to GitHub Pages
+- Removed unused imports and variables
+
 ## [0.1.1] - 2026-01-12
 
 ### Added
@@ -75,5 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rate limiting to prevent denial of service
 - Audit logging for security-relevant events
 
-[Unreleased]: https://github.com/mapyr/mcp-hangar/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/mapyr/mcp-hangar/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/mapyr/mcp-hangar/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/mapyr/mcp-hangar/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/mapyr/mcp-hangar/releases/tag/v0.1.0
