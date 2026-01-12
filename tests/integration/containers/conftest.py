@@ -27,6 +27,7 @@ except ImportError:
     TESTCONTAINERS_AVAILABLE = False
     PostgresContainer = None
     DockerContainer = None
+    wait_for_logs = None
 
 # Check if httpx is available for API testing
 try:
@@ -48,6 +49,90 @@ def skip_if_no_httpx():
     """Skip test if httpx is not installed."""
     if not HTTPX_AVAILABLE:
         pytest.skip("httpx not installed. Run: pip install httpx")
+
+
+# ============================================================================
+# Container Classes (only defined if testcontainers is available)
+# ============================================================================
+
+if TESTCONTAINERS_AVAILABLE:
+
+    class RedisContainer(DockerContainer):
+        """Redis container for caching and rate limiting tests."""
+
+        def __init__(self, image: str = "redis:7-alpine", **kwargs):
+            super().__init__(image=image, **kwargs)
+            self.with_exposed_ports(6379)
+
+        def get_connection_url(self) -> str:
+            host = self.get_container_host_ip()
+            port = self.get_exposed_port(6379)
+            return f"redis://{host}:{port}/0"
+
+    class LangfuseContainer(DockerContainer):
+        """Langfuse container for LLM observability tests."""
+
+        def __init__(self, image: str = "langfuse/langfuse:2", postgres_dsn: str | None = None, **kwargs):
+            super().__init__(image=image, **kwargs)
+            self.with_exposed_ports(3000)
+
+            # Use internal postgres if not provided
+            self._needs_postgres = postgres_dsn is None
+
+            self.with_env("NEXTAUTH_SECRET", "test-secret-for-ci-testing")
+            self.with_env("NEXTAUTH_URL", "http://localhost:3000")
+            self.with_env("SALT", "test-salt-for-ci-testing")
+            self.with_env("TELEMETRY_ENABLED", "false")
+
+            # Test API keys
+            self.with_env("LANGFUSE_INIT_PROJECT_PUBLIC_KEY", "pk-lf-test-key")
+            self.with_env("LANGFUSE_INIT_PROJECT_SECRET_KEY", "sk-lf-test-key")
+
+            if postgres_dsn:
+                self.with_env("DATABASE_URL", postgres_dsn)
+
+        def get_api_url(self) -> str:
+            host = self.get_container_host_ip()
+            port = self.get_exposed_port(3000)
+            return f"http://{host}:{port}"
+
+        @property
+        def public_key(self) -> str:
+            return "pk-lf-test-key"
+
+        @property
+        def secret_key(self) -> str:
+            return "sk-lf-test-key"
+
+    class PrometheusContainer(DockerContainer):
+        """Prometheus container for metrics tests."""
+
+        def __init__(self, image: str = "prom/prometheus:v2.47.0", **kwargs):
+            super().__init__(image=image, **kwargs)
+            self.with_exposed_ports(9090)
+            self.with_command(
+                "--config.file=/etc/prometheus/prometheus.yml",
+                "--web.enable-lifecycle",
+            )
+
+        def get_api_url(self) -> str:
+            host = self.get_container_host_ip()
+            port = self.get_exposed_port(9090)
+            return f"http://{host}:{port}"
+
+    class MCPProviderContainer(DockerContainer):
+        """Generic MCP Provider container for testing."""
+
+        def __init__(self, image: str, provider_name: str, port: int = 8080, **kwargs):
+            super().__init__(image=image, **kwargs)
+            self.provider_name = provider_name
+            self._port = port
+            self.with_exposed_ports(port)
+
+        def get_mcp_url(self) -> str:
+            host = self.get_container_host_ip()
+            port = self.get_exposed_port(self._port)
+            return f"http://{host}:{port}"
 
 
 # ============================================================================
@@ -94,19 +179,6 @@ def postgres_dsn(postgres_container: dict) -> str:
 # ============================================================================
 
 
-class RedisContainer(DockerContainer):
-    """Redis container for caching and rate limiting tests."""
-
-    def __init__(self, image: str = "redis:7-alpine", **kwargs):
-        super().__init__(image=image, **kwargs)
-        self.with_exposed_ports(6379)
-
-    def get_connection_url(self) -> str:
-        host = self.get_container_host_ip()
-        port = self.get_exposed_port(6379)
-        return f"redis://{host}:{port}/0"
-
-
 @pytest.fixture(scope="session")
 def redis_container() -> Generator[dict[str, Any], None, None]:
     """Start Redis container for caching tests.
@@ -133,42 +205,6 @@ def redis_container() -> Generator[dict[str, Any], None, None]:
 # ============================================================================
 # Langfuse Container (with PostgreSQL)
 # ============================================================================
-
-
-class LangfuseContainer(DockerContainer):
-    """Langfuse container for LLM observability tests."""
-
-    def __init__(self, image: str = "langfuse/langfuse:2", postgres_dsn: str | None = None, **kwargs):
-        super().__init__(image=image, **kwargs)
-        self.with_exposed_ports(3000)
-
-        # Use internal postgres if not provided
-        self._needs_postgres = postgres_dsn is None
-
-        self.with_env("NEXTAUTH_SECRET", "test-secret-for-ci-testing")
-        self.with_env("NEXTAUTH_URL", "http://localhost:3000")
-        self.with_env("SALT", "test-salt-for-ci-testing")
-        self.with_env("TELEMETRY_ENABLED", "false")
-
-        # Test API keys
-        self.with_env("LANGFUSE_INIT_PROJECT_PUBLIC_KEY", "pk-lf-test-key")
-        self.with_env("LANGFUSE_INIT_PROJECT_SECRET_KEY", "sk-lf-test-key")
-
-        if postgres_dsn:
-            self.with_env("DATABASE_URL", postgres_dsn)
-
-    def get_api_url(self) -> str:
-        host = self.get_container_host_ip()
-        port = self.get_exposed_port(3000)
-        return f"http://{host}:{port}"
-
-    @property
-    def public_key(self) -> str:
-        return "pk-lf-test-key"
-
-    @property
-    def secret_key(self) -> str:
-        return "sk-lf-test-key"
 
 
 @pytest.fixture(scope="session")
@@ -224,23 +260,6 @@ def langfuse_config(langfuse_container: dict):
 # ============================================================================
 
 
-class PrometheusContainer(DockerContainer):
-    """Prometheus container for metrics tests."""
-
-    def __init__(self, image: str = "prom/prometheus:v2.47.0", **kwargs):
-        super().__init__(image=image, **kwargs)
-        self.with_exposed_ports(9090)
-        self.with_command(
-            "--config.file=/etc/prometheus/prometheus.yml",
-            "--web.enable-lifecycle",
-        )
-
-    def get_api_url(self) -> str:
-        host = self.get_container_host_ip()
-        port = self.get_exposed_port(9090)
-        return f"http://{host}:{port}"
-
-
 @pytest.fixture(scope="session")
 def prometheus_container() -> Generator[dict[str, Any], None, None]:
     """Start Prometheus container for metrics tests.
@@ -267,21 +286,6 @@ def prometheus_container() -> Generator[dict[str, Any], None, None]:
 # ============================================================================
 # MCP Provider Containers
 # ============================================================================
-
-
-class MCPProviderContainer(DockerContainer):
-    """Generic MCP Provider container for testing."""
-
-    def __init__(self, image: str, provider_name: str, port: int = 8080, **kwargs):
-        super().__init__(image=image, **kwargs)
-        self.provider_name = provider_name
-        self._port = port
-        self.with_exposed_ports(port)
-
-    def get_mcp_url(self) -> str:
-        host = self.get_container_host_ip()
-        port = self.get_exposed_port(self._port)
-        return f"http://{host}:{port}"
 
 
 @pytest.fixture
@@ -353,10 +357,6 @@ def http_client() -> Generator[Any, None, None]:
 def async_http_client() -> Generator[Any, None, None]:
     """Provide async httpx client for API testing."""
     skip_if_no_httpx()
-
-    async def get_client():
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            yield client
 
     # This is a sync fixture that provides async client
     # Use with pytest-asyncio
