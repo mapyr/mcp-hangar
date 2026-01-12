@@ -4,8 +4,8 @@ Prometheus metrics for provider discovery observability.
 Tracks discovery cycles, registrations, conflicts, and validation times.
 """
 
-from functools import wraps
 import time
+from functools import wraps
 from typing import Callable
 
 from ...logging_config import get_logger

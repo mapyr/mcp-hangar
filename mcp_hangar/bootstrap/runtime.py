@@ -9,14 +9,15 @@ without starting any background threads.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 from typing import Any, Optional, Protocol, runtime_checkable
 
 from ..application.event_handlers import get_security_handler
+from ..application.ports.observability import NullObservabilityAdapter, ObservabilityPort
 from ..domain.repository import InMemoryProviderRepository, IProviderRepository
 from ..domain.security.input_validator import InputValidator
-from ..domain.security.rate_limiter import get_rate_limiter, RateLimitConfig
+from ..domain.security.rate_limiter import RateLimitConfig, get_rate_limiter
 from ..infrastructure.command_bus import CommandBus, get_command_bus
 from ..infrastructure.event_bus import EventBus, get_event_bus
 from ..infrastructure.persistence import (
@@ -28,7 +29,7 @@ from ..infrastructure.persistence import (
     SQLiteAuditRepository,
     SQLiteProviderConfigRepository,
 )
-from ..infrastructure.query_bus import get_query_bus, QueryBus
+from ..infrastructure.query_bus import QueryBus, get_query_bus
 
 # =============================================================================
 # Protocol Interfaces for Runtime Dependencies
@@ -108,6 +109,31 @@ class PersistenceConfig:
 
 
 @dataclass(frozen=True)
+class ObservabilityConfig:
+    """Configuration for observability integrations.
+
+    Supports Langfuse for LLM observability and tracing.
+
+    Attributes:
+        langfuse_enabled: Whether Langfuse integration is active.
+        langfuse_public_key: Langfuse public API key.
+        langfuse_secret_key: Langfuse secret API key.
+        langfuse_host: Langfuse host URL.
+        langfuse_sample_rate: Fraction of traces to sample (0.0 to 1.0).
+        langfuse_scrub_inputs: Whether to redact sensitive inputs.
+        langfuse_scrub_outputs: Whether to redact sensitive outputs.
+    """
+
+    langfuse_enabled: bool = False
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
+    langfuse_host: str = "https://cloud.langfuse.com"
+    langfuse_sample_rate: float = 1.0
+    langfuse_scrub_inputs: bool = False
+    langfuse_scrub_outputs: bool = False
+
+
+@dataclass(frozen=True)
 class Runtime:
     """Container for runtime dependencies.
 
@@ -132,6 +158,10 @@ class Runtime:
     audit_repository: Optional[IAuditRepository] = None
     recovery_service: Optional[RecoveryService] = None
 
+    # Observability components (optional)
+    observability_config: Optional[ObservabilityConfig] = None
+    observability: Optional[ObservabilityPort] = None
+
 
 def create_runtime(
     *,
@@ -140,6 +170,7 @@ def create_runtime(
     command_bus: Optional[CommandBus] = None,
     query_bus: Optional[QueryBus] = None,
     persistence_config: Optional[PersistenceConfig] = None,
+    observability_config: Optional[ObservabilityConfig] = None,
     env: Optional[dict[str, str]] = None,
 ) -> Runtime:
     """Create runtime dependencies explicitly.
@@ -150,6 +181,7 @@ def create_runtime(
         command_bus: Optional command bus override.
         query_bus: Optional query bus override.
         persistence_config: Optional persistence configuration.
+        observability_config: Optional observability configuration.
         env: Optional environment mapping (defaults to os.environ).
 
     Returns:
@@ -209,6 +241,43 @@ def create_runtime(
         config_repository = InMemoryProviderConfigRepository()
         audit_repository = InMemoryAuditRepository()
 
+    # Configure observability if enabled
+    langfuse_enabled = env.get("HANGAR_LANGFUSE_ENABLED", "false").lower() == "true"
+
+    if observability_config is None and langfuse_enabled:
+        observability_config = ObservabilityConfig(
+            langfuse_enabled=True,
+            langfuse_public_key=env.get("LANGFUSE_PUBLIC_KEY", ""),
+            langfuse_secret_key=env.get("LANGFUSE_SECRET_KEY", ""),
+            langfuse_host=env.get("LANGFUSE_HOST", "https://cloud.langfuse.com"),
+            langfuse_sample_rate=float(env.get("HANGAR_LANGFUSE_SAMPLE_RATE", "1.0")),
+            langfuse_scrub_inputs=env.get("HANGAR_LANGFUSE_SCRUB_INPUTS", "false").lower() == "true",
+            langfuse_scrub_outputs=env.get("HANGAR_LANGFUSE_SCRUB_OUTPUTS", "false").lower() == "true",
+        )
+
+    observability: ObservabilityPort = NullObservabilityAdapter()
+
+    if observability_config and observability_config.langfuse_enabled:
+        try:
+            from ..infrastructure.observability import LangfuseConfig, LangfuseObservabilityAdapter
+
+            langfuse_config = LangfuseConfig(
+                enabled=True,
+                public_key=observability_config.langfuse_public_key,
+                secret_key=observability_config.langfuse_secret_key,
+                host=observability_config.langfuse_host,
+                sample_rate=observability_config.langfuse_sample_rate,
+                scrub_inputs=observability_config.langfuse_scrub_inputs,
+                scrub_outputs=observability_config.langfuse_scrub_outputs,
+            )
+            observability = LangfuseObservabilityAdapter(langfuse_config)
+        except ImportError:
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "Langfuse enabled but package not installed. Install with: pip install mcp-hangar[observability]"
+            )
+
     return Runtime(
         repository=repo,
         event_bus=eb,
@@ -223,6 +292,8 @@ def create_runtime(
         config_repository=config_repository,
         audit_repository=audit_repository,
         recovery_service=recovery_service,
+        observability_config=observability_config,
+        observability=observability,
     )
 
 
@@ -250,5 +321,8 @@ async def shutdown_runtime(runtime: Runtime) -> None:
     Args:
         runtime: Runtime container to shutdown
     """
+    if runtime.observability:
+        runtime.observability.shutdown()
+
     if runtime.database:
         await runtime.database.close()

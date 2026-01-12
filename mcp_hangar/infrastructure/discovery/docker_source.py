@@ -22,8 +22,8 @@ Label Reference:
 """
 
 import os
-from pathlib import Path
 import platform
+from pathlib import Path
 from typing import List, Optional
 
 from mcp_hangar.domain.discovery.discovered_provider import DiscoveredProvider
@@ -35,8 +35,9 @@ logger = get_logger(__name__)
 
 # Optional Docker dependency (works with Podman too via Docker API compatibility)
 try:
-    import docker
     from docker.errors import DockerException
+
+    import docker
 
     DOCKER_AVAILABLE = True
 except ImportError:

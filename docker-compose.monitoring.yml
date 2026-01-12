@@ -15,7 +15,6 @@
 #   - Alertmanager: http://localhost:9093
 #   - Jaeger UI: http://localhost:16686
 
-version: '3.8'
 
 services:
   # Prometheus - Metrics collection
@@ -24,7 +23,7 @@ services:
     container_name: mcp-prometheus
     volumes:
       - ./monitoring/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
-      - ./monitoring/prometheus/alerts:/etc/prometheus/alerts:ro
+      - ./monitoring/prometheus/alerts.yaml:/etc/prometheus/alerts.yaml:ro
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'

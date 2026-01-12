@@ -67,6 +67,18 @@ providers:
 #     - type: docker
 #       mode: additive
 
+# Observability - Langfuse integration (optional)
+# Provides end-to-end tracing for MCP tool invocations
+# observability:
+#   langfuse:
+#     enabled: true
+#     public_key: ${LANGFUSE_PUBLIC_KEY}   # From Langfuse dashboard
+#     secret_key: ${LANGFUSE_SECRET_KEY}   # From Langfuse dashboard
+#     host: https://cloud.langfuse.com    # Or self-hosted URL
+#     sample_rate: 1.0                    # 0.0-1.0, fraction of traces to sample
+#     scrub_inputs: false                 # Redact sensitive input data
+#     scrub_outputs: false                # Redact sensitive output data
+
 # Logging configuration
 logging:
   level: INFO  # DEBUG, INFO, WARNING, ERROR

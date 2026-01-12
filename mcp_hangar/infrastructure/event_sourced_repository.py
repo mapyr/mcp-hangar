@@ -11,7 +11,7 @@ from ..domain.model.event_sourced_provider import EventSourcedProvider, Provider
 from ..domain.repository import IProviderRepository, ProviderLike
 from ..logging_config import get_logger
 from .event_bus import EventBus, get_event_bus
-from .event_store import EventStore, EventStoreSnapshot, get_event_store, StoredEvent
+from .event_store import EventStore, EventStoreSnapshot, StoredEvent, get_event_store
 
 logger = get_logger(__name__)
 
@@ -148,8 +148,7 @@ class EventSourcedProviderRepository(IProviderRepository):
                     self._event_bus.publish(event)
 
                 logger.debug(
-                    f"Saved {len(events)} events for provider {provider_id}, "
-                    f"version {current_version} -> {new_version}"
+                    f"Saved {len(events)} events for provider {provider_id}, version {current_version} -> {new_version}"
                 )
 
             # Update cache

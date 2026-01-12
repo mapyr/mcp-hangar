@@ -21,12 +21,12 @@ logger = get_logger(__name__)
 
 # Import metadata handling
 try:
-    from importlib.metadata import entry_points, EntryPoint
+    from importlib.metadata import EntryPoint, entry_points
 
     METADATA_AVAILABLE = True
 except ImportError:
     try:
-        from importlib_metadata import entry_points, EntryPoint
+        from importlib_metadata import EntryPoint, entry_points
 
         METADATA_AVAILABLE = True
     except ImportError:

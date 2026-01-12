@@ -9,7 +9,7 @@ serves as an event-driven bridge for external events (like health checks)
 that may not flow through the standard invoke path.
 """
 
-from typing import Callable, Dict, List, Optional, Type, TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Type
 
 from ...domain.events import (
     DomainEvent,

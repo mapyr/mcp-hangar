@@ -1,8 +1,8 @@
 """SQLite implementation of IKnowledgeBase."""
 
-from datetime import datetime, timedelta, timezone
 import hashlib
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -491,7 +491,7 @@ class SQLiteKnowledgeBase(IKnowledgeBase):
                     f"""
                     SELECT provider_id, metric_name, metric_value, labels, timestamp
                     FROM provider_metrics
-                    WHERE {' AND '.join(conditions)}
+                    WHERE {" AND ".join(conditions)}
                     ORDER BY timestamp DESC
                     LIMIT ?
                     """,

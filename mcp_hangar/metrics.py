@@ -7,12 +7,12 @@ Production-grade metrics following Prometheus/OpenMetrics best practices:
 - Standard histogram buckets for different use cases
 """
 
-from collections import defaultdict
-from dataclasses import dataclass, field
-from functools import wraps
 import platform
 import threading
 import time
+from collections import defaultdict
+from dataclasses import dataclass, field
+from functools import wraps
 from typing import Dict, List, Optional
 
 # =============================================================================
@@ -411,7 +411,7 @@ class CollectorRegistry:
                 lines.append(f"{name}_count{labels} {int(sample.value)}")
 
         elif isinstance(collector, Info):
-            lines.append(f"# TYPE {name} info")
+            lines.append(f"# TYPE {name}_info gauge")
             for sample in collector.collect():
                 labels = self._format_labels(sample.labels)
                 lines.append(f"{name}_info{labels} 1")

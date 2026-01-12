@@ -4,9 +4,9 @@ A ProviderGroup is an aggregate root that manages multiple Provider instances
 as a single logical unit with automatic load balancing and failover.
 """
 
-from dataclasses import dataclass
 import threading
 import time
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from ...logging_config import get_logger
@@ -315,7 +315,7 @@ class ProviderGroup(AggregateRoot):
                 )
             )
 
-            logger.info(f"Added member {member_id} to group {self.id} " f"(weight={weight}, priority={priority})")
+            logger.info(f"Added member {member_id} to group {self.id} (weight={weight}, priority={priority})")
 
             # Auto-start if configured
             if self._auto_start:
@@ -487,7 +487,7 @@ class ProviderGroup(AggregateRoot):
                 reason="unhealthy_threshold_reached",
             )
         )
-        logger.info(f"Member {member_id} removed from rotation after " f"{member.consecutive_failures} failures")
+        logger.info(f"Member {member_id} removed from rotation after {member.consecutive_failures} failures")
 
     def _maybe_open_circuit(self) -> None:
         """Open circuit breaker if failure threshold reached."""
@@ -502,7 +502,7 @@ class ProviderGroup(AggregateRoot):
             )
         )
         logger.warning(
-            f"Circuit breaker opened for group {self.id} " f"after {self._circuit_breaker.failure_count} failures"
+            f"Circuit breaker opened for group {self.id} after {self._circuit_breaker.failure_count} failures"
         )
 
     # --- State Management ---
@@ -533,9 +533,7 @@ class ProviderGroup(AggregateRoot):
                     total_count=total,
                 )
             )
-            logger.info(
-                f"Group {self.id} state: {old_state.value} -> {new_state.value} " f"(healthy={healthy}/{total})"
-            )
+            logger.info(f"Group {self.id} state: {old_state.value} -> {new_state.value} (healthy={healthy}/{total})")
 
     def rebalance(self) -> None:
         """

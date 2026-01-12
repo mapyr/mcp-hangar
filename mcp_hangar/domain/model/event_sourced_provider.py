@@ -1,7 +1,7 @@
 """Event Sourced Provider aggregate - provider that rebuilds state from events."""
 
-from dataclasses import dataclass
 import threading
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from ...logging_config import get_logger

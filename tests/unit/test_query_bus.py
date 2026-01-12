@@ -5,7 +5,6 @@ from unittest.mock import Mock
 import pytest
 
 from mcp_hangar.infrastructure.query_bus import (
-    get_query_bus,
     GetProviderHealthQuery,
     GetProviderQuery,
     GetProviderToolsQuery,
@@ -14,6 +13,7 @@ from mcp_hangar.infrastructure.query_bus import (
     Query,
     QueryBus,
     QueryHandler,
+    get_query_bus,
 )
 
 

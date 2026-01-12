@@ -1,0 +1,117 @@
+# MCP Hangar Alert Rules
+# Critical alerts page on-call, warnings notify via Slack/email
+
+groups:
+  - name: mcp-hangar-critical
+    rules:
+      - alert: MCPHangarAllProvidersDown
+        expr: sum(mcp_registry_provider_state{state="ready"}) == 0 and sum(mcp_registry_provider_state) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "All MCP providers are down"
+          description: "No providers in ready state"
+
+      - alert: MCPHangarHighErrorRate
+        expr: (rate(mcp_registry_errors_total[5m]) / (rate(mcp_registry_tool_calls_total[5m]) + 0.001)) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Error rate > 10%"
+          description: "Error rate: {{ $value | humanizePercentage }}"
+
+      - alert: MCPHangarCircuitBreakerOpen
+        expr: mcp_registry_circuit_breaker_state == 1
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Circuit breaker open for {{ $labels.provider }}"
+
+      - alert: MCPHangarNotResponding
+        expr: up{job="mcp-hangar"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MCP Hangar not responding"
+          description: "Cannot scrape metrics"
+
+      - alert: MCPHangarStartupFailed
+        expr: mcp_registry_provider_state{state="dead"} == 1 and on(provider) increase(mcp_registry_cold_starts_total[5m]) > 3
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Provider {{ $labels.provider }} repeatedly failing to start"
+
+  - name: mcp-hangar-warning
+    rules:
+      - alert: MCPHangarProviderDegraded
+        expr: mcp_registry_provider_state{state="degraded"} == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Provider {{ $labels.provider }} degraded"
+
+      - alert: MCPHangarHighLatencyP95
+        expr: histogram_quantile(0.95, rate(mcp_registry_tool_call_duration_seconds_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "P95 latency > 5s"
+          description: "P95: {{ $value | humanizeDuration }}"
+
+      - alert: MCPHangarFrequentColdStarts
+        expr: rate(mcp_registry_cold_starts_total[15m]) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Frequent cold starts - consider increasing idle TTL"
+
+      - alert: MCPHangarDiscoverySourceUnhealthy
+        expr: mcp_registry_discovery_sources_healthy == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Discovery source {{ $labels.source_type }} unhealthy"
+
+      - alert: MCPHangarHighConsecutiveFailures
+        expr: mcp_registry_health_check_consecutive_failures > 2
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Provider {{ $labels.provider }} has {{ $value }} consecutive failures"
+
+      - alert: MCPHangarLowAvailability
+        expr: (sum(mcp_registry_provider_state{state="ready"}) / sum(mcp_registry_provider_state)) < 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Availability below 80%"
+          description: "{{ $value | humanizePercentage }} providers ready"
+
+      - alert: MCPHangarHighMemoryUsage
+        expr: process_resident_memory_bytes{job="mcp-hangar"} / (1024 * 1024 * 1024) > 2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Memory usage > 2GB"
+
+      - alert: MCPHangarRetryExhaustion
+        expr: rate(mcp_registry_retry_exhausted_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High retry exhaustion for {{ $labels.provider }}/{{ $labels.tool }}"
+

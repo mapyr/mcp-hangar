@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Set
 
+# Import main metrics for unified observability
+from mcp_hangar import metrics as main_metrics
 from mcp_hangar.domain.discovery.conflict_resolver import ConflictResolver
 from mcp_hangar.domain.discovery.discovered_provider import DiscoveredProvider
 from mcp_hangar.domain.discovery.discovery_service import (
@@ -17,9 +19,6 @@ from mcp_hangar.domain.discovery.discovery_service import (
 )
 from mcp_hangar.domain.discovery.discovery_source import DiscoverySource
 from mcp_hangar.logging_config import get_logger
-
-# Import main metrics for unified observability
-from mcp_hangar import metrics as main_metrics
 
 from .discovery_metrics import get_discovery_metrics
 from .lifecycle_manager import DiscoveryLifecycleManager
@@ -190,7 +189,7 @@ class DiscoveryOrchestrator:
         # Start discovery loop
         self._discovery_task = asyncio.create_task(self._discovery_loop())
 
-        logger.info(f"Discovery orchestrator started " f"(refresh_interval={self.config.refresh_interval_s}s)")
+        logger.info(f"Discovery orchestrator started (refresh_interval={self.config.refresh_interval_s}s)")
 
     async def stop(self) -> None:
         """Stop the discovery orchestrator."""
