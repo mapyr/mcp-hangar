@@ -1,0 +1,285 @@
+# Release workflow - orchestrates version validation, testing, and artifact publishing
+#
+# Triggered on version tags (v*.*.*) or manual dispatch.
+# Runs full test suite before publishing to PyPI and Docker registries.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g., v1.0.0)"
+        required: true
+        type: string
+      skip_tests:
+        description: "Skip test suite (use with caution)"
+        required: false
+        type: boolean
+        default: false
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  # Validate release tag matches pyproject.toml version
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract.outputs.version }}
+      is_prerelease: ${{ steps.extract.outputs.is_prerelease }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: extract
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+
+          # Strip 'v' prefix for version comparison
+          VERSION="${TAG#v}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+          # Check if prerelease
+          if [[ "$VERSION" =~ (alpha|beta|rc) ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "📦 Release version: ${VERSION}"
+
+      - name: Validate version in pyproject.toml
+        run: |
+          PYPROJECT_VERSION=$(grep -E '^version = "' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          TAG_VERSION="${{ steps.extract.outputs.version }}"
+
+          # For prereleases, strip suffix for comparison (e.g., 1.0.0-rc.1 -> 1.0.0)
+          BASE_TAG_VERSION=$(echo "$TAG_VERSION" | sed 's/-.*//')
+
+          if [ "$PYPROJECT_VERSION" != "$BASE_TAG_VERSION" ] && [ "$PYPROJECT_VERSION" != "$TAG_VERSION" ]; then
+            echo "❌ Version mismatch!"
+            echo "   pyproject.toml: ${PYPROJECT_VERSION}"
+            echo "   Git tag: ${TAG_VERSION}"
+            echo ""
+            echo "Please update pyproject.toml version before tagging."
+            exit 1
+          fi
+
+          echo "✅ Version validated: ${TAG_VERSION}"
+
+  # Run full test suite before release
+  test:
+    name: Test Suite
+    needs: validate
+    if: ${{ github.event.inputs.skip_tests != 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Build test images
+        env:
+          MCP_CONTAINER_RUNTIME: docker
+        run: |
+          cd examples/provider_math && docker build -t mcp-math:latest .
+          cd ../../
+          docker build -f docker/Dockerfile.memory -t mcp-memory:latest .
+          docker build -f docker/Dockerfile.filesystem -t mcp-filesystem:latest .
+
+      - name: Run tests
+        env:
+          MCP_CONTAINER_RUNTIME: docker
+          MCP_CI_RELAX_VOLUME_PERMS: "true"
+          MCP_CONTAINER_INHERIT_STDERR: "true"
+        run: |
+          python -m pytest tests/ -v --tb=short --color=yes -m "not slow"
+
+      - name: Run integration tests
+        if: matrix.python-version == '3.11'
+        env:
+          MCP_CONTAINER_RUNTIME: docker
+          MCP_CI_RELAX_VOLUME_PERMS: "true"
+          MCP_CONTAINER_INHERIT_STDERR: "true"
+        run: |
+          python -m pytest tests/integration/ -v --tb=short --color=yes
+
+  # Publish Python package to PyPI
+  publish-pypi:
+    name: Publish to PyPI
+    needs: [validate, test]
+    if: always() && needs.validate.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ needs.validate.outputs.is_prerelease == 'true' && 'testpypi' || 'pypi' }}
+      url: ${{ needs.validate.outputs.is_prerelease == 'true' && 'https://test.pypi.org/p/mcp-hangar' || 'https://pypi.org/p/mcp-hangar' }}
+    permissions:
+      id-token: write  # Required for trusted publishing
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build hatchling
+
+      - name: Build package
+        run: python -m build
+
+      - name: Verify package
+        run: |
+          pip install twine
+          twine check dist/*
+
+      - name: Publish to TestPyPI (prereleases)
+        if: needs.validate.outputs.is_prerelease == 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+      - name: Publish to PyPI (stable releases)
+        if: needs.validate.outputs.is_prerelease == 'false'
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  # Build and publish Docker images
+  publish-docker:
+    name: Publish Docker Image
+    needs: [validate, test]
+    if: always() && needs.validate.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}},enable=${{ !startsWith(github.ref, 'refs/tags/v0.') }}
+            type=raw,value=latest,enable=${{ needs.validate.outputs.is_prerelease == 'false' }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+  # Create GitHub Release with changelog
+  create-release:
+    name: Create GitHub Release
+    needs: [validate, publish-pypi, publish-docker]
+    if: always() && needs.validate.result == 'success' && needs.publish-pypi.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract changelog for version
+        id: changelog
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+          BASE_VERSION=$(echo "$VERSION" | sed 's/-.*//')
+
+          # Extract section for this version from CHANGELOG.md
+          CHANGELOG=$(awk "/^## \[${BASE_VERSION}\]/{flag=1; next} /^## \[/{flag=0} flag" CHANGELOG.md)
+
+          # If no specific version found, use Unreleased section
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG=$(awk '/^## \[Unreleased\]/{flag=1; next} /^## \[/{flag=0} flag' CHANGELOG.md)
+          fi
+
+          # Escape for GitHub Actions
+          CHANGELOG="${CHANGELOG//'%'/'%25'}"
+          CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
+          CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
+
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "v${{ needs.validate.outputs.version }}"
+          body: |
+            ## What's Changed
+
+            ${{ steps.changelog.outputs.content }}
+
+            ## Installation
+
+            **PyPI:**
+            ```bash
+            pip install mcp-hangar==${{ needs.validate.outputs.version }}
+            ```
+
+            **Docker:**
+            ```bash
+            docker pull ghcr.io/${{ github.repository }}:${{ needs.validate.outputs.version }}
+            ```
+
+            ## Links
+            - [PyPI Package](https://pypi.org/project/mcp-hangar/${{ needs.validate.outputs.version }}/)
+            - [Docker Image](https://ghcr.io/${{ github.repository }}:${{ needs.validate.outputs.version }})
+            - [Documentation](https://mcp-hangar.io/docs)
+          prerelease: ${{ needs.validate.outputs.is_prerelease == 'true' }}
+          generate_release_notes: true
+
