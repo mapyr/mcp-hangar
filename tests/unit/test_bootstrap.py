@@ -3,19 +3,19 @@
 Tests cover application bootstrapping and dependency injection.
 """
 
-from unittest.mock import MagicMock, patch
 import sys
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from mcp_hangar.server.bootstrap import (
+    _auto_add_volumes,
+    _create_discovery_source,
+    _ensure_data_dir,
     ApplicationContext,
     bootstrap,
     GC_WORKER_INTERVAL_SECONDS,
     HEALTH_CHECK_INTERVAL_SECONDS,
-    _auto_add_volumes,
-    _create_discovery_source,
-    _ensure_data_dir,
 )
 
 

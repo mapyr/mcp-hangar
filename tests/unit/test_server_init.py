@@ -7,7 +7,6 @@ These tests verify backward compatibility after the refactoring.
 import os
 from unittest.mock import MagicMock, patch
 
-
 from mcp_hangar.server import (
     _auto_add_volumes,
     _create_discovery_source,
@@ -118,6 +117,7 @@ class TestEnsureDataDir:
     def test_handles_oserror_gracefully(self, tmp_path, monkeypatch):
         """Should handle OSError gracefully."""
         import sys
+
         import mcp_hangar.server.bootstrap  # noqa: F401
 
         bootstrap_mod = sys.modules["mcp_hangar.server.bootstrap"]
@@ -270,6 +270,7 @@ class TestStartBackgroundWorkers:
     def test_starts_gc_worker(self):
         """Should start GC background worker."""
         import sys
+
         import mcp_hangar.server.bootstrap  # noqa: F401
 
         bootstrap_mod = sys.modules["mcp_hangar.server.bootstrap"]
@@ -300,6 +301,7 @@ class TestStartBackgroundWorkers:
     def test_passes_correct_interval_to_gc_worker(self):
         """Should pass correct interval to GC worker."""
         import sys
+
         import mcp_hangar.server.bootstrap  # noqa: F401
 
         bootstrap_mod = sys.modules["mcp_hangar.server.bootstrap"]
@@ -333,6 +335,7 @@ class TestRegisterAllTools:
     def test_registers_all_tool_groups(self):
         """Should register all tool groups."""
         import sys
+
         import mcp_hangar.server.bootstrap  # noqa: F401
 
         bootstrap_mod = sys.modules["mcp_hangar.server.bootstrap"]

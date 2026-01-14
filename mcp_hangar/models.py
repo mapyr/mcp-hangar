@@ -24,8 +24,8 @@ from .domain.exceptions import (
     ValidationError,
 )
 
-# Re-export ProviderState from the canonical location
-from .domain.value_objects import ProviderState
-
 # Re-export ToolSchema from the canonical location
 from .domain.model import ToolSchema
+
+# Re-export ProviderState from the canonical location
+from .domain.value_objects import ProviderState

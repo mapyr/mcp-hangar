@@ -21,12 +21,7 @@ Usage:
 from mcp.server.fastmcp import FastMCP
 
 # Public API imports
-from .bootstrap import (
-    ApplicationContext,
-    bootstrap,
-    GC_WORKER_INTERVAL_SECONDS,
-    HEALTH_CHECK_INTERVAL_SECONDS,
-    # Internal functions exported for backward compatibility / testing
+from .bootstrap import (  # Internal functions exported for backward compatibility / testing
     _auto_add_volumes,
     _create_background_workers,
     _create_discovery_source,
@@ -37,6 +32,10 @@ from .bootstrap import (
     _init_retry_config,
     _init_saga,
     _register_all_tools,
+    ApplicationContext,
+    bootstrap,
+    GC_WORKER_INTERVAL_SECONDS,
+    HEALTH_CHECK_INTERVAL_SECONDS,
 )
 from .cli import CLIConfig, parse_args
 from .config import load_config, load_config_from_file, load_configuration

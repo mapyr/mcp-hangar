@@ -12,8 +12,8 @@ Usage:
 """
 
 import argparse
-import os
 from dataclasses import dataclass
+import os
 from typing import List, Optional
 
 

@@ -3,16 +3,17 @@
 Tests cover the MCPServerFactory, builder pattern, and backward compatibility.
 """
 
-import pytest
 from unittest.mock import AsyncMock, Mock
 
+import pytest
+
 from mcp_hangar.fastmcp_server import (
+    create_fastmcp_server,
     MCPServerFactory,
     MCPServerFactoryBuilder,
     RegistryFunctions,
     ServerConfig,
     setup_fastmcp_server,
-    create_fastmcp_server,
 )
 
 

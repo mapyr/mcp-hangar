@@ -12,9 +12,9 @@ import pytest
 from mcp_hangar.server.bootstrap import ApplicationContext
 from mcp_hangar.server.cli import CLIConfig
 from mcp_hangar.server.lifecycle import (
-    ServerLifecycle,
-    run_server,
     _setup_signal_handlers,
+    run_server,
+    ServerLifecycle,
 )
 
 
