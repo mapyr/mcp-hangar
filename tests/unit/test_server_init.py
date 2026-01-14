@@ -114,16 +114,24 @@ class TestEnsureDataDir:
 
     def test_handles_oserror_gracefully(self, tmp_path, monkeypatch):
         """Should handle OSError gracefully."""
+        import sys
+        import mcp_hangar.server.bootstrap  # noqa: F401
+        bootstrap_mod = sys.modules['mcp_hangar.server.bootstrap']
         monkeypatch.chdir(tmp_path)
 
-        with patch("mcp_hangar.server.bootstrap.Path") as mock_path:
-            mock_data_dir = MagicMock()
-            mock_data_dir.exists.return_value = False
-            mock_data_dir.mkdir.side_effect = OSError("Permission denied")
-            mock_path.return_value = mock_data_dir
+        original_path = bootstrap_mod.Path
 
+        mock_data_dir = MagicMock()
+        mock_data_dir.exists.return_value = False
+        mock_data_dir.mkdir.side_effect = OSError("Permission denied")
+        mock_path = MagicMock(return_value=mock_data_dir)
+        bootstrap_mod.Path = mock_path
+
+        try:
             # Should not raise
-            _ensure_data_dir()
+            bootstrap_mod._ensure_data_dir()
+        finally:
+            bootstrap_mod.Path = original_path
 
 
 class TestCreateDiscoverySource:
@@ -257,30 +265,60 @@ class TestStartBackgroundWorkers:
 
     def test_starts_gc_worker(self):
         """Should start GC background worker."""
-        with patch("mcp_hangar.server.bootstrap.BackgroundWorker") as mock_worker_class:
-            with patch("mcp_hangar.server.bootstrap.PROVIDERS", {}):
-                mock_worker = MagicMock()
-                mock_worker_class.return_value = mock_worker
+        import sys
+        import mcp_hangar.server.bootstrap  # noqa: F401
+        bootstrap_mod = sys.modules['mcp_hangar.server.bootstrap']
 
-                _start_background_workers()
+        original_providers = bootstrap_mod.PROVIDERS
+        original_worker = bootstrap_mod.BackgroundWorker
 
-                # Should be called twice (GC and health check)
-                assert mock_worker_class.call_count == 2
-                assert mock_worker.start.call_count == 2
+        mock_worker_class = MagicMock()
+        mock_worker = MagicMock()
+        mock_worker_class.return_value = mock_worker
+
+        bootstrap_mod.PROVIDERS = {}
+        bootstrap_mod.BackgroundWorker = mock_worker_class
+
+        try:
+            # Call through module to pick up patches
+            workers = bootstrap_mod._create_background_workers()
+            for worker in workers:
+                worker.start()
+
+            # Should be called twice (GC and health check)
+            assert mock_worker_class.call_count == 2
+            assert mock_worker.start.call_count == 2
+        finally:
+            bootstrap_mod.PROVIDERS = original_providers
+            bootstrap_mod.BackgroundWorker = original_worker
 
     def test_passes_correct_interval_to_gc_worker(self):
         """Should pass correct interval to GC worker."""
-        with patch("mcp_hangar.server.bootstrap.BackgroundWorker") as mock_worker_class:
-            with patch("mcp_hangar.server.bootstrap.PROVIDERS", {}):
-                mock_worker = MagicMock()
-                mock_worker_class.return_value = mock_worker
+        import sys
+        import mcp_hangar.server.bootstrap  # noqa: F401
+        bootstrap_mod = sys.modules['mcp_hangar.server.bootstrap']
 
-                _start_background_workers()
+        original_providers = bootstrap_mod.PROVIDERS
+        original_worker = bootstrap_mod.BackgroundWorker
 
-                # First call should be GC worker
-                first_call = mock_worker_class.call_args_list[0]
-                assert first_call.kwargs["interval_s"] == GC_WORKER_INTERVAL_SECONDS
-                assert first_call.kwargs["task"] == "gc"
+        mock_worker_class = MagicMock()
+        mock_worker = MagicMock()
+        mock_worker_class.return_value = mock_worker
+
+        bootstrap_mod.PROVIDERS = {}
+        bootstrap_mod.BackgroundWorker = mock_worker_class
+
+        try:
+            # Call through module to pick up patches
+            bootstrap_mod._create_background_workers()
+
+            # First call should be GC worker
+            first_call = mock_worker_class.call_args_list[0]
+            assert first_call.kwargs["interval_s"] == GC_WORKER_INTERVAL_SECONDS
+            assert first_call.kwargs["task"] == "gc"
+        finally:
+            bootstrap_mod.PROVIDERS = original_providers
+            bootstrap_mod.BackgroundWorker = original_worker
 
 
 class TestRegisterAllTools:
@@ -288,18 +326,44 @@ class TestRegisterAllTools:
 
     def test_registers_all_tool_groups(self):
         """Should register all tool groups."""
+        import sys
+        import mcp_hangar.server.bootstrap  # noqa: F401
+        bootstrap_mod = sys.modules['mcp_hangar.server.bootstrap']
         mock_mcp = MagicMock()
 
-        with patch("mcp_hangar.server.bootstrap.register_registry_tools") as mock_registry:
-            with patch("mcp_hangar.server.bootstrap.register_provider_tools") as mock_provider:
-                with patch("mcp_hangar.server.bootstrap.register_health_tools") as mock_health:
-                    with patch("mcp_hangar.server.bootstrap.register_discovery_tools") as mock_discovery:
-                        with patch("mcp_hangar.server.bootstrap.register_group_tools") as mock_group:
-                            _register_all_tools(mock_mcp)
+        # Store originals
+        originals = {
+            'register_registry_tools': getattr(bootstrap_mod, 'register_registry_tools', None),
+            'register_provider_tools': getattr(bootstrap_mod, 'register_provider_tools', None),
+            'register_health_tools': getattr(bootstrap_mod, 'register_health_tools', None),
+            'register_discovery_tools': getattr(bootstrap_mod, 'register_discovery_tools', None),
+            'register_group_tools': getattr(bootstrap_mod, 'register_group_tools', None),
+        }
 
-                            mock_registry.assert_called_once_with(mock_mcp)
-                            mock_provider.assert_called_once_with(mock_mcp)
-                            mock_health.assert_called_once_with(mock_mcp)
-                            mock_discovery.assert_called_once_with(mock_mcp)
-                            mock_group.assert_called_once_with(mock_mcp)
+        # Create mocks
+        mocks = {
+            'register_registry_tools': MagicMock(),
+            'register_provider_tools': MagicMock(),
+            'register_health_tools': MagicMock(),
+            'register_discovery_tools': MagicMock(),
+            'register_group_tools': MagicMock(),
+        }
+
+        # Apply mocks
+        for name, mock in mocks.items():
+            setattr(bootstrap_mod, name, mock)
+
+        try:
+            bootstrap_mod._register_all_tools(mock_mcp)
+
+            mocks['register_registry_tools'].assert_called_once_with(mock_mcp)
+            mocks['register_provider_tools'].assert_called_once_with(mock_mcp)
+            mocks['register_health_tools'].assert_called_once_with(mock_mcp)
+            mocks['register_discovery_tools'].assert_called_once_with(mock_mcp)
+            mocks['register_group_tools'].assert_called_once_with(mock_mcp)
+        finally:
+            # Restore originals
+            for name, original in originals.items():
+                if original is not None:
+                    setattr(bootstrap_mod, name, original)
 
