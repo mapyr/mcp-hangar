@@ -213,15 +213,22 @@ class TestParseArgsCombined:
     def test_parse_args_all_options_combined(self):
         """Should parse all options together."""
         with patch.dict(os.environ, {}, clear=True):
-            config = parse_args([
-                "--http",
-                "--host", "localhost",
-                "--port", "8080",
-                "--config", "custom.yaml",
-                "--log-file", "server.log",
-                "--log-level", "DEBUG",
-                "--json-logs",
-            ])
+            config = parse_args(
+                [
+                    "--http",
+                    "--host",
+                    "localhost",
+                    "--port",
+                    "8080",
+                    "--config",
+                    "custom.yaml",
+                    "--log-file",
+                    "server.log",
+                    "--log-level",
+                    "DEBUG",
+                    "--json-logs",
+                ]
+            )
 
         assert config.http_mode is True
         assert config.http_host == "localhost"
@@ -242,12 +249,17 @@ class TestParseArgsCombined:
         }
 
         with patch.dict(os.environ, env_vars, clear=True):
-            config = parse_args([
-                "--http",
-                "--host", "cli-host",
-                "--port", "9000",
-                "--log-level", "DEBUG",
-            ])
+            config = parse_args(
+                [
+                    "--http",
+                    "--host",
+                    "cli-host",
+                    "--port",
+                    "9000",
+                    "--log-level",
+                    "DEBUG",
+                ]
+            )
 
         # CLI overrides
         assert config.http_mode is True  # --http overrides MCP_MODE=stdio
@@ -272,6 +284,7 @@ class TestParseArgsEdgeCases:
     def test_parse_args_none_uses_sys_argv(self):
         """None args should use sys.argv (tested via mock)."""
         import sys
+
         original_argv = sys.argv.copy()
         try:
             sys.argv = ["mcp-hangar", "--http", "--port", "5000"]
@@ -289,4 +302,3 @@ class TestParseArgsEdgeCases:
             config = parse_args([])
 
         assert config.log_level == "DEBUG"
-

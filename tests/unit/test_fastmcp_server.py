@@ -576,7 +576,7 @@ class TestNoSideEffectsOnImport:
 
     def test_import_doesnt_call_registry_functions(self, mock_registry):
         """Importing and creating factory doesn't call registry functions."""
-        factory = MCPServerFactory(mock_registry)
+        _factory = MCPServerFactory(mock_registry)  # noqa: F841
 
         # Registry functions should not be called just by creating factory
         mock_registry.list.assert_not_called()
@@ -592,4 +592,3 @@ class TestNoSideEffectsOnImport:
         mock_registry.list.assert_not_called()
         mock_registry.start.assert_not_called()
         mock_registry.health.assert_not_called()
-

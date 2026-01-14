@@ -7,15 +7,12 @@ These tests verify backward compatibility after the refactoring.
 import os
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from mcp_hangar.server import (
     _auto_add_volumes,
     _create_discovery_source,
     _ensure_data_dir,
     _parse_args,
-    _register_all_tools,
-    _start_background_workers,
     GC_WORKER_INTERVAL_SECONDS,
     HEALTH_CHECK_INTERVAL_SECONDS,
 )
@@ -73,13 +70,19 @@ class TestParseArgs:
     def test_all_options_combined(self):
         """Should parse all options together."""
         with patch.dict(os.environ, {}, clear=True):
-            config = _parse_args([
-                "--http",
-                "--host", "0.0.0.0",
-                "--port", "8080",
-                "--config", "custom.yaml",
-                "--log-file", "server.log",
-            ])
+            config = _parse_args(
+                [
+                    "--http",
+                    "--host",
+                    "0.0.0.0",
+                    "--port",
+                    "8080",
+                    "--config",
+                    "custom.yaml",
+                    "--log-file",
+                    "server.log",
+                ]
+            )
 
         assert config.http_mode is True
         assert config.http_host == "0.0.0.0"
@@ -116,7 +119,8 @@ class TestEnsureDataDir:
         """Should handle OSError gracefully."""
         import sys
         import mcp_hangar.server.bootstrap  # noqa: F401
-        bootstrap_mod = sys.modules['mcp_hangar.server.bootstrap']
+
+        bootstrap_mod = sys.modules["mcp_hangar.server.bootstrap"]
         monkeypatch.chdir(tmp_path)
 
         original_path = bootstrap_mod.Path
@@ -267,7 +271,8 @@ class TestStartBackgroundWorkers:
         """Should start GC background worker."""
         import sys
         import mcp_hangar.server.bootstrap  # noqa: F401
-        bootstrap_mod = sys.modules['mcp_hangar.server.bootstrap']
+
+        bootstrap_mod = sys.modules["mcp_hangar.server.bootstrap"]
 
         original_providers = bootstrap_mod.PROVIDERS
         original_worker = bootstrap_mod.BackgroundWorker
@@ -296,7 +301,8 @@ class TestStartBackgroundWorkers:
         """Should pass correct interval to GC worker."""
         import sys
         import mcp_hangar.server.bootstrap  # noqa: F401
-        bootstrap_mod = sys.modules['mcp_hangar.server.bootstrap']
+
+        bootstrap_mod = sys.modules["mcp_hangar.server.bootstrap"]
 
         original_providers = bootstrap_mod.PROVIDERS
         original_worker = bootstrap_mod.BackgroundWorker
@@ -328,25 +334,26 @@ class TestRegisterAllTools:
         """Should register all tool groups."""
         import sys
         import mcp_hangar.server.bootstrap  # noqa: F401
-        bootstrap_mod = sys.modules['mcp_hangar.server.bootstrap']
+
+        bootstrap_mod = sys.modules["mcp_hangar.server.bootstrap"]
         mock_mcp = MagicMock()
 
         # Store originals
         originals = {
-            'register_registry_tools': getattr(bootstrap_mod, 'register_registry_tools', None),
-            'register_provider_tools': getattr(bootstrap_mod, 'register_provider_tools', None),
-            'register_health_tools': getattr(bootstrap_mod, 'register_health_tools', None),
-            'register_discovery_tools': getattr(bootstrap_mod, 'register_discovery_tools', None),
-            'register_group_tools': getattr(bootstrap_mod, 'register_group_tools', None),
+            "register_registry_tools": getattr(bootstrap_mod, "register_registry_tools", None),
+            "register_provider_tools": getattr(bootstrap_mod, "register_provider_tools", None),
+            "register_health_tools": getattr(bootstrap_mod, "register_health_tools", None),
+            "register_discovery_tools": getattr(bootstrap_mod, "register_discovery_tools", None),
+            "register_group_tools": getattr(bootstrap_mod, "register_group_tools", None),
         }
 
         # Create mocks
         mocks = {
-            'register_registry_tools': MagicMock(),
-            'register_provider_tools': MagicMock(),
-            'register_health_tools': MagicMock(),
-            'register_discovery_tools': MagicMock(),
-            'register_group_tools': MagicMock(),
+            "register_registry_tools": MagicMock(),
+            "register_provider_tools": MagicMock(),
+            "register_health_tools": MagicMock(),
+            "register_discovery_tools": MagicMock(),
+            "register_group_tools": MagicMock(),
         }
 
         # Apply mocks
@@ -356,14 +363,13 @@ class TestRegisterAllTools:
         try:
             bootstrap_mod._register_all_tools(mock_mcp)
 
-            mocks['register_registry_tools'].assert_called_once_with(mock_mcp)
-            mocks['register_provider_tools'].assert_called_once_with(mock_mcp)
-            mocks['register_health_tools'].assert_called_once_with(mock_mcp)
-            mocks['register_discovery_tools'].assert_called_once_with(mock_mcp)
-            mocks['register_group_tools'].assert_called_once_with(mock_mcp)
+            mocks["register_registry_tools"].assert_called_once_with(mock_mcp)
+            mocks["register_provider_tools"].assert_called_once_with(mock_mcp)
+            mocks["register_health_tools"].assert_called_once_with(mock_mcp)
+            mocks["register_discovery_tools"].assert_called_once_with(mock_mcp)
+            mocks["register_group_tools"].assert_called_once_with(mock_mcp)
         finally:
             # Restore originals
             for name, original in originals.items():
                 if original is not None:
                     setattr(bootstrap_mod, name, original)
-

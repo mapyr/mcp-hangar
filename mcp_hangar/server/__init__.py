@@ -18,6 +18,8 @@ Usage:
     run_server(cli_config)
 """
 
+from mcp.server.fastmcp import FastMCP
+
 # Public API imports
 from .bootstrap import (
     ApplicationContext,
@@ -53,6 +55,7 @@ from .tools import registry_list
 # Backward compatibility: expose _parse_args as alias
 _parse_args = parse_args
 
+
 # Backward compatibility: expose _start_background_workers
 def _start_background_workers() -> None:
     """Start GC and health check background workers.
@@ -76,7 +79,6 @@ def main():
 
 # FastMCP server instance for backward compatibility
 # Note: This is lazily created by bootstrap() now
-from mcp.server.fastmcp import FastMCP
 mcp = FastMCP("mcp-registry")
 
 
@@ -125,4 +127,3 @@ __all__ = [
     "_start_background_workers",
     "_register_all_tools",
 ]
-

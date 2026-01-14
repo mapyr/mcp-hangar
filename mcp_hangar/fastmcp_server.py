@@ -349,9 +349,7 @@ class MCPServerFactory:
         async def ready_endpoint(request):
             """Readiness endpoint with internal checks."""
             checks = self._run_readiness_checks()
-            ready = all(
-                v is True for k, v in checks.items() if isinstance(v, bool)
-            )
+            ready = all(v is True for k, v in checks.items() if isinstance(v, bool))
             return JSONResponse(
                 {"ready": ready, "service": "mcp-registry", "checks": checks},
                 status_code=200 if ready else 503,
@@ -729,18 +727,18 @@ class MCPServerFactoryBuilder:
         Raises:
             ValueError: If required registry functions not provided.
         """
-        if not all([
-            self._list_fn,
-            self._start_fn,
-            self._stop_fn,
-            self._invoke_fn,
-            self._tools_fn,
-            self._details_fn,
-            self._health_fn,
-        ]):
-            raise ValueError(
-                "All core registry functions must be provided via with_registry()"
-            )
+        if not all(
+            [
+                self._list_fn,
+                self._start_fn,
+                self._stop_fn,
+                self._invoke_fn,
+                self._tools_fn,
+                self._details_fn,
+                self._health_fn,
+            ]
+        ):
+            raise ValueError("All core registry functions must be provided via with_registry()")
 
         registry = RegistryFunctions(
             list=self._list_fn,
@@ -883,8 +881,7 @@ def run_fastmcp_server():
 
     if _compat_factory is None:
         raise RuntimeError(
-            "setup_fastmcp_server() must be called before run_fastmcp_server(). "
-            "Consider migrating to MCPServerFactory."
+            "setup_fastmcp_server() must be called before run_fastmcp_server(). Consider migrating to MCPServerFactory."
         )
 
     logger.info(
@@ -945,4 +942,3 @@ if __name__ == "__main__":
 
     # Example with deprecated API (will emit warning)
     run_fastmcp_server()
-

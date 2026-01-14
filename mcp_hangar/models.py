@@ -29,4 +29,3 @@ from .domain.value_objects import ProviderState
 
 # Re-export ToolSchema from the canonical location
 from .domain.model import ToolSchema
-

@@ -107,7 +107,7 @@ class TestServerLifecycle:
         lifecycle._running = True
 
         # Mock the context's shutdown behavior
-        with patch.object(mock_context, 'shutdown', MagicMock()) as mock_shutdown:
+        with patch.object(mock_context, "shutdown", MagicMock()) as mock_shutdown:
             lifecycle.shutdown()
 
             assert lifecycle._shutdown_requested is True
@@ -118,7 +118,7 @@ class TestServerLifecycle:
         """shutdown() should be idempotent."""
         lifecycle = ServerLifecycle(mock_context)
 
-        with patch.object(mock_context, 'shutdown', MagicMock()) as mock_shutdown:
+        with patch.object(mock_context, "shutdown", MagicMock()) as mock_shutdown:
             lifecycle.shutdown()
             lifecycle.shutdown()  # Second call should be no-op
 
@@ -153,9 +153,8 @@ class TestServerLifecycle:
 
     def test_run_http(self, mock_context):
         """run_http() should configure and run uvicorn."""
-        import sys
         mock_uvicorn = MagicMock()
-        sys.modules['uvicorn'] = mock_uvicorn
+        sys.modules["uvicorn"] = mock_uvicorn
 
         try:
             with patch("asyncio.run") as mock_asyncio_run:
@@ -168,13 +167,12 @@ class TestServerLifecycle:
             assert mock_context.mcp_server.settings.host == "127.0.0.1"
             assert mock_context.mcp_server.settings.port == 9000
         finally:
-            del sys.modules['uvicorn']
+            del sys.modules["uvicorn"]
 
     def test_run_http_handles_keyboard_interrupt(self, mock_context):
         """run_http() should handle KeyboardInterrupt gracefully."""
-        import sys
         mock_uvicorn = MagicMock()
-        sys.modules['uvicorn'] = mock_uvicorn
+        sys.modules["uvicorn"] = mock_uvicorn
 
         try:
             with patch("asyncio.run") as mock_asyncio_run:
@@ -184,7 +182,7 @@ class TestServerLifecycle:
                 # Should not raise
                 lifecycle.run_http("localhost", 8000)
         finally:
-            del sys.modules['uvicorn']
+            del sys.modules["uvicorn"]
 
 
 class TestSetupSignalHandlers:
@@ -244,12 +242,13 @@ class TestRunServer:
     @pytest.fixture
     def mock_dependencies(self):
         """Mock all dependencies for run_server."""
-        with patch("mcp_hangar.server.lifecycle.setup_logging") as mock_setup_log, \
-             patch("mcp_hangar.server.lifecycle.bootstrap") as mock_bootstrap, \
-             patch("mcp_hangar.server.lifecycle._setup_signal_handlers") as mock_signals, \
-             patch("mcp_hangar.server.lifecycle.get_discovery_orchestrator") as mock_get_disc, \
-             patch("mcp_hangar.server.lifecycle.ServerLifecycle") as MockLifecycle:
-
+        with (
+            patch("mcp_hangar.server.lifecycle.setup_logging") as mock_setup_log,
+            patch("mcp_hangar.server.lifecycle.bootstrap") as mock_bootstrap,
+            patch("mcp_hangar.server.lifecycle._setup_signal_handlers") as mock_signals,
+            patch("mcp_hangar.server.lifecycle.get_discovery_orchestrator") as mock_get_disc,
+            patch("mcp_hangar.server.lifecycle.ServerLifecycle") as MockLifecycle,
+        ):
             mock_context = MagicMock()
             mock_context.runtime.repository.get_all_ids.return_value = ["provider1"]
             mock_bootstrap.return_value = mock_context
@@ -354,4 +353,3 @@ class TestRunServer:
 
         # Shutdown should still be called
         mock_dependencies["lifecycle_instance"].shutdown.assert_called_once()
-
