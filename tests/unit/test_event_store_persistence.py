@@ -10,7 +10,6 @@ import pytest
 
 from mcp_hangar.domain.contracts.event_store import (
     ConcurrencyError,
-    IEventStore,
     NullEventStore,
 )
 from mcp_hangar.domain.events import (

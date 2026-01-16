@@ -1,7 +1,5 @@
 """Tests for EventBus with Event Store integration."""
 
-import threading
-
 import pytest
 
 from mcp_hangar.domain.contracts.event_store import ConcurrencyError
