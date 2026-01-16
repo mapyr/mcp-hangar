@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-01-16
+
+### Added
+- **Event Store Implementation**: Full Event Sourcing support with persistence
+  - `IEventStore` interface with SQLite and In-Memory implementations
+  - Optimistic concurrency control for concurrent event appends
+  - Event serialization/deserialization with JSON support
+  - Integration with EventBus for automatic event persistence
+  - `publish_to_stream()` and `publish_aggregate_events()` methods
+  - Configurable via `event_store` section in config.yaml
+  - Complete test coverage (33 new tests)
+  - Documentation in `.github/copilot-instructions.md`
+
 ## [0.1.3] - 2026-01-14
 
 ## [0.1.2] - 2026-01-13
