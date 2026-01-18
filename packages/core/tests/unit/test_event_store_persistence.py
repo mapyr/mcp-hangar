@@ -3,8 +3,8 @@
 Covers SQLiteEventStore and InMemoryEventStore from persistence module.
 """
 
-import threading
 from pathlib import Path
+import threading
 
 import pytest
 

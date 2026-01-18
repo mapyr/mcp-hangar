@@ -11,8 +11,8 @@ Usage:
     pytest --run-containers tests/integration/containers/
 """
 
-import time
 from collections.abc import Generator
+import time
 from typing import Any
 
 import pytest

@@ -6,8 +6,8 @@ Provides:
 - Testcontainers integration for integration tests
 """
 
-import os
 from collections.abc import Generator
+import os
 
 import pytest
 

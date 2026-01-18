@@ -6,7 +6,7 @@ Tests cover:
 - Value objects (Principal, Permission, Role)
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 import pytest
 

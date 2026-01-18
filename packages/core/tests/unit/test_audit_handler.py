@@ -1,6 +1,6 @@
 """Tests for Audit Event Handler."""
 
-from datetime import UTC, datetime
+from datetime import datetime, UTC
 from unittest.mock import patch
 
 import pytest

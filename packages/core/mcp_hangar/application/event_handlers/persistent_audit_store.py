@@ -5,7 +5,7 @@ persistent IAuditRepository implementation.
 """
 
 import asyncio
-from datetime import UTC, datetime
+from datetime import datetime, UTC
 
 from ...domain.contracts.persistence import AuditAction, AuditEntry, IAuditRepository
 from ...infrastructure.async_executor import submit_async

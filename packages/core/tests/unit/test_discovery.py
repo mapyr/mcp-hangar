@@ -1,6 +1,6 @@
 """Unit tests for Provider Discovery components."""
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 import pytest
 

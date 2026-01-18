@@ -1,8 +1,8 @@
 """Tests for SQLite-based auth storage."""
 
-import tempfile
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from pathlib import Path
+import tempfile
 
 import pytest
 

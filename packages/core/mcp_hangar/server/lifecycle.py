@@ -12,9 +12,9 @@ The lifecycle flow:
 """
 
 import asyncio
+from pathlib import Path
 import signal
 import sys
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import yaml

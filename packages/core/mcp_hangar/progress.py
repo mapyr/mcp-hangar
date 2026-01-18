@@ -23,11 +23,11 @@ See docs/guides/UX_IMPROVEMENTS.md for more examples.
 """
 
 import asyncio
-import threading
-import time
 from collections.abc import AsyncIterator, Callable, Iterator
 from dataclasses import dataclass, field
 from enum import Enum
+import threading
+import time
 from typing import Any
 
 from .logging_config import get_logger

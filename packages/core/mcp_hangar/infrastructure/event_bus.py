@@ -4,8 +4,8 @@ The event bus allows decoupled communication between components via domain event
 Supports optional event persistence via IEventStore.
 """
 
-import threading
 from collections.abc import Callable
+import threading
 
 from mcp_hangar.domain.contracts.event_store import IEventStore, NullEventStore
 from mcp_hangar.domain.events import DomainEvent

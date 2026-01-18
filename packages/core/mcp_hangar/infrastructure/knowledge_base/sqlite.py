@@ -1,8 +1,8 @@
 """SQLite implementation of IKnowledgeBase."""
 
+from datetime import datetime, timedelta, UTC
 import hashlib
 import json
-from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 

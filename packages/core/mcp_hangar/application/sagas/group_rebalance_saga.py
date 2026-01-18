@@ -10,7 +10,7 @@ that may not flow through the standard invoke path.
 """
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Optional
+from typing import Optional, TYPE_CHECKING
 
 from ...domain.events import (
     DomainEvent,

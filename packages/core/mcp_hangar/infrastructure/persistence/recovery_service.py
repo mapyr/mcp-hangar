@@ -5,7 +5,7 @@ restoring system state after restart.
 """
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, UTC
 from typing import Any
 
 from ...domain.contracts.persistence import AuditAction, AuditEntry, ProviderConfigSnapshot

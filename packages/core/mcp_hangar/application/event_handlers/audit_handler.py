@@ -1,10 +1,10 @@
 """Audit event handler for compliance and debugging."""
 
-import json
-import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, UTC
+import json
+import logging
 from typing import Any
 
 from ...domain.events import DomainEvent

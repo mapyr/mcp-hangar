@@ -10,13 +10,13 @@ an optional event_publisher callback. For full CQRS integration,
 inject the EventBus.publish method as the event_publisher.
 """
 
+from collections.abc import Callable
+from datetime import datetime, UTC
 import json
+from pathlib import Path
 import secrets
 import sqlite3
 import threading
-from collections.abc import Callable
-from datetime import UTC, datetime
-from pathlib import Path
 
 import structlog
 

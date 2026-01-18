@@ -10,15 +10,15 @@ Provides dedicated security audit logging for:
 - Command injection attempts
 """
 
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from datetime import datetime, UTC
+from enum import Enum
 import hashlib
 import json
 import logging
 import threading
 import time
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from datetime import UTC, datetime
-from enum import Enum
 from typing import Any
 
 from ...domain.events import (

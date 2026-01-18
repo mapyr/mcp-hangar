@@ -6,9 +6,8 @@ that might not be covered by example-based tests.
 
 import sys
 
+from hypothesis import given, HealthCheck, settings, strategies as st
 import pytest
-from hypothesis import HealthCheck, given, settings
-from hypothesis import strategies as st
 
 from mcp_hangar.application.ports.observability import NullObservabilityAdapter, NullSpanHandle, TraceContext
 

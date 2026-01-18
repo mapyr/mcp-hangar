@@ -1,8 +1,8 @@
 """Tests for auth storage CQRS integration - event emission."""
 
-import tempfile
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from pathlib import Path
+import tempfile
 from unittest.mock import Mock
 
 import pytest

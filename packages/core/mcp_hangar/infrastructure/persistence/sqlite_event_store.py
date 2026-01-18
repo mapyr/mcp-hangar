@@ -4,11 +4,11 @@ Provides durable event persistence suitable for single-node deployments.
 For distributed systems, consider PostgreSQL or EventStoreDB.
 """
 
+from collections.abc import Iterator
+from datetime import datetime, UTC
+from pathlib import Path
 import sqlite3
 import threading
-from collections.abc import Iterator
-from datetime import UTC, datetime
-from pathlib import Path
 
 from mcp_hangar.domain.contracts.event_store import ConcurrencyError, IEventStore
 from mcp_hangar.domain.events import DomainEvent

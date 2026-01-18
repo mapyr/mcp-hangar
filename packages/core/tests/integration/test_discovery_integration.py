@@ -14,9 +14,9 @@ Requirements:
 """
 
 import asyncio
-import sys
 from datetime import UTC
 from pathlib import Path
+import sys
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent

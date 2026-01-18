@@ -17,8 +17,8 @@ Usage:
 """
 
 import argparse
+from datetime import datetime, timedelta, UTC
 import sys
-from datetime import UTC, datetime, timedelta
 
 from ..domain.security.roles import list_builtin_roles
 from ..infrastructure.auth.api_key_authenticator import InMemoryApiKeyStore

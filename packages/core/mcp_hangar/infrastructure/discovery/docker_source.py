@@ -22,8 +22,8 @@ Label Reference:
 """
 
 import os
-import platform
 from pathlib import Path
+import platform
 
 from mcp_hangar.domain.discovery.discovered_provider import DiscoveredProvider
 from mcp_hangar.domain.discovery.discovery_source import DiscoveryMode, DiscoverySource

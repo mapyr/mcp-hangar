@@ -6,7 +6,7 @@ quarantine management, and graceful deregistration.
 
 import asyncio
 from collections.abc import Awaitable, Callable
-from datetime import UTC, datetime
+from datetime import datetime, UTC
 
 from mcp_hangar.domain.discovery.discovered_provider import DiscoveredProvider
 

@@ -3,13 +3,13 @@
 Provides append-only storage of domain events with optimistic concurrency control.
 """
 
-import json
-import threading
-import time
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass, field
+import json
 from pathlib import Path
+import threading
+import time
 from typing import Any
 
 from ..domain.events import DomainEvent

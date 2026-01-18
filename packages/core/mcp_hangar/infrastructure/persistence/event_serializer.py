@@ -3,9 +3,9 @@
 Handles conversion of domain events to/from JSON for storage in event store.
 """
 
+from datetime import datetime
 import inspect
 import json
-from datetime import datetime
 from typing import Any
 
 from mcp_hangar.domain.events import (

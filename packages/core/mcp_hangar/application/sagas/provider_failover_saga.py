@@ -1,7 +1,7 @@
 """Provider Failover Saga - failover to backup providers on failure."""
 
-import time
 from dataclasses import dataclass
+import time
 
 from ...domain.events import DomainEvent, ProviderDegraded, ProviderStarted, ProviderStopped
 from ...infrastructure.saga_manager import EventTriggeredSaga

@@ -22,9 +22,6 @@ from mcp.server.fastmcp import FastMCP
 
 # Public API imports
 from .bootstrap import (  # Internal functions exported for backward compatibility / testing
-    GC_WORKER_INTERVAL_SECONDS,
-    HEALTH_CHECK_INTERVAL_SECONDS,
-    ApplicationContext,
     _auto_add_volumes,
     _create_background_workers,
     _create_discovery_source,
@@ -35,12 +32,15 @@ from .bootstrap import (  # Internal functions exported for backward compatibili
     _init_retry_config,
     _init_saga,
     _register_all_tools,
+    ApplicationContext,
     bootstrap,
+    GC_WORKER_INTERVAL_SECONDS,
+    HEALTH_CHECK_INTERVAL_SECONDS,
 )
 from .cli import CLIConfig, parse_args
 from .config import load_config, load_config_from_file, load_configuration
-from .lifecycle import ServerLifecycle, run_server
-from .state import COMMAND_BUS, EVENT_BUS, GROUPS, PROVIDER_REPOSITORY, PROVIDERS, QUERY_BUS, get_runtime
+from .lifecycle import run_server, ServerLifecycle
+from .state import COMMAND_BUS, EVENT_BUS, get_runtime, GROUPS, PROVIDER_REPOSITORY, PROVIDERS, QUERY_BUS
 from .tools import registry_list
 
 # Backward compatibility: expose _parse_args as alias

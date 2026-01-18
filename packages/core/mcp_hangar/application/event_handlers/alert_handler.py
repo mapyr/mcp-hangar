@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, UTC
 from typing import Any
 
 from ...domain.events import DomainEvent, HealthCheckFailed, ProviderDegraded, ProviderStopped, ToolInvocationFailed

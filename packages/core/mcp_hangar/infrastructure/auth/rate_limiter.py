@@ -6,9 +6,9 @@ the number of failed authentication attempts per IP address.
 Uses a token bucket algorithm with per-IP tracking.
 """
 
+from dataclasses import dataclass, field
 import threading
 import time
-from dataclasses import dataclass, field
 from typing import NamedTuple
 
 import structlog

@@ -4,7 +4,7 @@ import threading
 import time
 from typing import Any, Literal
 
-from .domain.contracts.provider_runtime import ProviderMapping, ProviderRuntime, normalize_state_to_str
+from .domain.contracts.provider_runtime import normalize_state_to_str, ProviderMapping, ProviderRuntime
 from .infrastructure.event_bus import get_event_bus
 from .logging_config import get_logger
 from .metrics import observe_health_check, record_error, record_gc_cycle, record_provider_stop

@@ -1,6 +1,6 @@
 """Tests for Auth CQRS command handlers."""
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from unittest.mock import Mock
 
 import pytest
@@ -18,9 +18,9 @@ from mcp_hangar.application.commands.auth_handlers import (
     CreateApiKeyHandler,
     CreateCustomRoleHandler,
     ListApiKeysHandler,
+    register_auth_command_handlers,
     RevokeApiKeyHandler,
     RevokeRoleHandler,
-    register_auth_command_handlers,
 )
 from mcp_hangar.infrastructure.auth.api_key_authenticator import InMemoryApiKeyStore
 from mcp_hangar.infrastructure.auth.rbac_authorizer import InMemoryRoleStore

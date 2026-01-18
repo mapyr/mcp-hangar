@@ -1,9 +1,9 @@
 """In-memory implementation of IKnowledgeBase for testing."""
 
+from collections import defaultdict
+from datetime import datetime, timedelta, UTC
 import hashlib
 import json
-from collections import defaultdict
-from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from ...logging_config import get_logger

@@ -1,6 +1,6 @@
 """Tests for persistence layer - audit repository."""
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 import pytest
 

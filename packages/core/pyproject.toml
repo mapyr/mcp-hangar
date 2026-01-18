@@ -90,6 +90,7 @@ ignore = [
     "SIM110", # any() instead of for loop - readability preference
     "SIM117", # Nested with statements - readability preference
     "SIM118", # key in dict - minor style
+    "UP038",  # Use X | Y in isinstance - requires Python 3.10+
 ]
 
 [tool.mypy]

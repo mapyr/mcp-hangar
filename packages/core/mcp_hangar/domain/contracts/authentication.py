@@ -6,7 +6,7 @@ Infrastructure layer provides concrete implementations.
 
 from abc import abstractmethod
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, UTC
 from typing import Protocol, runtime_checkable
 
 from ..value_objects import Principal

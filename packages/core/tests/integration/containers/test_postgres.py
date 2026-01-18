@@ -150,8 +150,8 @@ class TestPostgresAuditLog:
         dsn = postgres_container["dsn"]
 
         try:
-            import json
             from datetime import datetime, timedelta
+            import json
 
             import asyncpg
 

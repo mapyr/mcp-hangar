@@ -22,7 +22,7 @@ Starting is handled by the lifecycle module.
 import asyncio
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any, TYPE_CHECKING
 
 from mcp.server.fastmcp import FastMCP
 
@@ -44,10 +44,10 @@ from .auth_config import parse_auth_config
 from .config import load_configuration
 from .context import get_context, init_context
 from .state import (
+    get_runtime,
     GROUPS,
     PROVIDER_REPOSITORY,
     PROVIDERS,
-    get_runtime,
     set_discovery_orchestrator,
     set_group_rebalance_saga,
 )
@@ -388,7 +388,7 @@ def _init_knowledge_base(config: dict[str, Any]) -> None:
     Args:
         config: Full configuration dictionary.
     """
-    from ..infrastructure.knowledge_base import KnowledgeBaseConfig, init_knowledge_base
+    from ..infrastructure.knowledge_base import init_knowledge_base, KnowledgeBaseConfig
 
     kb_config_dict = config.get("knowledge_base", {})
     kb_config = KnowledgeBaseConfig.from_dict(kb_config_dict)

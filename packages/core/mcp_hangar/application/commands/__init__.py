@@ -13,9 +13,9 @@ from .auth_handlers import (
     CreateApiKeyHandler,
     CreateCustomRoleHandler,
     ListApiKeysHandler,
+    register_auth_command_handlers,
     RevokeApiKeyHandler,
     RevokeRoleHandler,
-    register_auth_command_handlers,
 )
 from .commands import (
     Command,
@@ -28,10 +28,10 @@ from .commands import (
 from .handlers import (
     HealthCheckHandler,
     InvokeToolHandler,
+    register_all_handlers,
     ShutdownIdleProvidersHandler,
     StartProviderHandler,
     StopProviderHandler,
-    register_all_handlers,
 )
 
 __all__ = [

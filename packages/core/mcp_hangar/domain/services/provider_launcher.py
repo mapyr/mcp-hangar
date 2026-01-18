@@ -19,12 +19,12 @@ MCP_CONTAINER_INHERIT_STDERR=true to inherit stderr (and use stderr=None in
 subprocess.Popen); otherwise stderr remains captured.
 """
 
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 import os
 import shutil
 import subprocess
 import sys
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
 
 from ...logging_config import get_logger
 from ...stdio_client import StdioClient
