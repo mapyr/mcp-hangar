@@ -23,7 +23,7 @@ func TestClient_GetProviderTools_Success(t *testing.T) {
 			"tools": []string{"tool1", "tool2", "tool3"},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
@@ -46,7 +46,7 @@ func TestClient_GetProviderTools_Success(t *testing.T) {
 func TestClient_GetProviderTools_NotFound(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"error": "provider not found",
 		})
 	}))
@@ -93,7 +93,7 @@ func TestClient_HealthCheckRemote_Healthy(t *testing.T) {
 			"tools":   []string{"remote-tool1", "remote-tool2"},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
@@ -118,7 +118,7 @@ func TestClient_HealthCheckRemote_Unhealthy(t *testing.T) {
 			"error":   "connection refused",
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
@@ -149,7 +149,7 @@ func TestClient_RegisterProvider_Success(t *testing.T) {
 		assert.Equal(t, "default", body.Namespace)
 
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"status": "registered",
 		})
 	}))
@@ -179,7 +179,7 @@ func TestClient_DeregisterProvider_Success(t *testing.T) {
 		assert.Equal(t, "test-api-key", r.Header.Get("X-API-Key"))
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"status": "deregistered",
 		})
 	}))
@@ -215,7 +215,7 @@ func TestClient_DeregisterProvider_NotFound(t *testing.T) {
 func TestClient_ServerError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"error": "internal server error",
 		})
 	}))
@@ -236,7 +236,7 @@ func TestClient_ServerError(t *testing.T) {
 func TestClient_InvalidJSON(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte("invalid json {"))
+		_, _ = w.Write([]byte("invalid json {"))
 	}))
 	defer server.Close()
 
