@@ -348,8 +348,10 @@ type ObservabilityConfig struct {
 
 // TracingConfig defines tracing settings
 type TracingConfig struct {
-	Enabled      bool    `json:"enabled,omitempty"`
-	SamplingRate float64 `json:"samplingRate,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
+	// SamplingRate as string (e.g., "0.1" for 10%)
+	// +kubebuilder:validation:Pattern=`^[0-9]*\.?[0-9]+$`
+	SamplingRate string `json:"samplingRate,omitempty"`
 }
 
 // MetricsConfig defines metrics settings
