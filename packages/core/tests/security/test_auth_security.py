@@ -13,9 +13,9 @@ This test suite covers:
 8. Timing attack resistance
 """
 
+from concurrent.futures import as_completed, ThreadPoolExecutor
+from datetime import datetime, timedelta, UTC
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -24,9 +24,9 @@ from mcp_hangar.domain.contracts.authorization import AuthorizationRequest
 from mcp_hangar.domain.exceptions import ExpiredCredentialsError, InvalidCredentialsError, RevokedCredentialsError
 from mcp_hangar.domain.value_objects import Principal, PrincipalId, PrincipalType
 from mcp_hangar.infrastructure.auth.api_key_authenticator import (
-    MAX_API_KEY_LENGTH,
     ApiKeyAuthenticator,
     InMemoryApiKeyStore,
+    MAX_API_KEY_LENGTH,
 )
 from mcp_hangar.infrastructure.auth.rbac_authorizer import InMemoryRoleStore, RBACAuthorizer
 
@@ -114,9 +114,9 @@ class TestBruteForceProtection:
         avg_valid = sum(valid_times) / len(valid_times)
         avg_invalid = sum(invalid_times) / len(invalid_times)
 
-        print(f"Valid key avg: {avg_valid*1000:.3f}ms")
-        print(f"Invalid key avg: {avg_invalid*1000:.3f}ms")
-        print(f"Difference: {abs(avg_valid - avg_invalid)*1000:.3f}ms")
+        print(f"Valid key avg: {avg_valid * 1000:.3f}ms")
+        print(f"Invalid key avg: {avg_invalid * 1000:.3f}ms")
+        print(f"Difference: {abs(avg_valid - avg_invalid) * 1000:.3f}ms")
 
         # GAP: Dictionary lookup is NOT constant-time
         # RECOMMENDATION: Use constant-time comparison

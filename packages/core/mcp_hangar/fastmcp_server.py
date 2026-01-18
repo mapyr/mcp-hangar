@@ -35,7 +35,7 @@ Usage:
 """
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, Protocol
+from typing import Any, Optional, Protocol, TYPE_CHECKING
 
 from mcp.server.fastmcp import FastMCP
 
@@ -367,7 +367,6 @@ class MCPServerFactory:
 
         # Log if auth is configured (actual wrapping happens in _create_auth_combined_app)
         if self._config.auth_enabled and self._auth_components:
-
             logger.info(
                 "auth_middleware_enabled",
                 skip_paths=self._config.auth_skip_paths,

@@ -4,13 +4,13 @@ Provides shared connection management, schema migrations, and utilities
 that can be reused across different stores (auth, events, knowledge base).
 """
 
-import sqlite3
-import threading
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, UTC
 from pathlib import Path
+import sqlite3
+import threading
 from typing import Any, Protocol
 
 import structlog
@@ -163,7 +163,7 @@ class PostgresConnectionFactory:
                 import psycopg2  # noqa: F401
                 from psycopg2 import pool
             except ImportError:
-                raise ImportError("psycopg2 is required for PostgreSQL. " "Install with: pip install psycopg2-binary")
+                raise ImportError("psycopg2 is required for PostgreSQL. Install with: pip install psycopg2-binary")
 
             self._pool = pool.ThreadedConnectionPool(
                 minconn=self._config.min_connections,

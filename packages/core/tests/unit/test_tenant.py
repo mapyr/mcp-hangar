@@ -1,6 +1,5 @@
 """Unit tests for Tenant and Namespace aggregates."""
 
-
 import pytest
 
 from mcp_hangar.domain.events import (

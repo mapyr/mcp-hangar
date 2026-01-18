@@ -84,9 +84,9 @@ def _create_storage_backends(
 
     elif driver == "postgresql" or driver == "postgres":
         from ..infrastructure.auth.postgres_store import (
+            create_postgres_connection_factory,
             PostgresApiKeyStore,
             PostgresRoleStore,
-            create_postgres_connection_factory,
         )
 
         logger.info(
@@ -114,7 +114,7 @@ def _create_storage_backends(
 
     else:
         raise ValueError(
-            f"Unknown auth storage driver: {driver}. " "Use 'memory', 'event_sourcing', 'sqlite', or 'postgresql'."
+            f"Unknown auth storage driver: {driver}. Use 'memory', 'event_sourcing', 'sqlite', or 'postgresql'."
         )
 
     return api_key_store, role_store

@@ -8,7 +8,7 @@ Implements Event Sourcing pattern for API keys where:
 """
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, UTC
 from typing import Any
 
 from ..events import ApiKeyCreated, ApiKeyRevoked, DomainEvent
@@ -309,9 +309,7 @@ class EventSourcedApiKey(AggregateRoot):
 
         # Restore state from snapshot
         key._created_at = datetime.fromtimestamp(snapshot.created_at, tz=UTC)
-        key._last_used_at = (
-            datetime.fromtimestamp(snapshot.last_used_at, tz=UTC) if snapshot.last_used_at else None
-        )
+        key._last_used_at = datetime.fromtimestamp(snapshot.last_used_at, tz=UTC) if snapshot.last_used_at else None
         key._revoked = snapshot.revoked
         key._revoked_at = datetime.fromtimestamp(snapshot.revoked_at, tz=UTC) if snapshot.revoked_at else None
         key._metadata = dict(snapshot.metadata)

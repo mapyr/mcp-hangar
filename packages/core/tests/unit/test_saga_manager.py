@@ -1,6 +1,5 @@
 """Tests for Saga Manager infrastructure."""
 
-
 from mcp_hangar.application.commands import Command, StartProviderCommand, StopProviderCommand
 from mcp_hangar.domain.events import DomainEvent, ProviderDegraded, ProviderStarted
 from mcp_hangar.infrastructure.command_bus import CommandBus, CommandHandler

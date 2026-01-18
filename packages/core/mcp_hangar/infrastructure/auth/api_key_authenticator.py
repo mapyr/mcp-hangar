@@ -4,10 +4,10 @@ Provides authenticator and in-memory store for API key authentication.
 Keys are stored as SHA-256 hashes, never in plaintext.
 """
 
+from datetime import datetime, UTC
 import hashlib
 import secrets
 import threading
-from datetime import UTC, datetime
 
 import structlog
 
@@ -234,8 +234,7 @@ class InMemoryApiKeyStore(IApiKeyStore):
             existing_keys = self._principal_keys.get(principal_id, [])
             if len(existing_keys) >= self.MAX_KEYS_PER_PRINCIPAL:
                 raise ValueError(
-                    f"Principal {principal_id} has reached maximum number of API keys "
-                    f"({self.MAX_KEYS_PER_PRINCIPAL})"
+                    f"Principal {principal_id} has reached maximum number of API keys ({self.MAX_KEYS_PER_PRINCIPAL})"
                 )
 
             raw_key = ApiKeyAuthenticator.generate_key()

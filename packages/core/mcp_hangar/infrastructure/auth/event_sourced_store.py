@@ -7,10 +7,10 @@ and rebuilding state on load. Provides:
 - Event publishing via EventBus
 """
 
+from datetime import datetime, UTC
 import hashlib
 import secrets
 import threading
-from datetime import UTC, datetime
 from typing import Protocol
 
 from ...domain.contracts.authentication import ApiKeyMetadata, IApiKeyStore
@@ -159,9 +159,7 @@ class EventSourcedApiKeyStore(IApiKeyStore):
                 name=creation_event.key_name,
                 events=all_events,
                 expires_at=(
-                    datetime.fromtimestamp(creation_event.expires_at, tz=UTC)
-                    if creation_event.expires_at
-                    else None
+                    datetime.fromtimestamp(creation_event.expires_at, tz=UTC) if creation_event.expires_at else None
                 ),
             )
 

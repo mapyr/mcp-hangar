@@ -3,7 +3,6 @@
 Tests tenant isolation, quota enforcement, and cross-aggregate interactions.
 """
 
-
 import pytest
 
 from mcp_hangar.domain.events import NamespaceCreated, QuotaExceeded, TenantCreated

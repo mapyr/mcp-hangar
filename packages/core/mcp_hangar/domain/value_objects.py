@@ -6,12 +6,12 @@ business rules and prevent invalid states. They replace primitive obsession
 with strongly-typed domain concepts.
 """
 
-import re
-import uuid
 from dataclasses import dataclass
 from enum import Enum
+import re
 from typing import Any
 from urllib.parse import urlparse
+import uuid
 
 # --- Authentication & Authorization Value Objects ---
 
@@ -55,7 +55,7 @@ class PrincipalId:
         allowed_chars = set("-_:@.")
         if not all(c.isalnum() or c in allowed_chars for c in self.value):
             raise ValueError(
-                f"PrincipalId contains invalid characters: {self.value!r}. " "Only alphanumeric and -_:@. are allowed."
+                f"PrincipalId contains invalid characters: {self.value!r}. Only alphanumeric and -_:@. are allowed."
             )
 
     def __str__(self) -> str:
@@ -197,7 +197,7 @@ class Permission:
         parts = permission_str.split(":", 2)  # Split into at most 3 parts
         if len(parts) < 2:
             raise ValueError(
-                f"Invalid permission format: {permission_str!r}. " "Expected 'resource:action' or 'resource:action:id'."
+                f"Invalid permission format: {permission_str!r}. Expected 'resource:action' or 'resource:action:id'."
             )
         if len(parts) == 2:
             return cls(resource_type=parts[0], action=parts[1])
@@ -226,7 +226,7 @@ class Role:
             raise ValueError("Role name cannot be empty")
         if not self.name.replace("-", "").replace("_", "").isalnum():
             raise ValueError(
-                f"Role name contains invalid characters: {self.name!r}. " "Only alphanumeric and -_ are allowed."
+                f"Role name contains invalid characters: {self.name!r}. Only alphanumeric and -_ are allowed."
             )
 
     def has_permission(self, resource_type: str, action: str, resource_id: str = "*") -> bool:
