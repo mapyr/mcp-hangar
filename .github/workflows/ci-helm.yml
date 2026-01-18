@@ -90,9 +90,9 @@ jobs:
       - name: Package and push mcp-hangar
         run: |
           helm package packages/helm-charts/mcp-hangar
-          helm push mcp-hangar-*.tgz oci://ghcr.io/mapyr/charts
+          helm push mcp-hangar-*.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
 
       - name: Package and push mcp-hangar-operator
         run: |
           helm package packages/helm-charts/mcp-hangar-operator
-          helm push mcp-hangar-operator-*.tgz oci://ghcr.io/mapyr/charts
+          helm push mcp-hangar-operator-*.tgz oci://ghcr.io/${{ github.repository_owner }}/charts

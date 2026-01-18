@@ -210,7 +210,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/mapyr/mcp-hangar
+          images: ghcr.io/${{ github.repository }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -255,7 +255,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/mapyr/mcp-hangar-operator
+          images: ghcr.io/${{ github.repository }}-operator
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -312,10 +312,10 @@ jobs:
           cd packages/helm-charts
 
           helm package mcp-hangar
-          helm push mcp-hangar-*.tgz oci://ghcr.io/mapyr/charts
+          helm push mcp-hangar-*.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
 
           helm package mcp-hangar-operator
-          helm push mcp-hangar-operator-*.tgz oci://ghcr.io/mapyr/charts
+          helm push mcp-hangar-operator-*.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
 
   # Create GitHub Release with changelog
   create-release:
@@ -372,18 +372,18 @@ jobs:
 
             **Docker:**
             ```bash
-            docker pull ghcr.io/mapyr/mcp-hangar:${{ needs.validate.outputs.version }}
+            docker pull ghcr.io/${{ github.repository }}:${{ needs.validate.outputs.version }}
             ```
 
             **Kubernetes:**
             ```bash
-            helm install mcp-hangar oci://ghcr.io/mapyr/charts/mcp-hangar --version ${{ needs.validate.outputs.version }}
-            helm install mcp-hangar-operator oci://ghcr.io/mapyr/charts/mcp-hangar-operator --version ${{ needs.validate.outputs.version }}
+            helm install mcp-hangar oci://ghcr.io/${{ github.repository_owner }}/charts/mcp-hangar --version ${{ needs.validate.outputs.version }}
+            helm install mcp-hangar-operator oci://ghcr.io/${{ github.repository_owner }}/charts/mcp-hangar-operator --version ${{ needs.validate.outputs.version }}
             ```
 
             ## Links
             - [PyPI Package](https://pypi.org/project/mcp-hangar/${{ needs.validate.outputs.version }}/)
-            - [Docker Image](https://ghcr.io/mapyr/mcp-hangar:${{ needs.validate.outputs.version }})
-            - [Documentation](https://mapyr.github.io/mcp-hangar/)
+            - [Docker Image](https://ghcr.io/${{ github.repository }}:${{ needs.validate.outputs.version }})
+            - [Documentation](https://${{ github.repository_owner }}.github.io/mcp-hangar/)
           prerelease: ${{ needs.validate.outputs.is_prerelease == 'true' }}
           generate_release_notes: true

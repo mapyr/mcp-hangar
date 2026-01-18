@@ -94,8 +94,8 @@ jobs:
           context: packages/operator
           push: true
           tags: |
-            ghcr.io/mapyr/mcp-hangar-operator:latest
-            ghcr.io/mapyr/mcp-hangar-operator:${{ github.sha }}
+            ghcr.io/${{ github.repository }}-operator:latest
+            ghcr.io/${{ github.repository }}-operator:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
