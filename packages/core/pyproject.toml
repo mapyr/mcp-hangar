@@ -127,6 +127,7 @@ disable_error_code = [
     "abstract",         # Cannot instantiate abstract class
     "typeddict-unknown-key",  # Extra keys for TypedDict
     "list-item",        # List item has incompatible type
+    "name-defined",     # Name not defined - forward references
 ]
 
 [[tool.mypy.overrides]]
