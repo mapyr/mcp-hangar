@@ -13,7 +13,16 @@ Usage:
 
 import argparse
 from dataclasses import dataclass
+from importlib.metadata import version
 import os
+
+
+def _get_version() -> str:
+    """Get package version from metadata."""
+    try:
+        return version("mcp-hangar")
+    except Exception:
+        return "unknown"
 
 
 @dataclass(frozen=True)
@@ -87,6 +96,12 @@ Environment Variables:
 """,
     )
 
+    parser.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version=f"mcp-hangar {_get_version()}",
+    )
     parser.add_argument(
         "--http",
         action="store_true",

@@ -4,10 +4,11 @@ Provides MCP-over-HTTP with proper dependency injection.
 No global state — all dependencies passed via constructor.
 
 Endpoints (HTTP mode):
-- /health : liveness (cheap ping)
-- /ready  : readiness (checks internal registry wiring + basic runtime state)
-- /metrics: prometheus metrics
-- /mcp    : MCP streamable HTTP endpoint
+- /health/live   : liveness probe (is the process alive?)
+- /health/ready  : readiness probe (can handle traffic?)
+- /health/startup: startup probe (is initialization complete?)
+- /metrics       : prometheus metrics
+- /mcp           : MCP streamable HTTP endpoint
 
 Usage:
     # Recommended: Use MCPServerFactory

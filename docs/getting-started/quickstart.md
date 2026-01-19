@@ -72,7 +72,9 @@ Once connected, you have access to these tools:
 | `registry_start` | Manually start a provider |
 | `registry_stop` | Stop a running provider |
 | `registry_invoke` | Invoke a tool on a provider |
+| `registry_invoke_ex` | Invoke with retry and rich metadata |
 | `registry_tools` | Get available tools for a provider |
+| `registry_details` | Get detailed info about a provider |
 | `registry_health` | Check provider health |
 | `registry_status` | Dashboard view of all providers |
 

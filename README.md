@@ -217,10 +217,13 @@ mcp-hangar --config config.yaml --http
 | `registry_invoke_ex` | Invoke with retry, correlation ID, and metadata |
 | `registry_invoke_stream` | Invoke with real-time progress notifications |
 | `registry_tools` | Get tool schemas for a provider |
+| `registry_details` | Get detailed information about a provider or group |
 | `registry_health` | Get health status and metrics |
 | `registry_status` | Dashboard view of all providers |
 | `registry_discover` | Trigger discovery cycle |
 | `registry_sources` | List discovery sources with status |
+| `registry_quarantine` | List quarantined providers |
+| `registry_approve` | Approve a quarantined provider |
 | `registry_warm` | Pre-start providers to avoid cold start latency |
 
 ## Configuration Reference
