@@ -37,9 +37,8 @@ jobs:
       - name: Ruff format check
         run: ruff format --check mcp_hangar
 
-      # Type check disabled - requires significant work to pass with strict mode
-      # - name: Type check
-      #   run: mypy mcp_hangar
+      - name: Type check
+        run: mypy mcp_hangar
 
   test:
     runs-on: ubuntu-latest

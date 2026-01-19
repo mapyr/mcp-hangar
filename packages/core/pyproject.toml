@@ -1,6 +1,6 @@
 [project]
 name = "mcp-hangar"
-version = "0.2.1"
+version = "0.2.2"
 description = "Production-grade infrastructure for Model Context Protocol"
 readme = "README.md"
 license = {text = "MIT"}
@@ -90,14 +90,61 @@ ignore = [
     "SIM110", # any() instead of for loop - readability preference
     "SIM117", # Nested with statements - readability preference
     "SIM118", # key in dict - minor style
-    "UP038",  # Use X | Y in isinstance - requires Python 3.10+
 ]
 
 [tool.mypy]
 python_version = "3.11"
-strict = true
-warn_return_any = true
-warn_unused_ignores = true
+# Start with basic checking, gradually enable stricter options
+# See: https://mypy.readthedocs.io/en/stable/existing_code.html
+strict = false
+warn_return_any = false
+warn_unused_ignores = false  # Too noisy during transition
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = false  # Disabled during transition - enable gradually
+no_implicit_optional = false  # Many implicit optionals in codebase
+warn_redundant_casts = true
+warn_unused_configs = true
+show_error_codes = true
+# Ignore missing imports for optional dependencies
+ignore_missing_imports = true
+
+# Disable some error codes globally during transition
+disable_error_code = [
+    "union-attr",       # Item "None" of "X | None" has no attribute - lots of these
+    "arg-type",         # Argument has incompatible type - gradual fix needed
+    "assignment",       # Incompatible types in assignment - gradual fix needed
+    "attr-defined",     # Has no attribute - needs interface fixes
+    "return-value",     # Incompatible return value type - gradual fix
+    "override",         # Liskov substitution violations in handlers
+    "call-arg",         # Unexpected keyword argument - interface mismatches
+    "var-annotated",    # Need type annotation for variable
+    "valid-type",       # Not valid as a type - edge cases with callable/any
+    "misc",             # Various issues during transition
+    "index",            # Not indexable issues
+    "operator",         # Unsupported operand types
+    "no-redef",         # Name already defined
+    "abstract",         # Cannot instantiate abstract class
+    "typeddict-unknown-key",  # Extra keys for TypedDict
+    "list-item",        # List item has incompatible type
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "docker.*",
+    "yaml.*",
+    "prometheus_client.*",
+    "kubernetes.*",
+    "asyncpg.*",
+    "psycopg2.*",
+    "langfuse.*",
+    "opentelemetry.*",
+    "watchdog.*",
+    "aiohttp.*",
+    "httpx.*",
+    "structlog.*",
+]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

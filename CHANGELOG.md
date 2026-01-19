@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-01-19
+
+### Fixed
+
+- **CI**: Re-enable mypy type checking in CI with gradual adoption configuration
+- **Core**: Configure mypy with relaxed settings for gradual type safety improvement
+- **Core**: Disable specific mypy error codes during transition period (union-attr, arg-type, override, etc.)
+
+### Technical Debt Notes
+
+The following items are documented technical debt introduced to enable CI:
+- **Mypy not in strict mode**: Currently using relaxed settings with many error codes disabled. Plan to gradually enable stricter checking. See `pyproject.toml` for full list of disabled error codes.
+- **Docker push disabled**: Requires organization package write permissions in GitHub settings.
+
 ## [0.2.1] - 2026-01-18
 
 ### Fixed
