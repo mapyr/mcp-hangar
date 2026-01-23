@@ -541,12 +541,12 @@ class DockerLauncher(ProviderLauncher):
                 shell=False,  # Never use shell
             )
             return StdioClient(process)
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             raise ProviderStartError(
                 provider_id="unknown",
                 reason="Docker not found. Is Docker installed and in PATH?",
                 details={"image": image},
-            )
+            ) from e
         except Exception as e:
             raise ProviderStartError(
                 provider_id="unknown",
@@ -981,12 +981,12 @@ class ContainerLauncher(ProviderLauncher):
                 shell=False,
             )
             return StdioClient(process)
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             raise ProviderStartError(
                 provider_id="unknown",
                 reason=f"{self._runtime} not found. Is it installed and in PATH?",
                 details={"image": image},
-            )
+            ) from e
         except Exception as e:
             raise ProviderStartError(
                 provider_id="unknown",
@@ -1129,12 +1129,12 @@ class HttpLauncher(ProviderLauncher):
             auth_type_str = auth_config.get("type", "none")
             try:
                 auth_type = AuthType(auth_type_str)
-            except ValueError:
+            except ValueError as e:
                 raise ValidationError(
                     message=f"Invalid auth type: {auth_type_str}. Use: none, api_key, bearer, basic.",
                     field="auth.type",
                     value=auth_type_str,
-                )
+                ) from e
 
             auth = AuthConfig(
                 auth_type=auth_type,

@@ -162,8 +162,10 @@ class PostgresConnectionFactory:
             try:
                 import psycopg2  # noqa: F401
                 from psycopg2 import pool
-            except ImportError:
-                raise ImportError("psycopg2 is required for PostgreSQL. Install with: pip install psycopg2-binary")
+            except ImportError as e:
+                raise ImportError(
+                    "psycopg2 is required for PostgreSQL. Install with: pip install psycopg2-binary"
+                ) from e
 
             self._pool = pool.ThreadedConnectionPool(
                 minconn=self._config.min_connections,

@@ -205,7 +205,7 @@ class StdioClient:
             logger.error("stdio_client_write_failed", error=str(e))
             with self.pending_lock:
                 self.pending.pop(request_id, None)
-            raise ClientError(f"write_failed: {e}")
+            raise ClientError(f"write_failed: {e}") from e
 
         try:
             response = result_queue.get(timeout=timeout)
@@ -213,7 +213,7 @@ class StdioClient:
         except Empty:
             with self.pending_lock:
                 self.pending.pop(request_id, None)
-            raise TimeoutError(f"timeout: {method} after {timeout}s")
+            raise TimeoutError(f"timeout: {method} after {timeout}s") from None
 
     def is_alive(self) -> bool:
         """Check if the underlying process is still running."""

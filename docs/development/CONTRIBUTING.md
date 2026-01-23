@@ -168,10 +168,26 @@ for event in provider.collect_events():
 
 **Exceptions:**
 ```python
+# Basic usage
 raise ProviderStartError(
     provider_id="my-provider",
     reason="Connection refused"
 )
+
+# With diagnostics (preferred)
+raise ProviderStartError(
+    provider_id="my-provider",
+    reason="MCP initialization failed: process crashed",
+    stderr="ModuleNotFoundError: No module named 'requests'",
+    exit_code=1,
+    suggestion="Install missing Python dependencies."
+)
+
+# Get user-friendly message
+try:
+    provider.ensure_ready()
+except ProviderStartError as e:
+    print(e.get_user_message())
 ```
 
 **Logging:**

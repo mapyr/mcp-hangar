@@ -632,6 +632,60 @@ sum(mcp_registry_provider_state)
 
 ## Troubleshooting
 
+### Provider Startup Errors
+
+MCP Hangar provides detailed diagnostics when providers fail to start. The `ProviderStartError` exception includes:
+
+- **stderr**: Captured process output for debugging
+- **exit_code**: Process exit code
+- **suggestion**: Actionable fix based on error patterns
+
+#### Common Error Patterns and Suggestions
+
+| Error Pattern | Exit Code | Suggestion |
+|---------------|-----------|------------|
+| `ModuleNotFoundError` | - | Install missing Python dependencies. Check your virtual environment is activated. |
+| `ImportError` | - | Check that all required packages are installed and import paths are correct. |
+| `SyntaxError` | - | Fix the syntax error in the provider code before starting. |
+| `PermissionError` | - | Check file permissions. Ensure the provider script is executable. |
+| `FileNotFoundError` | - | Check that all referenced files and paths exist. |
+| `ConnectionRefused` | - | The target service is not running or not accepting connections. |
+| `timeout` | - | The operation timed out. Check network connectivity and service availability. |
+| `docker not found` | - | Ensure Docker/Podman is installed and running. Check that the image exists. |
+| `MemoryError` | - | The provider ran out of memory. Consider increasing memory limits. |
+| - | 1 | General error. Check the provider logs for more details. |
+| - | 126 | Command not executable. Check file permissions (chmod +x). |
+| - | 127 | Command not found. Check that the command exists and PATH is correct. |
+| - | 137 | Process was killed (OOM or SIGKILL). Consider increasing memory limits. |
+| - | 139 | Segmentation fault. This indicates a bug in the provider code. |
+
+#### Example Error Output
+
+```
+Failed to start provider 'my-provider': ModuleNotFoundError: No module named fastapi
+  Exit code: 1
+  Process output:
+    Traceback (most recent call last):
+    File "server.py", line 1
+    ModuleNotFoundError: No module named fastapi
+  Suggestion: Install missing Python dependencies. Check your virtual environment is activated.
+```
+
+#### Programmatic Access to Diagnostics
+
+```python
+from mcp_hangar.domain.exceptions import ProviderStartError
+
+try:
+    provider.ensure_ready()
+except ProviderStartError as e:
+    print(e.get_user_message())  # Human-readable message
+    print(f"Exit code: {e.exit_code}")
+    print(f"Stderr: {e.stderr}")
+    print(f"Suggestion: {e.suggestion}")
+    print(f"Details: {e.details}")  # All diagnostics as dict
+```
+
 ### Metrics Not Visible
 
 1. **Verify endpoint accessibility**:

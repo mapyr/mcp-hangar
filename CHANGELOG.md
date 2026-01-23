@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-01-24
+
+### Added
+
+- **Core**: Enhanced `ProviderStartError` with diagnostic information
+  - `stderr`: Captured process stderr output
+  - `exit_code`: Process exit code for failed starts
+  - `suggestion`: Actionable suggestions based on error patterns
+  - `get_user_message()`: Human-readable error message method
+- **Core**: Automatic error pattern detection with suggestions for common issues:
+  - Python errors (ModuleNotFoundError, ImportError, SyntaxError)
+  - Permission and file errors
+  - Network/connection errors
+  - Docker/Podman container issues
+  - Memory/resource errors
+  - Common exit codes (1, 2, 126, 127, 137, 139)
+
+### Documentation
+
+- Updated troubleshooting guide with provider startup error diagnostics
+- Added programmatic error handling examples
+
 ## [0.3.0] - 2026-01-21
 
 ### Added
@@ -263,7 +285,8 @@ The following items are documented technical debt introduced to enable CI:
 - Rate limiting to prevent denial of service
 - Audit logging for security-relevant events
 
-[Unreleased]: https://github.com/mapyr/mcp-hangar/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/mapyr/mcp-hangar/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/mapyr/mcp-hangar/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/mapyr/mcp-hangar/compare/v0.2.3...v0.3.0
 [0.2.3]: https://github.com/mapyr/mcp-hangar/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/mapyr/mcp-hangar/compare/v0.2.1...v0.2.2

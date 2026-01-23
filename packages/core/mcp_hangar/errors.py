@@ -7,24 +7,68 @@ This module provides rich error types that include:
 - Actionable recovery hints
 - Related log references
 
-Error output example::
+Error output example for tool invocation::
 
-    ProviderProtocolError: SQLite provider returned invalid response
-      ↳ Provider: sqlite
-      ↳ Operation: query
-      ↳ Details: Expected JSON object, received plain text
+    RichToolInvocationError: Provider 'sqlite' did not respond in time
+      Provider: sqlite
+      Tool: query
+      Operation: invoke
 
-    💡 Recovery steps:
-      1. Retry the operation (often transient)
-      2. Check provider logs: registry_details('sqlite')
-      3. If persistent, file bug report
+      Possible causes:
+        - The operation is taking longer than expected
+        - The provider is stuck or deadlocked
+        - Resource constraints (CPU/memory)
 
-See docs/guides/UX_IMPROVEMENTS.md for usage examples.
+      Technical details:
+        Timeout: 30.0s, elapsed: 30.50s
+
+      What you can try:
+        1. Retry with longer timeout: timeout=60
+        2. Check provider status: registry_details('sqlite')
+        3. Retry the operation (may be transient)
+
+      Correlation ID: abc-123-def
+
+Usage::
+
+    from mcp_hangar.errors import create_timeout_tool_error
+
+    error = create_timeout_tool_error(
+        provider="sqlite",
+        tool="query",
+        timeout_s=30.0,
+        elapsed_s=30.5,
+        correlation_id="abc-123",
+    )
+    raise error
+
+Factory functions for common error types:
+- create_timeout_tool_error() - Provider did not respond in time
+- create_crash_tool_error() - Provider crashed (with signal detection)
+- create_argument_tool_error() - Invalid arguments (with schema hints)
+- create_provider_error() - Generic provider error
+
+See docs/guides/UX_IMPROVEMENTS.md for more examples.
 """
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any
+
+
+class ErrorCategory(str, Enum):
+    """Kategoria bledu dla lepszej diagnostyki.
+
+    Attributes:
+        USER_ERROR: Blad po stronie uzytkownika (zle argumenty, zla nazwa narzedzia)
+        PROVIDER_ERROR: Blad po stronie providera (crash, blad logiki)
+        INFRA_ERROR: Blad infrastruktury (timeout, siec, brak zasobow)
+    """
+
+    USER_ERROR = "user_error"
+    PROVIDER_ERROR = "provider_error"
+    INFRA_ERROR = "infra_error"
 
 
 @dataclass
@@ -318,6 +362,362 @@ class ToolNotFoundError(HangarError):
             if target in name.lower() or name.lower() in target:
                 return name
         return None
+
+
+@dataclass
+class RichToolInvocationError(HangarError):
+    """Wzbogacony blad wywolania narzedzia z kontekstem diagnostycznym.
+
+    Zawiera:
+    - Klasyfikacje bledu (user/provider/infra)
+    - Szczegoly techniczne (timeout, exit_code, stderr)
+    - Kontekstowe kroki naprawcze
+    - Informacje o mozliwosci retry
+
+    Example output::
+
+        RichToolInvocationError: Provider 'sqlite' did not respond in time
+          Provider: sqlite
+          Tool: query
+          Operation: invoke
+
+          Possible causes:
+            - The operation is taking longer than expected
+            - The provider is stuck or deadlocked
+
+          Technical details:
+            Timeout: 30.0s, elapsed: 30.50s
+
+          What you can try:
+            1. Retry with longer timeout: timeout=60
+            2. Check provider status: registry_details('sqlite')
+
+          Correlation ID: abc-123-def
+    """
+
+    # Kontekst wywolania
+    tool_name: str = ""
+    """Name of the tool that was invoked."""
+
+    arguments: dict[str, Any] = field(default_factory=dict)
+    """Arguments passed to the tool."""
+
+    correlation_id: str = ""
+    """Correlation ID for tracing."""
+
+    # Szczegoly bledu
+    category: ErrorCategory = ErrorCategory.INFRA_ERROR
+    """Error category for classification."""
+
+    timeout_s: float | None = None
+    """Timeout value in seconds."""
+
+    elapsed_s: float | None = None
+    """Elapsed time before failure."""
+
+    exit_code: int | None = None
+    """Process exit code if applicable."""
+
+    signal_name: str | None = None
+    """Signal name if killed by signal (e.g., SIGKILL)."""
+
+    stderr_preview: str | None = None
+    """Preview of stderr output from provider."""
+
+    # Schema dla bledow argumentow
+    expected_schema: dict[str, Any] | None = None
+    """Expected tool schema for argument errors."""
+
+    schema_hint: str | None = None
+    """Hint about schema mismatch (e.g., 'Did you mean sql instead of query?')."""
+
+    # Retry info
+    is_retryable: bool = True
+    """Whether the operation can be retried."""
+
+    retry_after_s: float | None = None
+    """Suggested delay before retry."""
+
+    # Mozliwe przyczyny
+    possible_causes: list[str] = field(default_factory=list)
+    """List of possible causes for the error."""
+
+    def __post_init__(self):
+        # Generuj recovery_hints na podstawie kategorii jesli nie podano
+        if not self.recovery_hints:
+            self.recovery_hints = self._generate_recovery_hints()
+        super().__post_init__()
+
+    def _generate_recovery_hints(self) -> list[str]:
+        """Generuj kontekstowe hinty naprawcze."""
+        hints = []
+
+        if self.category == ErrorCategory.USER_ERROR:
+            if self.expected_schema:
+                hints.append(f"Check tool schema: registry_tools('{self.provider}')")
+            if self.schema_hint:
+                hints.append(self.schema_hint)
+            hints.append("Verify argument names and types")
+
+        elif self.category == ErrorCategory.PROVIDER_ERROR:
+            hints.append("Provider will auto-restart on next use")
+            hints.append(f"Check provider logs: registry_details('{self.provider}')")
+            if self.exit_code == 137:  # SIGKILL/OOM
+                hints.append("Consider increasing memory limit in config")
+            if self.stderr_preview:
+                hints.append("Review stderr output below for details")
+
+        elif self.category == ErrorCategory.INFRA_ERROR:
+            if self.timeout_s:
+                new_timeout = int(self.timeout_s * 2)
+                hints.append(f"Retry with longer timeout: timeout={new_timeout}")
+            hints.append(f"Check provider status: registry_details('{self.provider}')")
+            if self.is_retryable:
+                hints.append("Retry the operation (may be transient)")
+
+        return hints
+
+    def __str__(self) -> str:
+        """Formatuj blad z pelnym kontekstem."""
+        lines = [f"\n{self.__class__.__name__}: {self.message}"]
+
+        # Kontekst
+        if self.provider:
+            lines.append(f"  Provider: {self.provider}")
+        if self.tool_name:
+            lines.append(f"  Tool: {self.tool_name}")
+        if self.operation:
+            lines.append(f"  Operation: {self.operation}")
+
+        # Mozliwe przyczyny
+        if self.possible_causes:
+            lines.append("")
+            lines.append("  Possible causes:")
+            for cause in self.possible_causes:
+                lines.append(f"    - {cause}")
+
+        # Szczegoly techniczne
+        if self.technical_details or self.timeout_s or self.exit_code is not None:
+            lines.append("")
+            lines.append("  Technical details:")
+            if self.timeout_s and self.elapsed_s:
+                lines.append(f"    Timeout: {self.timeout_s}s, elapsed: {self.elapsed_s:.2f}s")
+            if self.exit_code is not None:
+                exit_info = f"Exit code: {self.exit_code}"
+                if self.signal_name:
+                    exit_info += f" ({self.signal_name})"
+                lines.append(f"    {exit_info}")
+            if self.technical_details:
+                lines.append(f"    {self.technical_details}")
+
+        # Stderr preview
+        if self.stderr_preview:
+            lines.append("")
+            lines.append("  Provider stderr:")
+            for stderr_line in self.stderr_preview.split("\n")[:5]:
+                lines.append(f"    | {stderr_line}")
+
+        # Recovery hints
+        if self.recovery_hints:
+            lines.append("")
+            lines.append("  What you can try:")
+            for i, hint in enumerate(self.recovery_hints, 1):
+                lines.append(f"    {i}. {hint}")
+
+        # Correlation ID
+        if self.correlation_id:
+            lines.append("")
+            lines.append(f"  Correlation ID: {self.correlation_id}")
+
+        return "\n".join(lines)
+
+
+# =============================================================================
+# Factory Functions for RichToolInvocationError
+# =============================================================================
+
+
+def create_timeout_tool_error(
+    provider: str,
+    tool: str,
+    timeout_s: float,
+    elapsed_s: float,
+    correlation_id: str = "",
+    arguments: dict[str, Any] | None = None,
+) -> RichToolInvocationError:
+    """Create a timeout error with full context.
+
+    Args:
+        provider: Provider ID.
+        tool: Tool name.
+        timeout_s: Configured timeout in seconds.
+        elapsed_s: Actual elapsed time.
+        correlation_id: Optional correlation ID.
+        arguments: Optional tool arguments.
+
+    Returns:
+        RichToolInvocationError configured for timeout scenario.
+    """
+    return RichToolInvocationError(
+        message=f"Provider '{provider}' did not respond in time",
+        provider=provider,
+        tool_name=tool,
+        operation="invoke",
+        category=ErrorCategory.INFRA_ERROR,
+        timeout_s=timeout_s,
+        elapsed_s=elapsed_s,
+        correlation_id=correlation_id,
+        arguments=arguments or {},
+        is_retryable=True,
+        possible_causes=[
+            "The operation is taking longer than expected",
+            "The provider is stuck or deadlocked",
+            "Resource constraints (CPU/memory)",
+        ],
+    )
+
+
+def create_crash_tool_error(
+    provider: str,
+    tool: str,
+    exit_code: int | None,
+    stderr_preview: str | None = None,
+    correlation_id: str = "",
+    elapsed_s: float | None = None,
+) -> RichToolInvocationError:
+    """Create a crash error with full context.
+
+    Args:
+        provider: Provider ID.
+        tool: Tool name.
+        exit_code: Process exit code.
+        stderr_preview: Preview of stderr output.
+        correlation_id: Optional correlation ID.
+        elapsed_s: Time elapsed before crash.
+
+    Returns:
+        RichToolInvocationError configured for crash scenario.
+    """
+    import signal as sig
+
+    signal_name = None
+    if exit_code is not None and exit_code < 0:
+        try:
+            signal_name = sig.Signals(-exit_code).name
+        except (ValueError, AttributeError):
+            pass
+    elif exit_code is not None and exit_code > 128:
+        try:
+            signal_name = sig.Signals(exit_code - 128).name
+        except (ValueError, AttributeError):
+            pass
+
+    causes = ["Internal provider error"]
+    if exit_code == 137 or signal_name == "SIGKILL":
+        causes = [
+            "Out of memory (OOM killed by system)",
+            "Container resource limits exceeded",
+            "Manual kill signal",
+        ]
+    elif exit_code == 139 or signal_name == "SIGSEGV":
+        causes = [
+            "Segmentation fault in provider",
+            "Memory corruption",
+        ]
+
+    return RichToolInvocationError(
+        message=f"Provider '{provider}' crashed during execution",
+        provider=provider,
+        tool_name=tool,
+        operation="invoke",
+        category=ErrorCategory.PROVIDER_ERROR,
+        exit_code=exit_code,
+        signal_name=signal_name,
+        stderr_preview=stderr_preview,
+        correlation_id=correlation_id,
+        elapsed_s=elapsed_s,
+        is_retryable=True,  # Provider will auto-restart
+        possible_causes=causes,
+    )
+
+
+def create_argument_tool_error(
+    provider: str,
+    tool: str,
+    provided_args: dict[str, Any],
+    expected_schema: dict[str, Any] | None = None,
+    hint: str | None = None,
+    correlation_id: str = "",
+) -> RichToolInvocationError:
+    """Create an argument error with full context.
+
+    Args:
+        provider: Provider ID.
+        tool: Tool name.
+        provided_args: Arguments that were provided.
+        expected_schema: Expected tool schema.
+        hint: Hint about what's wrong.
+        correlation_id: Optional correlation ID.
+
+    Returns:
+        RichToolInvocationError configured for argument error scenario.
+    """
+    return RichToolInvocationError(
+        message=f"Invalid arguments for tool '{tool}'",
+        provider=provider,
+        tool_name=tool,
+        operation="invoke",
+        category=ErrorCategory.USER_ERROR,
+        arguments=provided_args,
+        expected_schema=expected_schema,
+        schema_hint=hint,
+        correlation_id=correlation_id,
+        is_retryable=False,  # User must fix arguments
+        possible_causes=[
+            "Missing required argument",
+            "Wrong argument name",
+            "Invalid argument type",
+        ],
+    )
+
+
+def create_provider_error(
+    provider: str,
+    tool: str,
+    error_message: str,
+    stderr_preview: str | None = None,
+    correlation_id: str = "",
+    is_retryable: bool = True,
+) -> RichToolInvocationError:
+    """Create a generic provider error with full context.
+
+    Args:
+        provider: Provider ID.
+        tool: Tool name.
+        error_message: Error message from provider.
+        stderr_preview: Preview of stderr output.
+        correlation_id: Optional correlation ID.
+        is_retryable: Whether the error is retryable.
+
+    Returns:
+        RichToolInvocationError configured for generic provider error.
+    """
+    return RichToolInvocationError(
+        message=f"Provider '{provider}' returned an error: {error_message}",
+        provider=provider,
+        tool_name=tool,
+        operation="invoke",
+        category=ErrorCategory.PROVIDER_ERROR,
+        technical_details=error_message,
+        stderr_preview=stderr_preview,
+        correlation_id=correlation_id,
+        is_retryable=is_retryable,
+        possible_causes=[
+            "Tool execution failed",
+            "Invalid input for tool logic",
+            "Provider internal error",
+        ],
+    )
 
 
 @dataclass
@@ -662,7 +1062,7 @@ def is_retryable(error: Exception) -> bool:
 
     if isinstance(error, HangarError):
         # Specific types that are retryable
-        if isinstance(error, (ProviderProtocolError, NetworkError, TimeoutError)):
+        if isinstance(error, ProviderProtocolError | NetworkError | TimeoutError):
             return True
         return False
 
@@ -762,7 +1162,7 @@ class ErrorClassifier:
 
         # Check if it's already a HangarError with hints
         if isinstance(error, HangarError):
-            is_transient = isinstance(error, (TransientError, ProviderProtocolError, NetworkError, TimeoutError))
+            is_transient = isinstance(error, TransientError | ProviderProtocolError | NetworkError | TimeoutError)
             return {
                 "is_transient": is_transient,
                 "final_error_reason": f"{'transient' if is_transient else 'permanent'}: {error_type}",

@@ -182,11 +182,11 @@ class JWKSTokenValidator(ITokenValidator):
         """
         try:
             import jwt
-        except ImportError:
+        except ImportError as e:
             raise InvalidCredentialsError(
                 message="JWT validation requires PyJWT library. Install with: pip install pyjwt[crypto]",
                 auth_method="jwt",
-            )
+            ) from e
 
         try:
             # Lazy init JWKS client
@@ -212,26 +212,26 @@ class JWKSTokenValidator(ITokenValidator):
 
             return claims
 
-        except jwt.ExpiredSignatureError:
+        except jwt.ExpiredSignatureError as e:
             raise ExpiredCredentialsError(
                 message="JWT token has expired",
                 auth_method="jwt",
-            )
-        except jwt.InvalidAudienceError:
+            ) from e
+        except jwt.InvalidAudienceError as e:
             raise InvalidCredentialsError(
                 message="Invalid JWT audience",
                 auth_method="jwt",
-            )
-        except jwt.InvalidIssuerError:
+            ) from e
+        except jwt.InvalidIssuerError as e:
             raise InvalidCredentialsError(
                 message="Invalid JWT issuer",
                 auth_method="jwt",
-            )
+            ) from e
         except jwt.InvalidTokenError as e:
             raise InvalidCredentialsError(
                 message=f"Invalid JWT token: {e}",
                 auth_method="jwt",
-            )
+            ) from e
 
     def _init_jwks_client(self) -> None:
         """Initialize JWKS client, discovering URI if needed."""
@@ -242,7 +242,7 @@ class JWKSTokenValidator(ITokenValidator):
             raise InvalidCredentialsError(
                 message=f"JWT validation requires additional libraries: {e}",
                 auth_method="jwt",
-            )
+            ) from e
 
         # Security check: OIDC issuer should use HTTPS in production
         if not self._config.issuer.startswith("https://"):
@@ -286,7 +286,7 @@ class JWKSTokenValidator(ITokenValidator):
                 raise InvalidCredentialsError(
                     message=f"Failed to discover OIDC configuration: {e}",
                     auth_method="jwt",
-                )
+                ) from e
 
         self._jwks_uri = jwks_uri
         self._jwks_client = jwt.PyJWKClient(jwks_uri)
@@ -325,11 +325,11 @@ class StaticSecretTokenValidator(ITokenValidator):
         """
         try:
             import jwt
-        except ImportError:
+        except ImportError as e:
             raise InvalidCredentialsError(
                 message="JWT validation requires PyJWT library",
                 auth_method="jwt",
-            )
+            ) from e
 
         options = {
             "verify_exp": True,
@@ -348,13 +348,13 @@ class StaticSecretTokenValidator(ITokenValidator):
                 options=options,
             )
             return claims
-        except jwt.ExpiredSignatureError:
+        except jwt.ExpiredSignatureError as e:
             raise ExpiredCredentialsError(
                 message="JWT token has expired",
                 auth_method="jwt",
-            )
+            ) from e
         except jwt.InvalidTokenError as e:
             raise InvalidCredentialsError(
                 message=f"Invalid JWT token: {e}",
                 auth_method="jwt",
-            )
+            ) from e

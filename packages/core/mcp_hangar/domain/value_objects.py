@@ -545,8 +545,8 @@ class CorrelationId:
                 raise ValueError("CorrelationId cannot be empty")
             try:
                 uuid.UUID(value, version=4)
-            except ValueError:
-                raise ValueError("CorrelationId must be a valid UUID v4")
+            except ValueError as e:
+                raise ValueError("CorrelationId must be a valid UUID v4") from e
 
         object.__setattr__(self, "value", value)
 
@@ -1044,8 +1044,8 @@ class ProviderConfig:
         # Validate and convert mode
         try:
             object.__setattr__(self, "mode", ProviderMode(mode))
-        except ValueError:
-            raise ValueError(f"Invalid provider mode: {mode}. Must be one of: subprocess, docker, remote")
+        except ValueError as e:
+            raise ValueError(f"Invalid provider mode: {mode}. Must be one of: subprocess, docker, remote") from e
 
         # Validate mode-specific configuration
         resolved_mode = ProviderMode(mode)
@@ -1136,7 +1136,7 @@ class ToolArguments:
                 raise ValueError(f"Tool arguments exceed maximum size ({size} > {self.MAX_SIZE_BYTES} bytes)")
         except (TypeError, ValueError) as e:
             if "size" not in str(e):
-                raise ValueError(f"Tool arguments must be JSON-serializable: {e}")
+                raise ValueError(f"Tool arguments must be JSON-serializable: {e}") from e
             raise
 
     def _validate_structure(self, obj: Any, depth: int = 0) -> None:

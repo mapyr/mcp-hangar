@@ -69,6 +69,11 @@ from .domain.value_objects import (
 # UX Improvements - Rich errors, retry, progress
 from .errors import (
     ConfigurationError as HangarConfigurationError,
+    create_argument_tool_error,
+    create_crash_tool_error,
+    create_provider_error,
+    create_timeout_tool_error,
+    ErrorCategory,
     HangarError,
     is_retryable,
     map_exception_to_hangar_error,
@@ -78,6 +83,7 @@ from .errors import (
     ProviderNotFoundError as HangarProviderNotFoundError,
     ProviderProtocolError,
     RateLimitError,
+    RichToolInvocationError,
     TimeoutError as HangarTimeoutError,
     ToolNotFoundError as HangarToolNotFoundError,
     TransientError,
@@ -138,7 +144,9 @@ __all__ = [
     "ConfigurationError",
     "RateLimitExceeded",
     # UX - Rich Errors
+    "ErrorCategory",
     "HangarError",
+    "RichToolInvocationError",
     "TransientError",
     "ProviderProtocolError",
     "ProviderCrashError",
@@ -151,6 +159,10 @@ __all__ = [
     "HangarProviderDegradedError",
     "map_exception_to_hangar_error",
     "is_retryable",
+    "create_timeout_tool_error",
+    "create_crash_tool_error",
+    "create_argument_tool_error",
+    "create_provider_error",
     # UX - Retry
     "RetryPolicy",
     "BackoffStrategy",

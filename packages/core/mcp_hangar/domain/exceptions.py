@@ -67,16 +67,69 @@ class ProviderNotFoundError(ProviderError):
 
 
 class ProviderStartError(ProviderError):
-    """Raised when a provider fails to start."""
+    """Raised when a provider fails to start.
 
-    def __init__(self, provider_id: str, reason: str, details: dict[str, Any] | None = None):
+    Contains detailed diagnostics to help users understand and fix the issue:
+    - reason: High-level reason for failure
+    - stderr: Captured stderr output from the process (if available)
+    - exit_code: Process exit code (if available)
+    - suggestion: Actionable suggestion for fixing the issue
+    """
+
+    def __init__(
+        self,
+        provider_id: str,
+        reason: str,
+        details: dict[str, Any] | None = None,
+        stderr: str | None = None,
+        exit_code: int | None = None,
+        suggestion: str | None = None,
+    ):
+        # Build user-friendly message
+        message = f"Failed to start provider: {reason}"
+        if suggestion:
+            message = f"{message}. Suggestion: {suggestion}"
+
         super().__init__(
-            message=f"Failed to start provider: {reason}",
+            message=message,
             provider_id=provider_id,
             operation="start",
             details=details or {},
         )
         self.reason = reason
+        self.stderr = stderr
+        self.exit_code = exit_code
+        self.suggestion = suggestion
+
+        # Add diagnostics to details for structured logging/API responses
+        if stderr:
+            self.details["stderr"] = stderr[:2000] if len(stderr) > 2000 else stderr
+        if exit_code is not None:
+            self.details["exit_code"] = exit_code
+        if suggestion:
+            self.details["suggestion"] = suggestion
+
+    def get_user_message(self) -> str:
+        """Get a user-friendly error message with all available context."""
+        lines = [f"Failed to start provider '{self.provider_id}': {self.reason}"]
+
+        if self.exit_code is not None:
+            lines.append(f"  Exit code: {self.exit_code}")
+
+        if self.stderr:
+            # Show first few lines of stderr
+            stderr_lines = self.stderr.strip().split("\n")[:5]
+            if stderr_lines:
+                lines.append("  Process output:")
+                for line in stderr_lines:
+                    lines.append(f"    {line}")
+                if len(self.stderr.strip().split("\n")) > 5:
+                    lines.append("    ... (truncated)")
+
+        if self.suggestion:
+            lines.append(f"  Suggestion: {self.suggestion}")
+
+        return "\n".join(lines)
 
 
 class ProviderDegradedError(ProviderError):

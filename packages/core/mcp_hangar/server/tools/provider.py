@@ -14,7 +14,16 @@ from mcp.server.fastmcp import Context, FastMCP
 from ...application.commands import InvokeToolCommand, StartProviderCommand
 from ...application.mcp.tooling import chain_validators, key_registry_invoke, mcp_tool_wrapper
 from ...domain.model import ProviderGroup
-from ...errors import map_exception_to_hangar_error, ProviderNotFoundError as HangarProviderNotFoundError
+from ...errors import (
+    create_argument_tool_error,
+    create_crash_tool_error,
+    create_provider_error,
+    create_timeout_tool_error,
+    ErrorCategory,
+    map_exception_to_hangar_error,
+    ProviderNotFoundError as HangarProviderNotFoundError,
+    RichToolInvocationError,
+)
 from ...infrastructure.async_executor import submit_async
 from ...infrastructure.query_bus import GetProviderQuery, GetProviderToolsQuery
 from ...progress import create_progress_tracker, get_stage_message, ProgressCallback, ProgressStage, ProgressTracker
@@ -78,6 +87,153 @@ def _extract_error_text(content: Any) -> str:
         return content.get("text", content.get("message", str(content)))
 
     return str(content) if content else "Unknown error"
+
+
+def _get_tool_schema_hint(
+    provider_id: str, tool_name: str, provided_args: dict[str, Any]
+) -> tuple[dict[str, Any] | None, str | None]:
+    """Get tool schema and generate hint for user.
+
+    Args:
+        provider_id: Provider ID.
+        tool_name: Tool name.
+        provided_args: Arguments that were provided.
+
+    Returns:
+        Tuple of (expected_schema, hint_message).
+    """
+    try:
+        ctx = get_context()
+        provider = ctx.get_provider(provider_id)
+        if not provider:
+            return None, None
+
+        tool_schema = provider.tools.get(tool_name)
+        if not tool_schema:
+            return None, None
+
+        expected = tool_schema.to_dict() if hasattr(tool_schema, "to_dict") else None
+
+        # Try to find similar argument name
+        if expected and "inputSchema" in expected:
+            expected_props = expected["inputSchema"].get("properties", {})
+            provided_keys = set(provided_args.keys())
+            expected_keys = set(expected_props.keys())
+
+            # Find arguments that are in provided but not in expected
+            extra_args = provided_keys - expected_keys
+            missing_args = expected_keys - provided_keys
+
+            if extra_args and missing_args:
+                # Maybe user confused argument name?
+                for extra in extra_args:
+                    for missing in missing_args:
+                        if extra.lower() in missing.lower() or missing.lower() in extra.lower():
+                            return expected, f"Did you mean '{missing}' instead of '{extra}'?"
+
+            if missing_args:
+                required = expected["inputSchema"].get("required", [])
+                missing_required = [m for m in missing_args if m in required]
+                if missing_required:
+                    return expected, f"Missing required argument(s): {', '.join(missing_required)}"
+
+        return expected, None
+    except Exception:
+        return None, None
+
+
+def _map_tool_invocation_error(
+    exc: Exception,
+    provider: str,
+    tool: str,
+    arguments: dict[str, Any],
+    timeout: float,
+    correlation_id: str,
+    elapsed_s: float | None = None,
+    stderr: str | None = None,
+    exit_code: int | None = None,
+) -> RichToolInvocationError:
+    """Map exception to RichToolInvocationError with full context.
+
+    Args:
+        exc: Original exception.
+        provider: Provider ID.
+        tool: Tool name.
+        arguments: Tool arguments.
+        timeout: Configured timeout.
+        correlation_id: Correlation ID.
+        elapsed_s: Elapsed time.
+        stderr: Stderr preview from provider.
+        exit_code: Process exit code.
+
+    Returns:
+        RichToolInvocationError with appropriate context.
+    """
+    exc_str = str(exc).lower()
+    exc_type = type(exc).__name__
+
+    # Timeout
+    if "timeout" in exc_str or "timed out" in exc_str or exc_type == "TimeoutError":
+        return create_timeout_tool_error(
+            provider=provider,
+            tool=tool,
+            timeout_s=timeout,
+            elapsed_s=elapsed_s or timeout,
+            correlation_id=correlation_id,
+            arguments=arguments,
+        )
+
+    # Process crash
+    if exit_code is not None or "exit code" in exc_str or "terminated" in exc_str or "process died" in exc_str:
+        return create_crash_tool_error(
+            provider=provider,
+            tool=tool,
+            exit_code=exit_code,
+            stderr_preview=stderr,
+            correlation_id=correlation_id,
+            elapsed_s=elapsed_s,
+        )
+
+    # Argument validation errors
+    if any(kw in exc_str for kw in ["argument", "parameter", "required", "missing", "invalid"]):
+        expected_schema, hint = _get_tool_schema_hint(provider, tool, arguments)
+        return create_argument_tool_error(
+            provider=provider,
+            tool=tool,
+            provided_args=arguments,
+            expected_schema=expected_schema,
+            hint=hint,
+            correlation_id=correlation_id,
+        )
+
+    # JSON/Protocol errors
+    if "json" in exc_str or "malformed" in exc_str or exc_type == "JSONDecodeError":
+        return RichToolInvocationError(
+            message=f"Provider '{provider}' returned invalid response",
+            provider=provider,
+            tool_name=tool,
+            operation="invoke",
+            category=ErrorCategory.PROVIDER_ERROR,
+            technical_details=str(exc),
+            stderr_preview=stderr,
+            correlation_id=correlation_id,
+            is_retryable=True,
+            possible_causes=[
+                "Provider returned malformed JSON",
+                "Communication interrupted",
+                "Provider internal error",
+            ],
+        )
+
+    # Generic provider error
+    return create_provider_error(
+        provider=provider,
+        tool=tool,
+        error_message=str(exc),
+        stderr_preview=stderr,
+        correlation_id=correlation_id,
+        is_retryable=True,
+    )
 
 
 def _submit_audit_log(
@@ -514,34 +670,46 @@ def register_provider_tools(mcp: FastMCP) -> None:
 
             return response
         else:
-            # Classify the error for enriched metadata
-            error_classification = ErrorClassifier.classify(result.final_error)
+            # Get stderr from provider if available
+            stderr_preview = None
+            exit_code_val = None
+            try:
+                provider_obj = ctx.get_provider(provider) if ctx.provider_exists(provider) else None
+                if provider_obj and provider_obj._client:
+                    stderr_preview = getattr(provider_obj._client, "_last_stderr", None)
+                    # Check process exit code
+                    if hasattr(provider_obj._client, "process"):
+                        exit_code_val = provider_obj._client.process.poll()
+            except Exception:
+                pass
 
-            # Map error to HangarError for better UX
-            hangar_error = map_exception_to_hangar_error(
-                result.final_error,
+            # Map to RichToolInvocationError for better UX
+            rich_error = _map_tool_invocation_error(
+                exc=result.final_error,
                 provider=provider,
-                operation=tool,
-                context={
-                    "arguments": args,
-                    "timeout": timeout,
-                    "attempts": result.attempt_count,
-                    "progress": progress_events,
-                },
+                tool=tool,
+                arguments=args,
+                timeout=timeout,
+                correlation_id=correlation_id,
+                elapsed_s=elapsed_ms / 1000,
+                stderr=stderr_preview,
+                exit_code=exit_code_val,
             )
-            progress.fail(hangar_error)
+
+            progress.fail(rich_error)
 
             # Return error response with enriched metadata (don't raise)
             error_response: dict[str, Any] = {
-                "content": f"Error executing tool {tool}: {str(result.final_error)}",
+                "content": str(rich_error),
                 "isError": True,
                 "_retry_metadata": {
                     "correlation_id": correlation_id,
                     "attempts": result.attempt_count,
                     "total_time_ms": round(elapsed_ms, 2),
                     "retries": [a.error_type for a in result.attempts],
-                    "final_error_reason": error_classification["final_error_reason"],
-                    "recovery_hints": error_classification["recovery_hints"],
+                    "error_category": rich_error.category.value,
+                    "is_retryable": rich_error.is_retryable,
+                    "recovery_hints": rich_error.recovery_hints,
                 },
             }
 
