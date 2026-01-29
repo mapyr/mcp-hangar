@@ -165,13 +165,13 @@ HTTP transport exposes the following metrics:
 
 | Metric | Type | Description |
 |--------|------|-------------|
-| `mcp_registry_http_requests_total` | Counter | Total HTTP requests by provider, method, status |
-| `mcp_registry_http_request_duration_seconds` | Histogram | Request latency |
-| `mcp_registry_http_errors_total` | Counter | HTTP errors by type |
-| `mcp_registry_http_retries_total` | Counter | Retry attempts |
-| `mcp_registry_http_connection_pool_size` | Gauge | Connection pool size |
-| `mcp_registry_http_sse_streams_active` | Gauge | Active SSE streams |
-| `mcp_registry_http_sse_events_total` | Counter | SSE events received |
+| `mcp_hangar_http_requests_total` | Counter | Total HTTP requests by provider, method, status |
+| `mcp_hangar_http_request_duration_seconds` | Histogram | Request latency |
+| `mcp_hangar_http_errors_total` | Counter | HTTP errors by type |
+| `mcp_hangar_http_retries_total` | Counter | Retry attempts |
+| `mcp_hangar_http_connection_pool_size` | Gauge | Connection pool size |
+| `mcp_hangar_http_sse_streams_active` | Gauge | Active SSE streams |
+| `mcp_hangar_http_sse_events_total` | Counter | SSE events received |
 
 ## Error Handling
 

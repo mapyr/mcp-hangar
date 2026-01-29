@@ -7,6 +7,96 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-01-29
+
+### Changed
+
+**BREAKING: Full rebrand from "registry" to "hangar" terminology.**
+
+MCP Hangar is a **control plane**, not a registry. The [MCP Registry](https://registry.modelcontextprotocol.io) is the official catalog for discovering MCP servers. MCP Hangar manages runtime lifecycle. This rename eliminates confusion between the two projects.
+
+#### MCP Tool Renames
+
+All MCP tools renamed from `registry_*` to `hangar_*`:
+
+| Old | New |
+|-----|-----|
+| `registry_list` | `hangar_list` |
+| `registry_start` | `hangar_start` |
+| `registry_stop` | `hangar_stop` |
+| `registry_invoke` | `hangar_invoke` |
+| `registry_tools` | `hangar_tools` |
+| `registry_details` | `hangar_details` |
+| `registry_health` | `hangar_health` |
+| `registry_discover` | `hangar_discover` |
+| `registry_discovered` | `hangar_discovered` |
+| `registry_quarantine` | `hangar_quarantine` |
+| `registry_approve` | `hangar_approve` |
+| `registry_sources` | `hangar_sources` |
+| `registry_metrics` | `hangar_metrics` |
+| `registry_group_list` | `hangar_group_list` |
+| `registry_group_rebalance` | `hangar_group_rebalance` |
+
+#### Python API Renames
+
+Protocol classes and dataclass renamed in `fastmcp_server.py`:
+
+| Old | New |
+|-----|-----|
+| `RegistryFunctions` | `HangarFunctions` |
+| `RegistryListFn` | `HangarListFn` |
+| `RegistryStartFn` | `HangarStartFn` |
+| `RegistryStopFn` | `HangarStopFn` |
+| `RegistryInvokeFn` | `HangarInvokeFn` |
+| `RegistryToolsFn` | `HangarToolsFn` |
+| `RegistryDetailsFn` | `HangarDetailsFn` |
+| `RegistryHealthFn` | `HangarHealthFn` |
+| `RegistryDiscoverFn` | `HangarDiscoverFn` |
+| `RegistryDiscoveredFn` | `HangarDiscoveredFn` |
+| `RegistryQuarantineFn` | `HangarQuarantineFn` |
+| `RegistryApproveFn` | `HangarApproveFn` |
+| `RegistrySourcesFn` | `HangarSourcesFn` |
+| `RegistryMetricsFn` | `HangarMetricsFn` |
+
+Builder method renamed: `with_registry()` -> `with_hangar()`
+Property renamed: `factory.registry` -> `factory.hangar`
+
+#### Prometheus Metric Renames
+
+All metrics renamed from `mcp_registry_*` to `mcp_hangar_*`:
+
+| Old | New |
+|-----|-----|
+| `mcp_registry_tool_calls_total` | `mcp_hangar_tool_calls_total` |
+| `mcp_registry_tool_call_duration_seconds` | `mcp_hangar_tool_call_duration_seconds` |
+| `mcp_registry_provider_state` | `mcp_hangar_provider_state` |
+| `mcp_registry_cold_starts_total` | `mcp_hangar_cold_starts_total` |
+| `mcp_registry_health_checks` | `mcp_hangar_health_checks` |
+| `mcp_registry_circuit_breaker_state` | `mcp_hangar_circuit_breaker_state` |
+
+**Action required:** Update Grafana dashboards and Prometheus alert rules.
+
+### Removed
+
+- **Backward compatibility layer removed** - no more deprecated aliases:
+  - `RegistryFunctions` (use `HangarFunctions`)
+  - `registry_list` (use `hangar_list`)
+  - `with_registry()` (use `with_hangar()`)
+  - `setup_fastmcp_server()` (use `MCPServerFactory`)
+  - `create_fastmcp_server()` (use `MCPServerFactory.create_server()`)
+  - `run_fastmcp_server()` (use `MCPServerFactory.create_asgi_app()`)
+
+### Fixed
+
+- Removed emoji from status indicators (per coding guidelines)
+
+### Documentation
+
+- Updated all documentation to use "control plane" terminology
+- Updated SYSTEM_PROMPT.md with new tool names
+- Updated Grafana dashboards with new metric names
+- Updated copilot-instructions.md with new metric names
+
 ## [0.3.1] - 2026-01-24
 
 ### Added

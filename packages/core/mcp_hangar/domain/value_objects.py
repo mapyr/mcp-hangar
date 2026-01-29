@@ -1,5 +1,5 @@
 """
-Value Objects for the MCP Registry domain.
+Value Objects for the MCP Hangar domain.
 
 Value objects are immutable, validated domain primitives that encapsulate
 business rules and prevent invalid states. They replace primitive obsession

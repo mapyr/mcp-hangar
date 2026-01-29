@@ -296,7 +296,7 @@ class ProviderNotFoundError(HangarError):
     def __post_init__(self):
         if not self.recovery_hints:
             hints = [
-                "Use registry_list() to see available providers",
+                "Use hangar_list() to see available providers",
             ]
             if self.available_providers:
                 similar = self._find_similar()

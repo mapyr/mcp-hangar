@@ -1,26 +1,19 @@
 """Tests for fastmcp_server.py module.
 
-Tests cover the MCPServerFactory, builder pattern, and backward compatibility.
+Tests cover the MCPServerFactory and builder pattern.
 """
 
 from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from mcp_hangar.fastmcp_server import (
-    create_fastmcp_server,
-    MCPServerFactory,
-    MCPServerFactoryBuilder,
-    RegistryFunctions,
-    ServerConfig,
-    setup_fastmcp_server,
-)
+from mcp_hangar.fastmcp_server import HangarFunctions, MCPServerFactory, MCPServerFactoryBuilder, ServerConfig
 
 
 @pytest.fixture
 def mock_registry():
     """Create mock registry functions."""
-    return RegistryFunctions(
+    return HangarFunctions(
         list=Mock(return_value={"providers": []}),
         start=Mock(return_value={"status": "started"}),
         stop=Mock(return_value={"status": "stopped"}),
@@ -34,7 +27,7 @@ def mock_registry():
 @pytest.fixture
 def mock_registry_with_discovery():
     """Create mock registry functions with discovery."""
-    return RegistryFunctions(
+    return HangarFunctions(
         list=Mock(return_value={"providers": []}),
         start=Mock(return_value={"status": "started"}),
         stop=Mock(return_value={"status": "stopped"}),
@@ -51,17 +44,17 @@ def mock_registry_with_discovery():
     )
 
 
-class TestRegistryFunctions:
-    """Tests for RegistryFunctions dataclass."""
+class TestHangarFunctions:
+    """Tests for HangarFunctions dataclass."""
 
     def test_registry_functions_immutable(self, mock_registry):
-        """RegistryFunctions is frozen dataclass."""
+        """HangarFunctions is frozen dataclass."""
         with pytest.raises(Exception):  # FrozenInstanceError
             mock_registry.list = Mock()
 
     def test_discovery_functions_optional(self):
         """Discovery functions can be None."""
-        registry = RegistryFunctions(
+        registry = HangarFunctions(
             list=Mock(),
             start=Mock(),
             stop=Mock(),
@@ -80,7 +73,7 @@ class TestRegistryFunctions:
         assert registry.metrics is None
 
     def test_registry_functions_with_all_fields(self, mock_registry_with_discovery):
-        """RegistryFunctions accepts all fields."""
+        """HangarFunctions accepts all fields."""
         assert mock_registry_with_discovery.list is not None
         assert mock_registry_with_discovery.discover is not None
         assert mock_registry_with_discovery.sources is not None
@@ -130,7 +123,7 @@ class TestMCPServerFactory:
         server = factory.create_server()
 
         assert server is not None
-        assert server.name == "mcp-registry"
+        assert server.name == "mcp-hangar"
 
     def test_create_server_caches_instance(self, mock_registry):
         """Repeated calls return same instance."""
@@ -167,10 +160,10 @@ class TestMCPServerFactory:
         assert factory.config.port == 8000
 
     def test_registry_property(self, mock_registry):
-        """registry property returns RegistryFunctions."""
+        """registry property returns HangarFunctions."""
         factory = MCPServerFactory(mock_registry)
 
-        assert factory.registry is mock_registry
+        assert factory.hangar is mock_registry
 
     def test_config_property(self, mock_registry):
         """config property returns ServerConfig."""
@@ -203,13 +196,13 @@ class TestMCPServerFactoryReadinessChecks:
 
         mock_registry.list.assert_called_once()
         mock_registry.health.assert_called_once()
-        assert checks["registry_list_ok"] is True
-        assert checks["registry_health_ok"] is True
-        assert checks["registry_wired"] is True
+        assert checks["hangar_list_ok"] is True
+        assert checks["hangar_health_ok"] is True
+        assert checks["hangar_wired"] is True
 
     def test_readiness_checks_handle_list_error(self):
         """Readiness checks handle list() exception."""
-        registry = RegistryFunctions(
+        registry = HangarFunctions(
             list=Mock(side_effect=RuntimeError("list error")),
             start=Mock(),
             stop=Mock(),
@@ -221,13 +214,13 @@ class TestMCPServerFactoryReadinessChecks:
         factory = MCPServerFactory(registry)
         checks = factory._run_readiness_checks()
 
-        assert checks["registry_list_ok"] is False
-        assert "list error" in checks["registry_list_error"]
-        assert checks["registry_health_ok"] is True
+        assert checks["hangar_list_ok"] is False
+        assert "list error" in checks["hangar_list_error"]
+        assert checks["hangar_health_ok"] is True
 
     def test_readiness_checks_handle_health_error(self):
         """Readiness checks handle health() exception."""
-        registry = RegistryFunctions(
+        registry = HangarFunctions(
             list=Mock(return_value={"providers": []}),
             start=Mock(),
             stop=Mock(),
@@ -239,13 +232,13 @@ class TestMCPServerFactoryReadinessChecks:
         factory = MCPServerFactory(registry)
         checks = factory._run_readiness_checks()
 
-        assert checks["registry_list_ok"] is True
-        assert checks["registry_health_ok"] is False
-        assert "health error" in checks["registry_health_error"]
+        assert checks["hangar_list_ok"] is True
+        assert checks["hangar_health_ok"] is False
+        assert "health error" in checks["hangar_health_error"]
 
     def test_readiness_checks_invalid_list_response(self):
         """Readiness checks detect invalid list response."""
-        registry = RegistryFunctions(
+        registry = HangarFunctions(
             list=Mock(return_value={"invalid": "response"}),  # Missing "providers"
             start=Mock(),
             stop=Mock(),
@@ -257,11 +250,11 @@ class TestMCPServerFactoryReadinessChecks:
         factory = MCPServerFactory(registry)
         checks = factory._run_readiness_checks()
 
-        assert checks["registry_list_ok"] is False
+        assert checks["hangar_list_ok"] is False
 
     def test_readiness_checks_invalid_health_response(self):
         """Readiness checks detect invalid health response."""
-        registry = RegistryFunctions(
+        registry = HangarFunctions(
             list=Mock(return_value={"providers": []}),
             start=Mock(),
             stop=Mock(),
@@ -273,7 +266,7 @@ class TestMCPServerFactoryReadinessChecks:
         factory = MCPServerFactory(registry)
         checks = factory._run_readiness_checks()
 
-        assert checks["registry_health_ok"] is False
+        assert checks["hangar_health_ok"] is False
 
 
 class TestMCPServerFactoryMetrics:
@@ -307,7 +300,7 @@ class TestMCPServerFactoryBuilder:
         """Builder creates working factory."""
         factory = (
             MCPServerFactory.builder()
-            .with_registry(
+            .with_hangar(
                 mock_registry.list,
                 mock_registry.start,
                 mock_registry.stop,
@@ -324,13 +317,13 @@ class TestMCPServerFactoryBuilder:
 
     def test_builder_requires_all_core_functions(self):
         """Builder raises if core functions missing."""
-        with pytest.raises(ValueError, match="core registry functions"):
+        with pytest.raises(ValueError, match="core hangar functions"):
             MCPServerFactory.builder().build()
 
     def test_builder_requires_all_core_functions_partial(self):
         """Builder raises if some core functions missing."""
-        with pytest.raises(ValueError, match="core registry functions"):
-            MCPServerFactory.builder().with_registry(
+        with pytest.raises(ValueError, match="core hangar functions"):
+            MCPServerFactory.builder().with_hangar(
                 Mock(),
                 Mock(),
                 Mock(),
@@ -346,7 +339,7 @@ class TestMCPServerFactoryBuilder:
 
         factory = (
             MCPServerFactory.builder()
-            .with_registry(
+            .with_hangar(
                 mock_registry.list,
                 mock_registry.start,
                 mock_registry.stop,
@@ -360,13 +353,13 @@ class TestMCPServerFactoryBuilder:
         )
 
         assert factory is not None
-        assert factory.registry.discover is mock_discover
+        assert factory.hangar.discover is mock_discover
 
     def test_builder_with_all_discovery_functions(self, mock_registry):
         """Builder accepts all discovery functions."""
         factory = (
             MCPServerFactory.builder()
-            .with_registry(
+            .with_hangar(
                 mock_registry.list,
                 mock_registry.start,
                 mock_registry.stop,
@@ -386,18 +379,18 @@ class TestMCPServerFactoryBuilder:
             .build()
         )
 
-        assert factory.registry.discover is not None
-        assert factory.registry.discovered is not None
-        assert factory.registry.quarantine is not None
-        assert factory.registry.approve is not None
-        assert factory.registry.sources is not None
-        assert factory.registry.metrics is not None
+        assert factory.hangar.discover is not None
+        assert factory.hangar.discovered is not None
+        assert factory.hangar.quarantine is not None
+        assert factory.hangar.approve is not None
+        assert factory.hangar.sources is not None
+        assert factory.hangar.metrics is not None
 
     def test_builder_with_config(self, mock_registry):
         """Builder accepts server config."""
         factory = (
             MCPServerFactory.builder()
-            .with_registry(
+            .with_hangar(
                 mock_registry.list,
                 mock_registry.start,
                 mock_registry.stop,
@@ -418,7 +411,7 @@ class TestMCPServerFactoryBuilder:
         """Builder accepts all config options."""
         factory = (
             MCPServerFactory.builder()
-            .with_registry(
+            .with_hangar(
                 mock_registry.list,
                 mock_registry.start,
                 mock_registry.stop,
@@ -447,7 +440,7 @@ class TestMCPServerFactoryBuilder:
         """Builder methods return self for chaining."""
         builder = MCPServerFactory.builder()
 
-        result1 = builder.with_registry(
+        result1 = builder.with_hangar(
             mock_registry.list,
             mock_registry.start,
             mock_registry.stop,
@@ -462,71 +455,6 @@ class TestMCPServerFactoryBuilder:
         assert result1 is builder
         assert result2 is builder
         assert result3 is builder
-
-
-class TestBackwardCompatibility:
-    """Tests for backward compatibility functions."""
-
-    def test_setup_emits_deprecation_warning(self, mock_registry):
-        """setup_fastmcp_server() emits DeprecationWarning."""
-        with pytest.warns(DeprecationWarning, match="deprecated"):
-            setup_fastmcp_server(
-                mock_registry.list,
-                mock_registry.start,
-                mock_registry.stop,
-                mock_registry.tools,
-                mock_registry.invoke,
-                mock_registry.details,
-                mock_registry.health,
-            )
-
-    def test_create_without_setup_raises(self):
-        """create_fastmcp_server() raises if setup not called."""
-        # Reset global state
-        import mcp_hangar.fastmcp_server as mod
-
-        mod._compat_factory = None
-
-        with pytest.raises(RuntimeError, match="setup_fastmcp_server"), pytest.warns(DeprecationWarning):
-            create_fastmcp_server()
-
-    def test_create_after_setup_works(self, mock_registry):
-        """create_fastmcp_server() works after setup."""
-        with pytest.warns(DeprecationWarning):
-            setup_fastmcp_server(
-                mock_registry.list,
-                mock_registry.start,
-                mock_registry.stop,
-                mock_registry.tools,
-                mock_registry.invoke,
-                mock_registry.details,
-                mock_registry.health,
-            )
-
-        with pytest.warns(DeprecationWarning):
-            server = create_fastmcp_server()
-
-        assert server is not None
-        assert server.name == "mcp-registry"
-
-    def test_setup_with_discovery_functions(self, mock_registry_with_discovery):
-        """setup_fastmcp_server() accepts discovery functions."""
-        with pytest.warns(DeprecationWarning):
-            setup_fastmcp_server(
-                mock_registry_with_discovery.list,
-                mock_registry_with_discovery.start,
-                mock_registry_with_discovery.stop,
-                mock_registry_with_discovery.tools,
-                mock_registry_with_discovery.invoke,
-                mock_registry_with_discovery.details,
-                mock_registry_with_discovery.health,
-                registry_discover_fn=mock_registry_with_discovery.discover,
-                registry_discovered_fn=mock_registry_with_discovery.discovered,
-                registry_quarantine_fn=mock_registry_with_discovery.quarantine,
-                registry_approve_fn=mock_registry_with_discovery.approve,
-                registry_sources_fn=mock_registry_with_discovery.sources,
-                registry_metrics_fn=mock_registry_with_discovery.metrics,
-            )
 
 
 class TestMultipleInstances:
@@ -567,14 +495,13 @@ class TestNoSideEffectsOnImport:
     def test_import_doesnt_create_server(self):
         """Importing module doesn't create any servers."""
         # If this test runs, import already happened without error
-        # Just verify no global servers exist
         import mcp_hangar.fastmcp_server as mod
 
-        # _compat_factory should be None unless setup was called
-        # (might be set by other tests, so just verify it's the expected type)
-        assert mod._compat_factory is None or isinstance(mod._compat_factory, MCPServerFactory)
+        # Verify module exports exist
+        assert hasattr(mod, "MCPServerFactory")
+        assert hasattr(mod, "HangarFunctions")
 
-    def test_import_doesnt_call_registry_functions(self, mock_registry):
+    def test_import_doesnt_call_hangar_functions(self, mock_registry):
         """Importing and creating factory doesn't call registry functions."""
         _factory = MCPServerFactory(mock_registry)  # noqa: F841
 
@@ -583,8 +510,8 @@ class TestNoSideEffectsOnImport:
         mock_registry.start.assert_not_called()
         mock_registry.health.assert_not_called()
 
-    def test_create_server_doesnt_call_registry(self, mock_registry):
-        """Creating server doesn't call registry functions."""
+    def test_create_server_doesnt_call_hangar(self, mock_registry):
+        """Creating server doesn't call hangar functions."""
         factory = MCPServerFactory(mock_registry)
         factory.create_server()
 

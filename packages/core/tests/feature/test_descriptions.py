@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test that provider descriptions are properly returned in registry_list.
+"""Test that provider descriptions are properly returned in hangar_list.
 
 This feature test depends on `config.container.yaml` being present in the worktree.
 If the file is missing, the test should be skipped (not failed).
@@ -15,12 +15,12 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from mcp_hangar.application.queries import register_all_handlers as register_query_handlers  # noqa: E402
 from mcp_hangar.server import (  # noqa: E402
+    hangar_list,
     load_config,
     load_config_from_file,
     PROVIDER_REPOSITORY,
     PROVIDERS,
     QUERY_BUS,
-    registry_list,
 )
 
 
@@ -62,10 +62,10 @@ def test_descriptions() -> None:
         print(f"\n❌ {len(missing)} providers missing descriptions: {missing}")
         assert False, f"Providers missing descriptions: {missing}"
 
-    # Test registry_list returns descriptions
-    print("\n📋 Testing registry_list response...")
+    # Test hangar_list returns descriptions
+    print("\n📋 Testing hangar_list response...")
     try:
-        result = registry_list()
+        result = hangar_list()
         providers_list = result.get("providers", [])
 
         print(f"   Found {len(providers_list)} providers in response:")
@@ -90,7 +90,7 @@ def test_descriptions() -> None:
 
         if no_description:
             print(f"   ❌ Missing descriptions: {no_description}")
-            assert False, f"Missing descriptions in registry_list response: {no_description}"
+            assert False, f"Missing descriptions in hangar_list response: {no_description}"
 
         print("\n✅ All providers have descriptions!")
 
@@ -102,7 +102,7 @@ def test_descriptions() -> None:
         return None
 
     except Exception as e:
-        print(f"   ❌ Error calling registry_list: {e}")
+        print(f"   ❌ Error calling hangar_list: {e}")
         import traceback
 
         traceback.print_exc()
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     if success:
         print("✅ ALL TESTS PASSED!")
         print("=" * 70)
-        print("\n💡 AI models will now receive provider descriptions in registry_list!")
+        print("\n💡 AI models will now receive provider descriptions in hangar_list!")
         print("   This helps them understand what each provider can do.")
     else:
         print("❌ TESTS FAILED!")

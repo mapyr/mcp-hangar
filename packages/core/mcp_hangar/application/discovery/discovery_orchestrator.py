@@ -339,7 +339,7 @@ class DiscoveryOrchestrator:
             try:
                 success = await self.on_register(provider)
                 if not success:
-                    logger.warning(f"Registry rejected provider: {provider.name}")
+                    logger.warning(f"Control plane rejected provider: {provider.name}")
                     return "skipped"
             except Exception as e:
                 logger.error(f"Error registering provider {provider.name}: {e}")

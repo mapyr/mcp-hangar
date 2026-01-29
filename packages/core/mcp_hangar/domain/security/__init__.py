@@ -1,5 +1,5 @@
 """
-Security module for the MCP Registry.
+Security module for MCP Hangar.
 
 Provides security primitives including:
 - Input validation and sanitization

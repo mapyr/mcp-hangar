@@ -63,51 +63,51 @@ class ObservabilityMetrics:
         """Initialize metrics."""
         # Circuit breaker metrics
         self.circuit_breaker_state = Gauge(
-            name="mcp_registry_circuit_breaker_state",
+            name="mcp_hangar_circuit_breaker_state",
             description="Circuit breaker state (0=closed, 1=open, 2=half_open)",
             labels=["provider"],
         )
 
         self.circuit_breaker_failures = Counter(
-            name="mcp_registry_circuit_breaker_failures_total",
+            name="mcp_hangar_circuit_breaker_failures_total",
             description="Total circuit breaker failures",
             labels=["provider"],
         )
 
         self.circuit_breaker_successes = Counter(
-            name="mcp_registry_circuit_breaker_successes_total",
+            name="mcp_hangar_circuit_breaker_successes_total",
             description="Total circuit breaker successes after recovery",
             labels=["provider"],
         )
 
         # Retry metrics
         self.retry_attempts = Counter(
-            name="mcp_registry_retry_attempts_total",
+            name="mcp_hangar_retry_attempts_total",
             description="Total retry attempts",
             labels=["provider", "tool", "attempt_number"],
         )
 
         self.retry_exhausted = Counter(
-            name="mcp_registry_retry_exhausted_total",
+            name="mcp_hangar_retry_exhausted_total",
             description="Total times all retries were exhausted",
             labels=["provider", "tool"],
         )
 
         self.retry_succeeded = Counter(
-            name="mcp_registry_retry_succeeded_total",
+            name="mcp_hangar_retry_succeeded_total",
             description="Total times retry succeeded after failure",
             labels=["provider", "tool", "attempt_number"],
         )
 
         # Queue metrics
         self.pending_requests = Gauge(
-            name="mcp_registry_pending_requests",
+            name="mcp_hangar_pending_requests",
             description="Number of pending requests per provider",
             labels=["provider"],
         )
 
         self.request_queue_time_seconds = Histogram(
-            name="mcp_registry_request_queue_time_seconds",
+            name="mcp_hangar_request_queue_time_seconds",
             description="Time requests spend waiting in queue",
             labels=["provider"],
             buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5),
@@ -115,45 +115,45 @@ class ObservabilityMetrics:
 
         # Cold start detailed metrics
         self.cold_start_phase_duration = Histogram(
-            name="mcp_registry_cold_start_phase_duration_seconds",
+            name="mcp_hangar_cold_start_phase_duration_seconds",
             description="Duration of cold start phases",
             labels=["provider", "phase"],  # phase: spawn, connect, discover, health
             buckets=(0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0),
         )
 
         self.cold_starts_in_progress = Gauge(
-            name="mcp_registry_cold_starts_in_progress",
+            name="mcp_hangar_cold_starts_in_progress",
             description="Number of cold starts currently in progress",
             labels=["provider"],
         )
 
         # Resource metrics (best-effort)
         self.provider_memory_bytes = Gauge(
-            name="mcp_registry_provider_memory_bytes",
+            name="mcp_hangar_provider_memory_bytes",
             description="Memory usage of provider process in bytes",
             labels=["provider"],
         )
 
         self.provider_cpu_percent = Gauge(
-            name="mcp_registry_provider_cpu_percent",
+            name="mcp_hangar_provider_cpu_percent",
             description="CPU usage percentage of provider process",
             labels=["provider"],
         )
 
         # SLI metrics
         self.availability_ratio = Gauge(
-            name="mcp_registry_availability_ratio",
+            name="mcp_hangar_availability_ratio",
             description="Availability ratio (ready providers / total providers)",
         )
 
         self.error_budget_remaining = Gauge(
-            name="mcp_registry_error_budget_remaining",
+            name="mcp_hangar_error_budget_remaining",
             description="Remaining error budget ratio (1.0 = full budget)",
         )
 
         # Saturation metrics
         self.provider_utilization = Gauge(
-            name="mcp_registry_provider_utilization",
+            name="mcp_hangar_provider_utilization",
             description="Provider utilization ratio (active/capacity)",
             labels=["provider"],
         )

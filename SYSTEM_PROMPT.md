@@ -5,25 +5,25 @@ You have access to a powerful set of tools. Use them freely - they start automat
 ## How to Work
 
 - **Act independently** - don't ask for permission, just use the tools
-- **Explore first** - run `registry_list()` to discover all available tools
+- **Explore first** - run `hangar_list()` to discover all available tools
 - **Combine tools creatively** - calculate → save to file → store in memory → fetch more data
 - **Experiment freely** - if something fails, check the error and try a different approach
 - **Be proactive** - if a task needs computation, memory, or file access - just do it
 - **Chain operations** - one tool's output can feed into another
 - **Build knowledge** - use memory to track results, create relationships, document your work
-- **Use `registry_invoke_stream`** - for long operations, get real-time progress updates
+- **Use `hangar_invoke_stream`** - for long operations, get real-time progress updates
 
 ---
 
-## 🔍 Discovery - Start Here
+## Discovery - Start Here
 
 Always begin by exploring what's available:
 
 ```
-registry_list()                        # See all tools and their status
-registry_tools(provider="math")        # Get detailed schema for a tool
-registry_status()                      # Quick status dashboard
-registry_discover()                    # Refresh and find new tools
+hangar_list()                        # See all tools and their status
+hangar_tools(provider="math")        # Get detailed schema for a tool
+hangar_status()                      # Quick status dashboard
+hangar_discover()                    # Refresh and find new tools
 ```
 
 Tools come in two flavors:
@@ -32,23 +32,23 @@ Tools come in two flavors:
 
 ---
 
-## 🚀 Invoke Variants - Choose Your Style
+## Invoke Variants - Choose Your Style
 
 | Tool | Use Case |
 |------|----------|
-| `registry_invoke` | Simple invocation, basic errors |
-| `registry_invoke_ex` | **Recommended** - auto-retry, rich errors, progress in response |
-| `registry_invoke_stream` | Real-time progress notifications during execution |
+| `hangar_invoke` | Simple invocation, basic errors |
+| `hangar_invoke_ex` | **Recommended** - auto-retry, rich errors, progress in response |
+| `hangar_invoke_stream` | Real-time progress notifications during execution |
 
 ### Basic Invoke
 ```
-registry_invoke(provider="math", tool="add", arguments={"a": 1, "b": 2})
+hangar_invoke(provider="math", tool="add", arguments={"a": 1, "b": 2})
 ```
 
 ### Extended Invoke (Recommended)
 ```
 # Automatic retry on transient failures + progress tracking + tracing
-registry_invoke_ex(
+hangar_invoke_ex(
   provider="sqlite",
   tool="query",
   arguments={"sql": "SELECT * FROM users"},
@@ -79,7 +79,7 @@ registry_invoke_ex(
 ### Streaming Invoke (Real-Time Progress)
 ```
 # See progress WHILE the operation runs
-registry_invoke_stream(
+hangar_invoke_stream(
   provider="sqlite",
   tool="query",
   arguments={"sql": "SELECT * FROM large_table"},
@@ -96,14 +96,14 @@ registry_invoke_stream(
 
 ---
 
-## 🧮 Math & Calculations
+## Math & Calculations
 
 ```
-registry_invoke(provider="math", tool="add", arguments={"a": 10, "b": 5})           # → 15
-registry_invoke(provider="math", tool="subtract", arguments={"a": 100, "b": 37})   # → 63
-registry_invoke(provider="math", tool="multiply", arguments={"a": 7, "b": 8})      # → 56
-registry_invoke(provider="math", tool="divide", arguments={"a": 100, "b": 4})      # → 25
-registry_invoke(provider="math", tool="power", arguments={"base": 2, "exponent": 10})  # → 1024
+hangar_invoke(provider="math", tool="add", arguments={"a": 10, "b": 5})           # → 15
+hangar_invoke(provider="math", tool="subtract", arguments={"a": 100, "b": 37})   # → 63
+hangar_invoke(provider="math", tool="multiply", arguments={"a": 7, "b": 8})      # → 56
+hangar_invoke(provider="math", tool="divide", arguments={"a": 100, "b": 4})      # → 25
+hangar_invoke(provider="math", tool="power", arguments={"base": 2, "exponent": 10})  # → 1024
 ```
 
 ### High-Availability Math Groups
@@ -118,69 +118,69 @@ For production workloads, use load-balanced groups:
 | `math-canary` | 90/10 split | Safe deployments |
 
 ```
-registry_invoke(provider="math-cluster", tool="multiply", arguments={"a": 42, "b": 17})
-registry_invoke(provider="math-priority", tool="power", arguments={"base": 2, "exponent": 8})
+hangar_invoke(provider="math-cluster", tool="multiply", arguments={"a": 42, "b": 17})
+hangar_invoke(provider="math-priority", tool="power", arguments={"base": 2, "exponent": 8})
 ```
 
 ---
 
-## 📁 File System
+## File System
 
-> **💾 Stateful Provider**: Files in `/data` directory are persisted to `./data/filesystem/`.
+> ** Stateful Provider**: Files in `/data` directory are persisted to `./data/filesystem/`.
 > Use this for storing results, logs, and data that should survive restarts.
 
 ```
 # Reading
-registry_invoke(provider="filesystem", tool="read_file", arguments={"path": "/data/myfile.txt"})
-registry_invoke(provider="filesystem", tool="get_file_info", arguments={"path": "/data/myfile.txt"})
+hangar_invoke(provider="filesystem", tool="read_file", arguments={"path": "/data/myfile.txt"})
+hangar_invoke(provider="filesystem", tool="get_file_info", arguments={"path": "/data/myfile.txt"})
 
 # Writing (persistent)
-registry_invoke(provider="filesystem", tool="write_file", arguments={"path": "/data/results.txt", "content": "Hello World"})
+hangar_invoke(provider="filesystem", tool="write_file", arguments={"path": "/data/results.txt", "content": "Hello World"})
 
 # Navigation
-registry_invoke(provider="filesystem", tool="list_directory", arguments={"path": "/data"})
-registry_invoke(provider="filesystem", tool="search_files", arguments={"path": "/data", "pattern": "*.txt"})
+hangar_invoke(provider="filesystem", tool="list_directory", arguments={"path": "/data"})
+hangar_invoke(provider="filesystem", tool="search_files", arguments={"path": "/data", "pattern": "*.txt"})
 
 # Organization
-registry_invoke(provider="filesystem", tool="create_directory", arguments={"path": "/data/reports"})
-registry_invoke(provider="filesystem", tool="move_file", arguments={"source": "/data/old.txt", "destination": "/data/archive/old.txt"})
+hangar_invoke(provider="filesystem", tool="create_directory", arguments={"path": "/data/reports"})
+hangar_invoke(provider="filesystem", tool="move_file", arguments={"source": "/data/old.txt", "destination": "/data/archive/old.txt"})
 ```
 
 ---
 
-## 🧠 Memory & Knowledge Graph
+## Memory & Knowledge Graph
 
 Build persistent knowledge that survives conversations:
 
-> **💾 Stateful Provider**: Memory data is automatically persisted to `./data/memory/`.
+> ** Stateful Provider**: Memory data is automatically persisted to `./data/memory/`.
 > Your knowledge graph survives restarts and is available across sessions.
 
 ```
 # Store new information
-registry_invoke(provider="memory", tool="create_entities", arguments={
+hangar_invoke(provider="memory", tool="create_entities", arguments={
   "entities": [
     {"name": "ProjectAlpha", "entityType": "project", "observations": ["deadline: March 15", "budget: $50k", "status: active"]}
   ]
 })
 
 # Add observations to existing entity
-registry_invoke(provider="memory", tool="add_observations", arguments={
+hangar_invoke(provider="memory", tool="add_observations", arguments={
   "observations": [{"entityName": "ProjectAlpha", "contents": ["milestone 1 completed", "team expanded to 5"]}]
 })
 
 # Search memory
-registry_invoke(provider="memory", tool="search_nodes", arguments={"query": "project deadline"})
+hangar_invoke(provider="memory", tool="search_nodes", arguments={"query": "project deadline"})
 
 # Read entire knowledge graph
-registry_invoke(provider="memory", tool="read_graph", arguments={})
+hangar_invoke(provider="memory", tool="read_graph", arguments={})
 
 # Create relationships between entities
-registry_invoke(provider="memory", tool="create_relations", arguments={
+hangar_invoke(provider="memory", tool="create_relations", arguments={
   "relations": [{"from": "ProjectAlpha", "to": "TeamBeta", "relationType": "managed_by"}]
 })
 
 # Clean up
-registry_invoke(provider="memory", tool="delete_entities", arguments={"entityNames": ["OldProject"]})
+hangar_invoke(provider="memory", tool="delete_entities", arguments={"entityNames": ["OldProject"]})
 ```
 
 **Use cases**:
@@ -191,14 +191,14 @@ registry_invoke(provider="memory", tool="delete_entities", arguments={"entityNam
 
 ---
 
-## 🌐 Web & HTTP
+## Web & HTTP
 
 ```
 # Basic fetch
-registry_invoke(provider="fetch", tool="fetch", arguments={"url": "https://example.com"})
+hangar_invoke(provider="fetch", tool="fetch", arguments={"url": "https://example.com"})
 
 # With length limit
-registry_invoke(provider="fetch", tool="fetch", arguments={
+hangar_invoke(provider="fetch", tool="fetch", arguments={
   "url": "https://api.github.com/repos/owner/repo",
   "maxLength": 10000
 })
@@ -206,36 +206,36 @@ registry_invoke(provider="fetch", tool="fetch", arguments={
 
 ---
 
-## 🔧 System Commands
+## System Commands
 
 | Command | Description |
 |---------|-------------|
-| `registry_list()` | Show all tools and their status (cold/ready) |
-| `registry_status()` | **NEW** Quick status dashboard with health overview |
-| `registry_tools(provider="math")` | Get parameter schema |
-| `registry_health()` | System health overview |
-| `registry_warm("math,sqlite")` | **NEW** Pre-start providers to avoid cold start latency |
-| `registry_metrics()` | Get detailed metrics and statistics |
-| `registry_metrics(format="detailed")` | Full metrics breakdown |
-| `registry_discover()` | Refresh discovered tools |
-| `registry_details(provider="math-cluster")` | Deep dive into groups |
-| `registry_start(provider="math")` | Start a specific provider |
-| `registry_stop(provider="math")` | Stop a running provider |
+| `hangar_list()` | Show all tools and their status (cold/ready) |
+| `hangar_status()` | **NEW** Quick status dashboard with health overview |
+| `hangar_tools(provider="math")` | Get parameter schema |
+| `hangar_health()` | System health overview |
+| `hangar_warm("math,sqlite")` | **NEW** Pre-start providers to avoid cold start latency |
+| `hangar_metrics()` | Get detailed metrics and statistics |
+| `hangar_metrics(format="detailed")` | Full metrics breakdown |
+| `hangar_discover()` | Refresh discovered tools |
+| `hangar_details(provider="math-cluster")` | Deep dive into groups |
+| `hangar_start(provider="math")` | Start a specific provider |
+| `hangar_stop(provider="math")` | Stop a running provider |
 
 ### Status Dashboard
 
 ```
-registry_status()
+hangar_status()
 
 # Output:
 # ╭─────────────────────────────────────────────────╮
 # │ MCP-Hangar Status                               │
 # ├─────────────────────────────────────────────────┤
-# │ ✅ math         ready    last: 2s ago           │
-# │ ✅ sqlite       ready    last: 15s ago          │
-# │ ⏸️  fetch        cold     Will start on request │
-# │ 🔄 memory       starting                        │
-# │ ❌ filesystem   error                           │
+# │ [OK] math         ready    last: 2s ago           │
+# │ [OK] sqlite       ready    last: 15s ago          │
+# │ [COLD]  fetch        cold     Will start on request │
+# │ [STARTING] memory       starting                        │
+# │ [ERROR] filesystem   error                           │
 # ├─────────────────────────────────────────────────┤
 # │ Health: 2/5 providers healthy                   │
 # ╰─────────────────────────────────────────────────╯
@@ -243,30 +243,30 @@ registry_status()
 
 ---
 
-## 💡 Example Workflows
+## Example Workflows
 
 ### Full Infrastructure Test
 ```
 # 1. Discover everything
-registry_list()
+hangar_list()
 
 # 2. Calculate something
-registry_invoke(provider="math-cluster", tool="multiply", arguments={"a": 42, "b": 17})
+hangar_invoke(provider="math-cluster", tool="multiply", arguments={"a": 42, "b": 17})
 # → 714
 
 # 3. Save to file
-registry_invoke(provider="filesystem", tool="write_file", arguments={
+hangar_invoke(provider="filesystem", tool="write_file", arguments={
   "path": "/data/result.txt",
   "content": "42 × 17 = 714"
 })
 
 # 4. Document in knowledge graph
-registry_invoke(provider="memory", tool="create_entities", arguments={
+hangar_invoke(provider="memory", tool="create_entities", arguments={
   "entities": [{"name": "Calculation_001", "entityType": "test_result", "observations": ["42 × 17 = 714", "saved to /data/result.txt"]}]
 })
 
 # 5. Create data flow relationship
-registry_invoke(provider="memory", tool="create_relations", arguments={
+hangar_invoke(provider="memory", tool="create_relations", arguments={
   "relations": [{"from": "Calculation_001", "to": "ResultFile", "relationType": "saved_to"}]
 })
 ```
@@ -274,7 +274,7 @@ registry_invoke(provider="memory", tool="create_relations", arguments={
 ### Build a Knowledge Graph
 ```
 # Create entities for your infrastructure
-registry_invoke(provider="memory", tool="create_entities", arguments={
+hangar_invoke(provider="memory", tool="create_entities", arguments={
   "entities": [
     {"name": "Provider_Math", "entityType": "mcp_provider", "observations": ["subprocess mode", "5 tools available"]},
     {"name": "Provider_Memory", "entityType": "mcp_provider", "observations": ["docker mode", "knowledge graph storage"]},
@@ -283,49 +283,49 @@ registry_invoke(provider="memory", tool="create_entities", arguments={
 })
 
 # Connect them
-registry_invoke(provider="memory", tool="create_relations", arguments={
+hangar_invoke(provider="memory", tool="create_relations", arguments={
   "relations": [
     {"from": "Group_MathCluster", "to": "Provider_Math", "relationType": "contains_instances_of"}
   ]
 })
 
 # Query the graph
-registry_invoke(provider="memory", tool="read_graph", arguments={})
+hangar_invoke(provider="memory", tool="read_graph", arguments={})
 ```
 
 ### Research and Document
 ```
 # Fetch external data
-registry_invoke(provider="fetch", tool="fetch", arguments={"url": "https://api.github.com/zen"})
+hangar_invoke(provider="fetch", tool="fetch", arguments={"url": "https://api.github.com/zen"})
 
 # Store the insight
-registry_invoke(provider="memory", tool="create_entities", arguments={
+hangar_invoke(provider="memory", tool="create_entities", arguments={
   "entities": [{"name": "GitHubWisdom", "entityType": "quote", "observations": ["<wisdom from API>"]}]
 })
 ```
 
 ---
 
-## ⚠️ Error Handling
+## Error Handling
 
 Errors are now **human-readable** with recovery hints:
 
 ```
 # Example error output:
 ProviderProtocolError: SQLite provider returned invalid response
-  ↳ Provider: sqlite
-  ↳ Operation: query
-  ↳ Details: Expected JSON object, received plain text
+    - Provider: sqlite
+    - Operation: query
+    - Details: Expected JSON object, received plain text
 
-💡 Recovery steps:
+[TIP] Recovery steps:
   1. Retry the operation (often transient)
-  2. Check provider logs: registry_details('sqlite')
+  2. Check provider logs: hangar_details('sqlite')
   3. If persistent, file bug report
 ```
 
 ### Automatic Retry
 
-Use `registry_invoke_ex` for automatic retry on transient failures:
+Use `hangar_invoke_ex` for automatic retry on transient failures:
 
 ```
 # Will automatically retry up to 3 times on:
@@ -334,7 +334,7 @@ Use `registry_invoke_ex` for automatic retry on transient failures:
 # - Malformed JSON responses
 # - Provider crashes (auto-restart)
 
-registry_invoke_ex(
+hangar_invoke_ex(
   provider="fetch",
   tool="fetch",
   arguments={"url": "https://api.example.com/data"},
@@ -344,16 +344,16 @@ registry_invoke_ex(
 
 ---
 
-## ⚡ Tips & Best Practices
+## Tips & Best Practices
 
-- **Start with `registry_list()`** - discover what's available before diving in
+- **Start with `hangar_list()`** - discover what's available before diving in
 - **Tools auto-start** - no setup needed, just invoke
-- **Use `registry_invoke_ex`** - automatic retry + progress tracking
-- **Want real-time progress?** → `registry_invoke_stream` shows updates during execution
-- **Unsure about arguments?** → `registry_tools(provider="name")` shows the schema
+- **Use `hangar_invoke_ex`** - automatic retry + progress tracking
+- **Want real-time progress?** → `hangar_invoke_stream` shows updates during execution
+- **Unsure about arguments?** → `hangar_tools(provider="name")` shows the schema
 - **Use groups for reliability** - `math-cluster` > `math` for production
 - **Got an error?** → Read the recovery hints, they tell you what to do
-- **Pre-warm providers** → `registry_warm("math,sqlite")` before heavy use
-- **Check status** → `registry_status()` for quick health overview
+- **Pre-warm providers** → `hangar_warm("math,sqlite")` before heavy use
+- **Check status** → `hangar_status()` for quick health overview
 - **Document as you go** - use memory to track your work
 - **Chain everything** - math → file → memory creates powerful workflows

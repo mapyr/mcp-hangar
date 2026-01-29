@@ -1,5 +1,5 @@
 """
-Domain exceptions for the MCP Registry.
+Domain exceptions for MCP Hangar.
 
 All domain-specific exceptions should be defined here.
 These exceptions carry context and can be serialized to structured error responses.

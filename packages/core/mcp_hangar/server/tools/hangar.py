@@ -1,4 +1,4 @@
-"""Registry management tools: list, start, stop, status.
+"""Control plane management tools: list, start, stop, status.
 
 Uses ApplicationContext for dependency injection (DIP).
 Separates commands (write) from queries (read) following CQRS.
@@ -18,9 +18,9 @@ from ..validation import check_rate_limit, tool_error_hook, tool_error_mapper, v
 _server_start_time: float = time.time()
 
 
-def registry_list(state_filter: str | None = None) -> dict:
+def hangar_list(state_filter: str | None = None) -> dict:
     """
-    List all providers and groups with status and metadata.
+    List all managed providers and groups with lifecycle state and metadata.
 
     This is a QUERY operation - no side effects, only reads data.
 
@@ -50,31 +50,31 @@ def registry_list(state_filter: str | None = None) -> dict:
     }
 
 
-def register_registry_tools(mcp: FastMCP) -> None:
-    """Register registry management tools with MCP server."""
+def register_hangar_tools(mcp: FastMCP) -> None:
+    """Register control plane management tools with MCP server."""
 
-    @mcp.tool(name="registry_list")
+    @mcp.tool(name="hangar_list")
     @mcp_tool_wrapper(
-        tool_name="registry_list",
+        tool_name="hangar_list",
         rate_limit_key=key_global,
-        check_rate_limit=lambda key: check_rate_limit("registry_list"),
+        check_rate_limit=lambda key: check_rate_limit("hangar_list"),
         validate=None,
         error_mapper=lambda exc: tool_error_mapper(exc),
         on_error=tool_error_hook,
     )
-    def _registry_list(state_filter: str | None = None) -> dict:
-        return registry_list(state_filter)
+    def _hangar_list(state_filter: str | None = None) -> dict:
+        return hangar_list(state_filter)
 
-    @mcp.tool(name="registry_start")
+    @mcp.tool(name="hangar_start")
     @mcp_tool_wrapper(
-        tool_name="registry_start",
-        rate_limit_key=lambda provider: f"registry_start:{provider}",
+        tool_name="hangar_start",
+        rate_limit_key=lambda provider: f"hangar_start:{provider}",
         check_rate_limit=check_rate_limit,
         validate=validate_provider_id_input,
         error_mapper=lambda exc: tool_error_mapper(exc),
         on_error=lambda exc, ctx: tool_error_hook(exc, ctx),
     )
-    def registry_start(provider: str) -> dict:
+    def hangar_start(provider: str) -> dict:
         """
         Explicitly start a provider or all members of a group.
 
@@ -111,16 +111,16 @@ def register_registry_tools(mcp: FastMCP) -> None:
         command = StartProviderCommand(provider_id=provider)
         return ctx.command_bus.send(command)
 
-    @mcp.tool(name="registry_stop")
+    @mcp.tool(name="hangar_stop")
     @mcp_tool_wrapper(
-        tool_name="registry_stop",
-        rate_limit_key=lambda provider: f"registry_stop:{provider}",
+        tool_name="hangar_stop",
+        rate_limit_key=lambda provider: f"hangar_stop:{provider}",
         check_rate_limit=check_rate_limit,
         validate=validate_provider_id_input,
         error_mapper=lambda exc: tool_error_mapper(exc),
         on_error=lambda exc, ctx_dict: tool_error_hook(exc, ctx_dict),
     )
-    def registry_stop(provider: str) -> dict:
+    def hangar_stop(provider: str) -> dict:
         """
         Explicitly stop a provider or all members of a group.
 
@@ -155,16 +155,16 @@ def register_registry_tools(mcp: FastMCP) -> None:
         command = StopProviderCommand(provider_id=provider)
         return ctx.command_bus.send(command)
 
-    @mcp.tool(name="registry_status")
+    @mcp.tool(name="hangar_status")
     @mcp_tool_wrapper(
-        tool_name="registry_status",
+        tool_name="hangar_status",
         rate_limit_key=key_global,
-        check_rate_limit=lambda key: check_rate_limit("registry_status"),
+        check_rate_limit=lambda key: check_rate_limit("hangar_status"),
         validate=None,
         error_mapper=lambda exc: tool_error_mapper(exc),
         on_error=tool_error_hook,
     )
-    def registry_status() -> dict:
+    def hangar_status() -> dict:
         """
         Get a comprehensive status overview of the MCP Registry.
 
@@ -246,14 +246,14 @@ def register_registry_tools(mcp: FastMCP) -> None:
 def _get_status_indicator(state: str) -> str:
     """Get visual indicator for provider state."""
     indicators = {
-        "ready": "✅",
-        "cold": "⏸️",
-        "starting": "🔄",
-        "degraded": "⚠️",
-        "dead": "❌",
-        "error": "❌",
+        "ready": "[READY]",
+        "cold": "[IDLE]",
+        "starting": "[STARTING]",
+        "degraded": "[DEGRADED]",
+        "dead": "[DEAD]",
+        "error": "[ERROR]",
     }
-    return indicators.get(state.lower(), "❓")
+    return indicators.get(state.lower(), "[?]")
 
 
 def _format_time_ago(seconds: float) -> str:

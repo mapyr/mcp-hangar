@@ -68,29 +68,29 @@ Once connected, you have access to these tools:
 
 | Tool | Description |
 |------|-------------|
-| `registry_list` | List all providers and their status |
-| `registry_start` | Manually start a provider |
-| `registry_stop` | Stop a running provider |
-| `registry_invoke` | Invoke a tool on a provider |
-| `registry_invoke_ex` | Invoke with retry and rich metadata |
-| `registry_tools` | Get available tools for a provider |
-| `registry_details` | Get detailed info about a provider |
-| `registry_health` | Check provider health |
+| `hangar_list` | List all providers and their status |
+| `hangar_start` | Manually start a provider |
+| `hangar_stop` | Stop a running provider |
+| `hangar_invoke` | Invoke a tool on a provider |
+| `hangar_invoke_ex` | Invoke with retry and rich metadata |
+| `hangar_tools` | Get available tools for a provider |
+| `hangar_details` | Get detailed info about a provider |
+| `hangar_health` | Check provider health |
 | `registry_status` | Dashboard view of all providers |
 
 ## Example Workflow
 
 ```python
 # 1. List available providers (containers stay OFF)
-registry_list()
+hangar_list()
 # → math: cold, sqlite: cold
 
 # 2. Check available tools (still cold)
-registry_tools(provider="sqlite")
+hangar_tools(provider="sqlite")
 # → [execute, query, ...]
 
 # 3. Invoke a tool (auto-starts provider)
-registry_invoke(
+hangar_invoke(
     provider="sqlite",
     tool="execute",
     arguments={"sql": "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"}

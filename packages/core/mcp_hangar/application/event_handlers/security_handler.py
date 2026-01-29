@@ -1,5 +1,5 @@
 """
-Security event handler for the MCP Registry.
+Security event handler for MCP Hangar.
 
 Provides dedicated security audit logging for:
 - Authentication and authorization events

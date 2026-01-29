@@ -64,39 +64,39 @@ MCP Hangar exports Prometheus metrics at `/metrics`:
 
 | Metric | Type | Labels | Description |
 |--------|------|--------|-------------|
-| `mcp_registry_tool_calls_total` | Counter | provider, tool | Total tool invocations |
-| `mcp_registry_tool_call_duration_seconds` | Histogram | provider, tool | Invocation latency |
-| `mcp_registry_tool_call_errors_total` | Counter | provider, tool, error_type | Failed invocations |
+| `mcp_hangar_tool_calls_total` | Counter | provider, tool | Total tool invocations |
+| `mcp_hangar_tool_call_duration_seconds` | Histogram | provider, tool | Invocation latency |
+| `mcp_hangar_tool_call_errors_total` | Counter | provider, tool, error_type | Failed invocations |
 
 #### Provider State
 
 | Metric | Type | Labels | Description |
 |--------|------|--------|-------------|
-| `mcp_registry_provider_state` | Gauge | provider, state | Current provider state |
-| `mcp_registry_cold_starts_total` | Counter | provider, mode | Cold start count |
-| `mcp_registry_cold_start_duration_seconds` | Histogram | provider, mode | Cold start latency |
+| `mcp_hangar_provider_state` | Gauge | provider, state | Current provider state |
+| `mcp_hangar_cold_starts_total` | Counter | provider, mode | Cold start count |
+| `mcp_hangar_cold_start_duration_seconds` | Histogram | provider, mode | Cold start latency |
 
 #### Health Checks
 
 | Metric | Type | Labels | Description |
 |--------|------|--------|-------------|
-| `mcp_registry_health_checks` | Counter | provider, result | Health check executions |
-| `mcp_registry_health_check_consecutive_failures` | Gauge | provider | Consecutive failures |
+| `mcp_hangar_health_checks` | Counter | provider, result | Health check executions |
+| `mcp_hangar_health_check_consecutive_failures` | Gauge | provider | Consecutive failures |
 
 #### Circuit Breaker
 
 | Metric | Type | Labels | Description |
 |--------|------|--------|-------------|
-| `mcp_registry_circuit_breaker_state` | Gauge | provider | State: 0=closed, 1=open, 2=half_open |
-| `mcp_registry_circuit_breaker_failures_total` | Counter | provider | Circuit breaker trip count |
+| `mcp_hangar_circuit_breaker_state` | Gauge | provider | State: 0=closed, 1=open, 2=half_open |
+| `mcp_hangar_circuit_breaker_failures_total` | Counter | provider | Circuit breaker trip count |
 
 #### Retry Metrics
 
 | Metric | Type | Labels | Description |
 |--------|------|--------|-------------|
-| `mcp_registry_retry_attempts_total` | Counter | provider, tool, attempt_number | Retry attempts |
-| `mcp_registry_retry_exhausted_total` | Counter | provider, tool | Retries exhausted |
-| `mcp_registry_retry_succeeded_total` | Counter | provider, tool, attempt_number | Successful retries |
+| `mcp_hangar_retry_attempts_total` | Counter | provider, tool, attempt_number | Retry attempts |
+| `mcp_hangar_retry_exhausted_total` | Counter | provider, tool | Retries exhausted |
+| `mcp_hangar_retry_succeeded_total` | Counter | provider, tool, attempt_number | Successful retries |
 
 ### Prometheus Configuration
 
@@ -600,9 +600,9 @@ receivers:
 
 | SLI | Metric | Good Event |
 |-----|--------|------------|
-| Availability | Provider ready state | `mcp_registry_provider_state{state="ready"}` |
+| Availability | Provider ready state | `mcp_hangar_provider_state{state="ready"}` |
 | Latency | Tool invocation duration | Request < 2s |
-| Error Rate | Failed invocations | `mcp_registry_errors_total` |
+| Error Rate | Failed invocations | `mcp_hangar_errors_total` |
 
 ### Recommended SLOs
 
@@ -617,8 +617,8 @@ receivers:
 ```promql
 # Error budget remaining (1.0 = full budget, 0.0 = exhausted)
 1 - (
-  sum(increase(mcp_registry_errors_total[30d])) /
-  sum(increase(mcp_registry_tool_calls_total[30d]))
+  sum(increase(mcp_hangar_errors_total[30d])) /
+  sum(increase(mcp_hangar_tool_calls_total[30d]))
 ) / 0.001
 ```
 
@@ -626,8 +626,8 @@ receivers:
 
 ```promql
 # Current availability ratio
-sum(mcp_registry_provider_state{state="ready"}) /
-sum(mcp_registry_provider_state)
+sum(mcp_hangar_provider_state{state="ready"}) /
+sum(mcp_hangar_provider_state)
 ```
 
 ## Troubleshooting
@@ -744,7 +744,7 @@ except ProviderStartError as e:
 2. Avoid user-provided values in labels
 3. Use label aggregation in queries:
    ```promql
-   sum by (provider) (rate(mcp_registry_tool_calls_total[5m]))
+   sum by (provider) (rate(mcp_hangar_tool_calls_total[5m]))
    ```
 
 ## Best Practices

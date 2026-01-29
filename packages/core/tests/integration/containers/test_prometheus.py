@@ -119,8 +119,8 @@ class TestObservabilityMetrics:
 
         output = REGISTRY.get_metrics_output()
 
-        assert "mcp_registry_retry_attempts_total" in output
-        assert "mcp_registry_circuit_breaker_state" in output
-        assert "mcp_registry_cold_start_phase_duration" in output
-        assert "mcp_registry_availability_ratio" in output
-        assert "mcp_registry_error_budget_remaining" in output
+        assert "mcp_hangar_retry_attempts_total" in output
+        assert "mcp_hangar_circuit_breaker_state" in output
+        assert "mcp_hangar_cold_start_phase_duration" in output
+        assert "mcp_hangar_availability_ratio" in output
+        assert "mcp_hangar_error_budget_remaining" in output

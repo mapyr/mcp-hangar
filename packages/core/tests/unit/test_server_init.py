@@ -343,7 +343,7 @@ class TestRegisterAllTools:
 
         # Store originals
         originals = {
-            "register_registry_tools": getattr(bootstrap_mod, "register_registry_tools", None),
+            "register_hangar_tools": getattr(bootstrap_mod, "register_hangar_tools", None),
             "register_provider_tools": getattr(bootstrap_mod, "register_provider_tools", None),
             "register_health_tools": getattr(bootstrap_mod, "register_health_tools", None),
             "register_discovery_tools": getattr(bootstrap_mod, "register_discovery_tools", None),
@@ -352,7 +352,7 @@ class TestRegisterAllTools:
 
         # Create mocks
         mocks = {
-            "register_registry_tools": MagicMock(),
+            "register_hangar_tools": MagicMock(),
             "register_provider_tools": MagicMock(),
             "register_health_tools": MagicMock(),
             "register_discovery_tools": MagicMock(),
@@ -366,7 +366,7 @@ class TestRegisterAllTools:
         try:
             bootstrap_mod._register_all_tools(mock_mcp)
 
-            mocks["register_registry_tools"].assert_called_once_with(mock_mcp)
+            mocks["register_hangar_tools"].assert_called_once_with(mock_mcp)
             mocks["register_provider_tools"].assert_called_once_with(mock_mcp)
             mocks["register_health_tools"].assert_called_once_with(mock_mcp)
             mocks["register_discovery_tools"].assert_called_once_with(mock_mcp)

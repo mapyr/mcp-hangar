@@ -15,8 +15,8 @@ from ...logging_config import get_logger
 logger = get_logger(__name__)
 
 
-# Type alias for registry callback
-RegistryCallback = Callable[[str, str], Awaitable[None]]
+# Type alias for hangar callback
+HangarCallback = Callable[[str, str], Awaitable[None]]
 
 
 class DiscoveryLifecycleManager:
@@ -41,7 +41,7 @@ class DiscoveryLifecycleManager:
         default_ttl: int = 90,
         check_interval: int = 10,
         drain_timeout: int = 30,
-        on_deregister: RegistryCallback | None = None,
+        on_deregister: HangarCallback | None = None,
     ):
         """Initialize lifecycle manager.
 

@@ -1,5 +1,5 @@
 """
-Secrets management for the MCP Registry.
+Secrets management for MCP Hangar.
 
 Provides secure handling of sensitive data:
 - Masking sensitive values in logs

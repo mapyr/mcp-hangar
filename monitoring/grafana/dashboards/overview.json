@@ -46,7 +46,7 @@
       },
       "targets": [
         {
-          "expr": "sum(mcp_registry_provider_state{state=\"ready\"}) / sum(mcp_registry_provider_state)",
+          "expr": "sum(mcp_hangar_provider_state{state=\"ready\"}) / sum(mcp_hangar_provider_state)",
           "legendFormat": "Availability",
           "refId": "A"
         }
@@ -75,7 +75,7 @@
       },
       "targets": [
         {
-          "expr": "sum(mcp_registry_provider_state{state=\"ready\"})",
+          "expr": "sum(mcp_hangar_provider_state{state=\"ready\"})",
           "legendFormat": "Ready",
           "refId": "A"
         }
@@ -104,7 +104,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(mcp_registry_tool_calls_total[5m]))",
+          "expr": "sum(rate(mcp_hangar_tool_calls_total[5m]))",
           "legendFormat": "Requests/s",
           "refId": "A"
         }
@@ -140,7 +140,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(mcp_registry_errors_total[5m])) / (sum(rate(mcp_registry_tool_calls_total[5m])) + 0.001)",
+          "expr": "sum(rate(mcp_hangar_errors_total[5m])) / (sum(rate(mcp_hangar_tool_calls_total[5m])) + 0.001)",
           "legendFormat": "Error Rate",
           "refId": "A"
         }
@@ -193,17 +193,17 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, sum(rate(mcp_registry_tool_call_duration_seconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(mcp_hangar_tool_call_duration_seconds_bucket[5m])) by (le))",
           "legendFormat": "P50",
           "refId": "A"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(mcp_registry_tool_call_duration_seconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(mcp_hangar_tool_call_duration_seconds_bucket[5m])) by (le))",
           "legendFormat": "P95",
           "refId": "B"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(mcp_registry_tool_call_duration_seconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(mcp_hangar_tool_call_duration_seconds_bucket[5m])) by (le))",
           "legendFormat": "P99",
           "refId": "C"
         }
@@ -248,7 +248,7 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(mcp_registry_cold_start_duration_seconds_bucket[5m])) by (le, provider))",
+          "expr": "histogram_quantile(0.95, sum(rate(mcp_hangar_cold_start_duration_seconds_bucket[5m])) by (le, provider))",
           "legendFormat": "{{ provider }}",
           "refId": "A"
         }
@@ -306,7 +306,7 @@
       },
       "targets": [
         {
-          "expr": "sum(mcp_registry_provider_state) by (state)",
+          "expr": "sum(mcp_hangar_provider_state) by (state)",
           "legendFormat": "{{ state }}",
           "refId": "A"
         }
@@ -351,7 +351,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(mcp_registry_tool_calls_total[5m])) by (provider)",
+          "expr": "sum(rate(mcp_hangar_tool_calls_total[5m])) by (provider)",
           "legendFormat": "{{ provider }}",
           "refId": "A"
         }
@@ -404,7 +404,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(mcp_registry_errors_total[5m])) by (error_type)",
+          "expr": "sum(rate(mcp_hangar_errors_total[5m])) by (error_type)",
           "legendFormat": "{{ error_type }}",
           "refId": "A"
         }
@@ -449,7 +449,7 @@
       },
       "targets": [
         {
-          "expr": "mcp_registry_health_check_consecutive_failures",
+          "expr": "mcp_hangar_health_check_consecutive_failures",
           "legendFormat": "{{ provider }}",
           "refId": "A"
         }

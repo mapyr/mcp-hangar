@@ -1,5 +1,5 @@
 """
-Input validation for the MCP Registry.
+Input validation for MCP Hangar.
 
 Provides comprehensive validation for all inputs at API boundaries.
 Validation happens early to prevent invalid data from propagating through the system.
@@ -146,7 +146,7 @@ DANGEROUS_PATH_PATTERNS = [
 
 class InputValidator:
     """
-    Comprehensive input validator for the MCP Registry.
+    Comprehensive input validator for MCP Hangar.
 
     Validates all inputs at API boundaries to prevent:
     - Injection attacks
@@ -402,7 +402,7 @@ class InputValidator:
             # Default will be used
             return result
 
-        if not isinstance(timeout, (int, float)):
+        if not isinstance(timeout, int | float):
             result.add_error("timeout", "Timeout must be a number", type(timeout).__name__)
             return result
 

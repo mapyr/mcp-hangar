@@ -54,9 +54,9 @@ from .state import (
 from .tools import (
     register_discovery_tools,
     register_group_tools,
+    register_hangar_tools,
     register_health_tools,
     register_provider_tools,
-    register_registry_tools,
 )
 
 if TYPE_CHECKING:
@@ -449,7 +449,7 @@ def _register_all_tools(mcp_server: FastMCP) -> None:
     Args:
         mcp_server: FastMCP server instance.
     """
-    register_registry_tools(mcp_server)
+    register_hangar_tools(mcp_server)
     register_provider_tools(mcp_server)
     register_health_tools(mcp_server)
     register_discovery_tools(mcp_server)

@@ -1,5 +1,5 @@
 """
-Security tests for the MCP Registry.
+Security tests for the MCP Hangar.
 
 Tests for:
 - Input validation

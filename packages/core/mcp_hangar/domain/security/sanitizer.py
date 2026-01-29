@@ -1,5 +1,5 @@
 """
-Sanitizer module for the MCP Registry.
+Sanitizer module for MCP Hangar.
 
 Provides sanitization utilities for:
 - Command arguments (prevent injection)
@@ -303,7 +303,7 @@ class Sanitizer:
             return {self.sanitize_for_json(k): self.sanitize_for_json(v) for k, v in value.items()}
         elif isinstance(value, list):
             return [self.sanitize_for_json(item) for item in value]
-        elif isinstance(value, (int, float, bool, type(None))):
+        elif isinstance(value, int | float | bool | type(None)):
             return value
         else:
             # Convert unknown types to string and sanitize

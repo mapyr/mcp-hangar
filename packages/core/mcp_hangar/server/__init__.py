@@ -41,7 +41,7 @@ from .cli import CLIConfig, parse_args
 from .config import load_config, load_config_from_file, load_configuration
 from .lifecycle import run_server, ServerLifecycle
 from .state import COMMAND_BUS, EVENT_BUS, get_runtime, GROUPS, PROVIDER_REPOSITORY, PROVIDERS, QUERY_BUS
-from .tools import registry_list
+from .tools import hangar_list
 
 # Backward compatibility: expose _parse_args as alias
 _parse_args = parse_args
@@ -70,7 +70,7 @@ def main():
 
 # FastMCP server instance for backward compatibility
 # Note: This is lazily created by bootstrap() now
-mcp = FastMCP("mcp-registry")
+mcp = FastMCP("mcp-hangar")
 
 
 __all__ = [
@@ -98,7 +98,7 @@ __all__ = [
     "EVENT_BUS",
     "get_runtime",
     # Tools
-    "registry_list",
+    "hangar_list",
     # MCP server instance
     "mcp",
     # Constants

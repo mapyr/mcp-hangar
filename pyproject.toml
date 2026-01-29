@@ -12,7 +12,7 @@ description = "MCP-Hangar monorepo workspace - see packages/core for actual pack
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [
-    { name = "MCP Registry Contributors" }
+    { name = "MCP Hangar Contributors" }
 ]
 
 [project.optional-dependencies]

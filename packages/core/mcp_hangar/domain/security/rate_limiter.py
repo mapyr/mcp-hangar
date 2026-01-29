@@ -1,5 +1,5 @@
 """
-Rate limiter for the MCP Registry.
+Rate limiter for MCP Hangar.
 
 Provides rate limiting to prevent DoS attacks and abuse.
 Implements token bucket algorithm for flexible rate control.

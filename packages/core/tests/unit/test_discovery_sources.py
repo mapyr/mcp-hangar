@@ -318,8 +318,8 @@ class TestDiscoveryMetricsIntegration:
 
         metrics_output = get_metrics()
 
-        assert 'mcp_registry_discovery_cycles_total{source_type="docker"}' in metrics_output
-        assert 'mcp_registry_discovery_providers{source_type="docker",status="discovered"} 3' in metrics_output
+        assert 'mcp_hangar_discovery_cycles_total{source_type="docker"}' in metrics_output
+        assert 'mcp_hangar_discovery_providers{source_type="docker",status="discovered"} 3' in metrics_output
 
     def test_kubernetes_specific_metrics(self):
         """Test Kubernetes-specific metrics."""
@@ -332,7 +332,7 @@ class TestDiscoveryMetricsIntegration:
         metrics_output = get_metrics()
 
         assert (
-            'mcp_registry_discovery_deregistrations_total{reason="ttl_expired",source_type="kubernetes"}'
+            'mcp_hangar_discovery_deregistrations_total{reason="ttl_expired",source_type="kubernetes"}'
             in metrics_output
         )
-        assert 'mcp_registry_discovery_quarantine_total{reason="namespace_denied"}' in metrics_output
+        assert 'mcp_hangar_discovery_quarantine_total{reason="namespace_denied"}' in metrics_output

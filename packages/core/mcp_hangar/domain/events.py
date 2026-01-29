@@ -1,4 +1,4 @@
-"""Domain events for the MCP Registry.
+"""Domain events for MCP Hangar.
 
 Events capture important business occurrences and allow decoupled reactions.
 """

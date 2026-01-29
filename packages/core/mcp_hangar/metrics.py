@@ -1,7 +1,7 @@
-"""Prometheus metrics for MCP Registry.
+"""Prometheus metrics for MCP Hangar.
 
 Production-grade metrics following Prometheus/OpenMetrics best practices:
-- Consistent naming: mcp_registry_<subsystem>_<metric>_<unit>
+- Consistent naming: mcp_hangar_<subsystem>_<metric>_<unit>
 - Proper label cardinality control
 - Thread-safe implementations
 - Standard histogram buckets for different use cases
@@ -445,7 +445,7 @@ REGISTRY = CollectorRegistry()
 
 
 # =============================================================================
-# MCP Registry Metrics - Following Best Practices
+# MCP Hangar Metrics - Following Best Practices
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -453,8 +453,8 @@ REGISTRY = CollectorRegistry()
 # -----------------------------------------------------------------------------
 
 BUILD_INFO = Info(
-    name="mcp_registry_build",
-    description="Build and version information for MCP Registry",
+    name="mcp_hangar_build",
+    description="Build and version information for MCP Hangar",
 )
 
 # -----------------------------------------------------------------------------
@@ -462,7 +462,7 @@ BUILD_INFO = Info(
 # -----------------------------------------------------------------------------
 
 PROCESS_START_TIME = Gauge(
-    name="mcp_registry_process_start_time_seconds",
+    name="mcp_hangar_process_start_time_seconds",
     description="Unix timestamp of process start time",
 )
 
@@ -471,56 +471,56 @@ PROCESS_START_TIME = Gauge(
 # -----------------------------------------------------------------------------
 
 PROVIDER_INFO = Gauge(
-    name="mcp_registry_provider_info",
+    name="mcp_hangar_provider_info",
     description="Provider configuration info (always 1, labels contain metadata)",
     labels=["provider", "mode"],
 )
 
 PROVIDER_STATE_CURRENT = Gauge(
-    name="mcp_registry_provider_state",
+    name="mcp_hangar_provider_state",
     description="Current provider state (0=cold, 1=initializing, 2=ready, 3=degraded, 4=dead)",
     labels=["provider"],
 )
 
 PROVIDER_UP = Gauge(
-    name="mcp_registry_provider_up",
+    name="mcp_hangar_provider_up",
     description="Whether provider is up and ready (1=up, 0=down)",
     labels=["provider"],
 )
 
 PROVIDER_INITIALIZED = Gauge(
-    name="mcp_registry_provider_initialized",
+    name="mcp_hangar_provider_initialized",
     description="Whether provider has been initialized at least once (1=yes, 0=no/cold)",
     labels=["provider"],
 )
 
 PROVIDER_LAST_STATE_CHANGE_SECONDS = Gauge(
-    name="mcp_registry_provider_last_state_change_timestamp_seconds",
+    name="mcp_hangar_provider_last_state_change_timestamp_seconds",
     description="Unix timestamp of last provider state change",
     labels=["provider"],
 )
 
 PROVIDER_STARTS_TOTAL = Counter(
-    name="mcp_registry_provider_starts",
+    name="mcp_hangar_provider_starts",
     description="Total number of provider start attempts",
     labels=["provider", "result"],  # result: success, failure
 )
 
 PROVIDER_STOPS_TOTAL = Counter(
-    name="mcp_registry_provider_stops",
+    name="mcp_hangar_provider_stops",
     description="Total number of provider stops",
     labels=["provider", "reason"],  # reason: idle, manual, error, gc
 )
 
 PROVIDER_COLD_START_SECONDS = Histogram(
-    name="mcp_registry_provider_cold_start_seconds",
+    name="mcp_hangar_provider_cold_start_seconds",
     description="Time from cold start to ready state (critical UX metric)",
     labels=["provider", "mode"],
     buckets=(0.1, 0.25, 0.5, 1.0, 2.0, 3.0, 5.0, 10.0, 15.0, 30.0, 60.0),
 )
 
 PROVIDER_COLD_START_IN_PROGRESS = Gauge(
-    name="mcp_registry_provider_cold_start_in_progress",
+    name="mcp_hangar_provider_cold_start_in_progress",
     description="Number of providers currently in cold start",
     labels=["provider"],
 )
@@ -530,20 +530,20 @@ PROVIDER_COLD_START_IN_PROGRESS = Gauge(
 # -----------------------------------------------------------------------------
 
 TOOL_CALLS_TOTAL = Counter(
-    name="mcp_registry_tool_calls",
+    name="mcp_hangar_tool_calls",
     description="Total number of tool calls",
     labels=["provider", "tool", "status"],  # status: success, error
 )
 
 TOOL_CALL_DURATION_SECONDS = Histogram(
-    name="mcp_registry_tool_call_duration_seconds",
+    name="mcp_hangar_tool_call_duration_seconds",
     description="Duration of tool calls in seconds",
     labels=["provider", "tool"],
     buckets=Histogram.LATENCY_BUCKETS,
 )
 
 TOOL_CALL_ERRORS_TOTAL = Counter(
-    name="mcp_registry_tool_call_errors",
+    name="mcp_hangar_tool_call_errors",
     description="Total number of tool call errors by error type",
     labels=["provider", "tool", "error_type"],
 )
@@ -553,20 +553,20 @@ TOOL_CALL_ERRORS_TOTAL = Counter(
 # -----------------------------------------------------------------------------
 
 HEALTH_CHECK_TOTAL = Counter(
-    name="mcp_registry_health_checks",
+    name="mcp_hangar_health_checks",
     description="Total number of health check executions",
     labels=["provider", "result"],  # result: cold, healthy, unhealthy
 )
 
 HEALTH_CHECK_DURATION_SECONDS = Histogram(
-    name="mcp_registry_health_check_duration_seconds",
+    name="mcp_hangar_health_check_duration_seconds",
     description="Duration of health checks in seconds",
     labels=["provider"],
     buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0),
 )
 
 HEALTH_CHECK_CONSECUTIVE_FAILURES = Gauge(
-    name="mcp_registry_health_check_consecutive_failures",
+    name="mcp_hangar_health_check_consecutive_failures",
     description="Number of consecutive health check failures",
     labels=["provider"],
 )
@@ -576,19 +576,19 @@ HEALTH_CHECK_CONSECUTIVE_FAILURES = Gauge(
 # -----------------------------------------------------------------------------
 
 CONNECTIONS_ACTIVE = Gauge(
-    name="mcp_registry_connections_active",
+    name="mcp_hangar_connections_active",
     description="Number of active connections to providers",
     labels=["provider"],
 )
 
 CONNECTIONS_TOTAL = Counter(
-    name="mcp_registry_connections",
+    name="mcp_hangar_connections",
     description="Total number of connections established",
     labels=["provider", "result"],
 )
 
 CONNECTION_DURATION_SECONDS = Histogram(
-    name="mcp_registry_connection_duration_seconds",
+    name="mcp_hangar_connection_duration_seconds",
     description="Duration of provider connections in seconds",
     labels=["provider"],
     buckets=(1, 5, 10, 30, 60, 300, 600, 1800, 3600),
@@ -599,19 +599,19 @@ CONNECTION_DURATION_SECONDS = Histogram(
 # -----------------------------------------------------------------------------
 
 MESSAGES_SENT_TOTAL = Counter(
-    name="mcp_registry_messages_sent",
+    name="mcp_hangar_messages_sent",
     description="Total number of JSON-RPC messages sent",
     labels=["provider", "method"],
 )
 
 MESSAGES_RECEIVED_TOTAL = Counter(
-    name="mcp_registry_messages_received",
+    name="mcp_hangar_messages_received",
     description="Total number of JSON-RPC messages received",
     labels=["provider", "type"],  # values: response, notification, error
 )
 
 MESSAGE_SIZE_BYTES = Histogram(
-    name="mcp_registry_message_size_bytes",
+    name="mcp_hangar_message_size_bytes",
     description="Size of JSON-RPC messages in bytes",
     labels=["provider", "direction"],  # direction: sent, received
     buckets=Histogram.SIZE_BUCKETS,
@@ -622,18 +622,18 @@ MESSAGE_SIZE_BYTES = Histogram(
 # -----------------------------------------------------------------------------
 
 GC_CYCLES_TOTAL = Counter(
-    name="mcp_registry_gc_cycles",
+    name="mcp_hangar_gc_cycles",
     description="Total number of garbage collection cycles",
 )
 
 GC_CYCLE_DURATION_SECONDS = Histogram(
-    name="mcp_registry_gc_cycle_duration_seconds",
+    name="mcp_hangar_gc_cycle_duration_seconds",
     description="Duration of garbage collection cycles in seconds",
     buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5),
 )
 
 GC_PROVIDERS_COLLECTED_TOTAL = Counter(
-    name="mcp_registry_gc_providers_collected",
+    name="mcp_hangar_gc_providers_collected",
     description="Total number of providers collected by GC",
     labels=["reason"],  # reason: idle, dead, error
 )
@@ -643,7 +643,7 @@ GC_PROVIDERS_COLLECTED_TOTAL = Counter(
 # -----------------------------------------------------------------------------
 
 ERRORS_TOTAL = Counter(
-    name="mcp_registry_errors",
+    name="mcp_hangar_errors",
     description="Total number of errors by type and component",
     labels=["component", "error_type"],  # component: provider, tool, health, gc, server
 )
@@ -653,7 +653,7 @@ ERRORS_TOTAL = Counter(
 # -----------------------------------------------------------------------------
 
 RATE_LIMIT_HITS_TOTAL = Counter(
-    name="mcp_registry_rate_limit_hits",
+    name="mcp_hangar_rate_limit_hits",
     description="Total number of requests that hit rate limits",
     labels=["endpoint"],
 )
@@ -663,68 +663,68 @@ RATE_LIMIT_HITS_TOTAL = Counter(
 # -----------------------------------------------------------------------------
 
 DISCOVERY_SOURCES_TOTAL = Gauge(
-    name="mcp_registry_discovery_sources",
+    name="mcp_hangar_discovery_sources",
     description="Number of configured discovery sources",
     labels=["source_type", "mode"],
 )
 
 DISCOVERY_SOURCES_HEALTHY = Gauge(
-    name="mcp_registry_discovery_sources_healthy",
+    name="mcp_hangar_discovery_sources_healthy",
     description="Whether discovery source is healthy (1=healthy, 0=unhealthy)",
     labels=["source_type"],
 )
 
 DISCOVERY_PROVIDERS_TOTAL = Gauge(
-    name="mcp_registry_discovery_providers",
+    name="mcp_hangar_discovery_providers",
     description="Number of discovered providers",
     labels=["source_type", "status"],  # status: discovered, registered, quarantined
 )
 
 DISCOVERY_CYCLES_TOTAL = Counter(
-    name="mcp_registry_discovery_cycles",
+    name="mcp_hangar_discovery_cycles",
     description="Total number of discovery cycles executed",
     labels=["source_type"],
 )
 
 DISCOVERY_CYCLE_DURATION_SECONDS = Histogram(
-    name="mcp_registry_discovery_cycle_duration_seconds",
+    name="mcp_hangar_discovery_cycle_duration_seconds",
     description="Duration of discovery cycles in seconds",
     labels=["source_type"],
     buckets=(0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0),
 )
 
 DISCOVERY_REGISTRATIONS_TOTAL = Counter(
-    name="mcp_registry_discovery_registrations",
+    name="mcp_hangar_discovery_registrations",
     description="Total provider registrations from discovery",
     labels=["source_type"],
 )
 
 DISCOVERY_DEREGISTRATIONS_TOTAL = Counter(
-    name="mcp_registry_discovery_deregistrations",
+    name="mcp_hangar_discovery_deregistrations",
     description="Total provider deregistrations from discovery",
     labels=["source_type", "reason"],  # reason: ttl_expired, source_removed, manual
 )
 
 DISCOVERY_CONFLICTS_TOTAL = Counter(
-    name="mcp_registry_discovery_conflicts",
+    name="mcp_hangar_discovery_conflicts",
     description="Total discovery conflicts",
     labels=["conflict_type"],  # conflict_type: static_wins, source_priority
 )
 
 DISCOVERY_QUARANTINE_TOTAL = Counter(
-    name="mcp_registry_discovery_quarantine",
+    name="mcp_hangar_discovery_quarantine",
     description="Total providers quarantined",
     labels=["reason"],  # reason: health_check_failed, validation_failed, rate_limited
 )
 
 DISCOVERY_ERRORS_TOTAL = Counter(
-    name="mcp_registry_discovery_errors",
+    name="mcp_hangar_discovery_errors",
     description="Total discovery errors",
     labels=["source_type", "error_type"],
 )
 
 DISCOVERY_LAST_CYCLE_TIMESTAMP = Gauge(
-    name="mcp_registry_discovery_last_cycle_timestamp_seconds",
+    name="mcp_hangar_discovery_last_cycle_timestamp_seconds",
     description="Unix timestamp of last discovery cycle",
     labels=["source_type"],
 )
@@ -734,44 +734,44 @@ DISCOVERY_LAST_CYCLE_TIMESTAMP = Gauge(
 # -----------------------------------------------------------------------------
 
 HTTP_REQUESTS_TOTAL = Counter(
-    name="mcp_registry_http_requests",
+    name="mcp_hangar_http_requests",
     description="Total number of HTTP requests to remote providers",
     labels=["provider", "method", "status_code"],
 )
 
 HTTP_REQUEST_DURATION_SECONDS = Histogram(
-    name="mcp_registry_http_request_duration_seconds",
+    name="mcp_hangar_http_request_duration_seconds",
     description="Duration of HTTP requests to remote providers in seconds",
     labels=["provider", "method"],
     buckets=Histogram.LATENCY_BUCKETS,
 )
 
 HTTP_ERRORS_TOTAL = Counter(
-    name="mcp_registry_http_errors",
+    name="mcp_hangar_http_errors",
     description="Total number of HTTP errors by type",
     labels=["provider", "error_type"],  # error_type: connection_refused, timeout, auth_failed, ssl_error
 )
 
 HTTP_RETRIES_TOTAL = Counter(
-    name="mcp_registry_http_retries",
+    name="mcp_hangar_http_retries",
     description="Total number of HTTP request retries",
     labels=["provider", "retry_reason"],  # retry_reason: 502, 503, 504, connection_error
 )
 
 HTTP_CONNECTION_POOL_SIZE = Gauge(
-    name="mcp_registry_http_connection_pool_size",
+    name="mcp_hangar_http_connection_pool_size",
     description="Current number of connections in HTTP connection pool",
     labels=["provider"],
 )
 
 HTTP_SSE_STREAMS_ACTIVE = Gauge(
-    name="mcp_registry_http_sse_streams_active",
+    name="mcp_hangar_http_sse_streams_active",
     description="Number of active SSE streams to remote providers",
     labels=["provider"],
 )
 
 HTTP_SSE_EVENTS_TOTAL = Counter(
-    name="mcp_registry_http_sse_events",
+    name="mcp_hangar_http_sse_events",
     description="Total number of SSE events received from remote providers",
     labels=["provider", "event_type"],  # event_type: message, notification, error
 )
