@@ -7,6 +7,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-01-31
+
+### Added
+
+- **Interactive CLI**: New typer-based CLI for streamlined MCP provider management
+  - `hangar init` - Initialize new project with guided setup
+  - `hangar add <provider>` - Add providers interactively with auto-configuration
+  - `hangar remove <provider>` - Remove providers from configuration
+  - `hangar status` - Show current providers and their states
+  - `hangar serve` - Start the MCP server (default command)
+  - `hangar completion` - Generate shell completion scripts
+  - Rich console output with colors and progress indicators
+  - JSON output mode for scripting (`--json`)
+  - Backward compatible with existing argparse CLI
+
+- **Provider Bundles**: Pre-configured provider definitions for quick setup
+  - Built-in definitions for popular MCP servers (filesystem, memory, sqlite, fetch, github, slack, etc.)
+  - `InstallType` enum: NPX, UVX, DOCKER, BINARY
+  - `ConfigType` enum: NONE, PATH, SECRET, STRING, URL
+  - Bundle resolver for discovering and validating providers
+
+- **Multi-runtime Installers**: Pluggable installer infrastructure
+  - `NpmInstaller` - Install providers via npx
+  - `PyPIInstaller` - Install providers via uvx
+  - `OCIInstaller` - Pull and run Docker/OCI images
+  - `BinaryInstaller` - Download and execute pre-built binaries
+  - Automatic runtime detection and validation
+
+- **Package Resolver**: Unified package resolution across ecosystems
+  - Resolve provider packages from npm, PyPI, or container registries
+  - Version validation and compatibility checks
+
+- **Secrets Resolver**: Secure configuration management
+  - Environment variable interpolation (`${VAR_NAME}`)
+  - Support for secret references in provider configs
+  - Integration with system keychain (future)
+
+- **Output Redactor**: Automatic sensitive data redaction
+  - Redact API keys, tokens, and passwords from logs
+  - Configurable redaction patterns
+  - Safe for production logging
+
+- **Runtime Store**: Persistent storage for installed provider runtimes
+  - Track installed providers and their versions
+  - Cache validation and cleanup
+
+### Changed
+
+- Refactored CLI into modular command structure under `server/cli/`
+- Legacy CLI preserved in `cli_legacy.py` for backward compatibility
+- Provider launcher now supports multiple install types
+
+### Documentation
+
+- Updated quickstart guide with new CLI commands
+
 ## [0.5.0] - 2026-01-29
 
 ### Added
