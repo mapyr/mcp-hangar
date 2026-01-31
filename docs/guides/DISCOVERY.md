@@ -143,10 +143,10 @@ discovery:
 
 | Tool | Description |
 |------|-------------|
-| `registry_discover` | Trigger discovery cycle |
-| `registry_sources` | List sources with status |
-| `registry_quarantine` | List quarantined providers |
-| `registry_approve` | Approve quarantined provider |
+| `hangar_discover` | Trigger discovery cycle |
+| `hangar_sources` | List sources with status |
+| `hangar_quarantine` | List quarantined providers |
+| `hangar_approve` | Approve quarantined provider |
 
 ## Conflict Resolution
 

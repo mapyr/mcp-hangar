@@ -32,6 +32,7 @@ from ..services.error_diagnostics import collect_startup_diagnostics
 from ..value_objects import CorrelationId, HealthCheckInterval, IdleTTL, ProviderId, ProviderMode, ProviderState
 from .aggregate import AggregateRoot
 from .health_tracker import HealthTracker
+from .provider_config import ProviderConfig
 from .tool_catalog import ToolCatalog, ToolSchema
 
 logger = get_logger(__name__)
@@ -160,6 +161,91 @@ class Provider(AggregateRoot):
         # Safe to acquire before: EVENT_BUS, EVENT_STORE, STDIO_CLIENT
         # I/O rule: Copy client reference under lock, do I/O outside lock
         self._lock = self._create_lock(provider_id)
+
+    @classmethod
+    def from_config(
+        cls,
+        config: ProviderConfig,
+        metrics_publisher: "IMetricsPublisher | None" = None,
+    ) -> "Provider":
+        """Create Provider from ProviderConfig.
+
+        This is the preferred way to create a Provider instance.
+        Uses structured configuration instead of 21+ parameters.
+
+        Args:
+            config: Provider configuration dataclass.
+            metrics_publisher: Optional metrics publisher for observability.
+
+        Returns:
+            Configured Provider instance.
+
+        Example:
+            config = ProviderConfig(
+                provider_id="math",
+                mode=ProviderMode.SUBPROCESS,
+                subprocess=SubprocessConfig(command=["python", "-m", "math"]),
+            )
+            provider = Provider.from_config(config)
+        """
+        # Extract mode-specific configuration
+        command = config.get_command()
+        image = config.get_image()
+        endpoint = config.get_endpoint()
+        env = config.get_env()
+
+        # Extract container-specific config
+        volumes = None
+        build = None
+        resources = None
+        network = "none"
+        read_only = True
+        user = None
+
+        if config.container:
+            volumes = config.container.volumes
+            build = config.container.build
+            resources = {
+                "memory": config.container.resources.memory,
+                "cpu": config.container.resources.cpu,
+            }
+            network = config.container.network
+            read_only = config.container.read_only
+            user = config.container.user
+
+        # Extract remote-specific config
+        auth = None
+        tls = None
+        http = None
+
+        if config.remote:
+            auth = config.remote.auth
+            tls = config.remote.tls
+            http = config.remote.http
+
+        return cls(
+            provider_id=config.provider_id,
+            mode=config.mode,
+            command=command,
+            image=image,
+            endpoint=endpoint,
+            env=env,
+            idle_ttl_s=config.idle_ttl,
+            health_check_interval_s=config.health.check_interval,
+            max_consecutive_failures=config.health.max_consecutive_failures,
+            volumes=volumes,
+            build=build,
+            resources=resources,
+            network=network,
+            read_only=read_only,
+            user=user,
+            description=config.description,
+            tools=config.tools,
+            auth=auth,
+            tls=tls,
+            http=http,
+            metrics_publisher=metrics_publisher,
+        )
 
     @staticmethod
     def _create_lock(provider_id: str) -> "TrackedLock | threading.RLock":

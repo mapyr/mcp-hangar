@@ -164,16 +164,16 @@ def _process_metric_sample(sample: Any, result: dict[str, Any]) -> None:
 def register_health_tools(mcp: FastMCP) -> None:
     """Register health and metrics tools with MCP server."""
 
-    @mcp.tool(name="registry_health")
+    @mcp.tool(name="hangar_health")
     @mcp_tool_wrapper(
-        tool_name="registry_health",
+        tool_name="hangar_health",
         rate_limit_key=key_global,
-        check_rate_limit=lambda key: check_rate_limit("registry_health"),
+        check_rate_limit=lambda key: check_rate_limit("hangar_health"),
         validate=None,
         error_mapper=lambda exc: tool_error_mapper(exc),
         on_error=tool_error_hook,
     )
-    def registry_health() -> dict:
+    def hangar_health() -> dict:
         """
         Get registry health status including security metrics.
 
@@ -219,16 +219,16 @@ def register_health_tools(mcp: FastMCP) -> None:
             },
         }
 
-    @mcp.tool(name="registry_metrics")
+    @mcp.tool(name="hangar_metrics")
     @mcp_tool_wrapper(
-        tool_name="registry_metrics",
+        tool_name="hangar_metrics",
         rate_limit_key=key_global,
-        check_rate_limit=lambda key: check_rate_limit("registry_metrics"),
+        check_rate_limit=lambda key: check_rate_limit("hangar_metrics"),
         validate=None,
         error_mapper=lambda exc: tool_error_mapper(exc),
         on_error=tool_error_hook,
     )
-    def registry_metrics(format: str = "json") -> dict:
+    def hangar_metrics(format: str = "json") -> dict:
         """
         Get detailed metrics for all providers, groups, and system components.
 

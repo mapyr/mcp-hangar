@@ -24,7 +24,7 @@ Error output example for tool invocation::
 
       What you can try:
         1. Retry with longer timeout: timeout=60
-        2. Check provider status: registry_details('sqlite')
+        2. Check provider status: hangar_details('sqlite')
         3. Retry the operation (may be transient)
 
       Correlation ID: abc-123-def
@@ -191,7 +191,7 @@ class ProviderProtocolError(HangarError):
         if not self.recovery_hints:
             self.recovery_hints = [
                 "Retry the operation (often transient)",
-                f"Check provider logs: registry_details('{self.provider}')",
+                f"Check provider logs: hangar_details('{self.provider}')",
                 "If persistent, file bug report with raw response",
             ]
         super().__post_init__()
@@ -224,7 +224,7 @@ class ProviderCrashError(HangarError):
                 hints.append("This is normal behavior for idle providers")
                 hints.append("If frequent, increase idle_ttl_s in config")
             else:
-                hints.append(f"Check provider logs: registry_details('{self.provider}')")
+                hints.append(f"Check provider logs: hangar_details('{self.provider}')")
                 hints.append("Check for memory/resource issues in container")
             self.recovery_hints = hints
         super().__post_init__()
@@ -277,7 +277,7 @@ class ConfigurationError(HangarError):
                 hints.append(f"Check config file at: {self.config_path}")
             if self.field_name:
                 hints.append(f"Review the '{self.field_name}' setting")
-            hints.append("Use registry_discover() to auto-detect providers")
+            hints.append("Use hangar_discover() to auto-detect providers")
             hints.append("Check example config: docs/configuration.md")
             self.recovery_hints = hints
         super().__post_init__()
@@ -353,7 +353,7 @@ class RichToolNotFoundError(HangarError):
     def __post_init__(self):
         if not self.recovery_hints:
             hints = [
-                f"Use registry_tools('{self.provider}') to see available tools",
+                f"Use hangar_tools('{self.provider}') to see available tools",
             ]
             if self.available_tools:
                 similar = self._find_similar()
@@ -404,7 +404,7 @@ class RichToolInvocationError(HangarError):
 
           What you can try:
             1. Retry with longer timeout: timeout=60
-            2. Check provider status: registry_details('sqlite')
+            2. Check provider status: hangar_details('sqlite')
 
           Correlation ID: abc-123-def
     """
@@ -468,14 +468,14 @@ class RichToolInvocationError(HangarError):
 
         if self.category == ErrorCategory.USER_ERROR:
             if self.expected_schema:
-                hints.append(f"Check tool schema: registry_tools('{self.provider}')")
+                hints.append(f"Check tool schema: hangar_tools('{self.provider}')")
             if self.schema_hint:
                 hints.append(self.schema_hint)
             hints.append("Verify argument names and types")
 
         elif self.category == ErrorCategory.PROVIDER_ERROR:
             hints.append("Provider will auto-restart on next use")
-            hints.append(f"Check provider logs: registry_details('{self.provider}')")
+            hints.append(f"Check provider logs: hangar_details('{self.provider}')")
             if self.exit_code == 137:  # SIGKILL/OOM
                 hints.append("Consider increasing memory limit in config")
             if self.stderr_preview:
@@ -485,7 +485,7 @@ class RichToolInvocationError(HangarError):
             if self.timeout_s:
                 new_timeout = int(self.timeout_s * 2)
                 hints.append(f"Retry with longer timeout: timeout={new_timeout}")
-            hints.append(f"Check provider status: registry_details('{self.provider}')")
+            hints.append(f"Check provider status: hangar_details('{self.provider}')")
             if self.is_retryable:
                 hints.append("Retry the operation (may be transient)")
 
@@ -752,7 +752,7 @@ class TimeoutError(HangarError):
             self.recovery_hints = [
                 f"Increase timeout: timeout={int(self.timeout_seconds * 2)}",
                 "Check if provider is overloaded",
-                f"Check provider health: registry_details('{self.provider}')",
+                f"Check provider health: hangar_details('{self.provider}')",
             ]
         super().__post_init__()
 
@@ -803,7 +803,7 @@ class ProviderDegradedError(HangarError):
                 f"Wait {self.backoff_remaining_s:.1f}s for automatic recovery",
                 f"Provider had {self.consecutive_failures} consecutive failures",
                 "Check provider logs for root cause",
-                "Use registry_start() to force restart",
+                "Use hangar_start() to force restart",
             ]
         super().__post_init__()
 
@@ -934,7 +934,7 @@ def _create_client_error(exc: Exception, provider: str, operation: str, context:
             recovery_hints=[
                 "This is usually a transient error",
                 "Retry the operation",
-                f"Check provider status: registry_details('{provider}')",
+                f"Check provider status: hangar_details('{provider}')",
             ],
             original_exception=exc,
             context=context,
@@ -965,7 +965,7 @@ def _create_generic_error(exc: Exception, provider: str, operation: str, context
         technical_details=f"{exc_type}: {exc_str}",
         recovery_hints=[
             "Check the logs for more details",
-            f"Provider status: registry_details('{provider}')" if provider else "Check provider configuration",
+            f"Provider status: hangar_details('{provider}')" if provider else "Check provider configuration",
         ],
         original_exception=exc,
         context=context,
@@ -1139,8 +1139,8 @@ class ErrorClassifier:
         "invalid argument": ("validation_error", ["Review tool schema and fix arguments"]),
         "tool_not_found": ("configuration_error", ["Verify tool name exists on provider"]),
         "tool not found": ("configuration_error", ["Verify tool name exists on provider"]),
-        "provider_not_found": ("configuration_error", ["Check provider ID in registry_status()"]),
-        "provider not found": ("configuration_error", ["Check provider ID in registry_status()"]),
+        "provider_not_found": ("configuration_error", ["Check provider ID in hangar_status()"]),
+        "provider not found": ("configuration_error", ["Check provider ID in hangar_status()"]),
         "permission_denied": ("authorization_error", ["Verify permissions for requested resource"]),
         "permission denied": ("authorization_error", ["Verify permissions for requested resource"]),
         "access denied": ("authorization_error", ["Path outside allowed directories or resource access not permitted"]),

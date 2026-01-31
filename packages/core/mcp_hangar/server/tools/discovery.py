@@ -13,16 +13,16 @@ from ..validation import check_rate_limit, tool_error_hook, tool_error_mapper, v
 def register_discovery_tools(mcp: FastMCP) -> None:
     """Register discovery tools with MCP server."""
 
-    @mcp.tool(name="registry_discover")
+    @mcp.tool(name="hangar_discover")
     @mcp_tool_wrapper(
-        tool_name="registry_discover",
+        tool_name="hangar_discover",
         rate_limit_key=key_global,
-        check_rate_limit=lambda key: check_rate_limit("registry_discover"),
+        check_rate_limit=lambda key: check_rate_limit("hangar_discover"),
         validate=None,
         error_mapper=lambda exc: tool_error_mapper(exc),
         on_error=tool_error_hook,
     )
-    async def registry_discover() -> dict:
+    async def hangar_discover() -> dict:
         """
         Trigger immediate discovery cycle across all configured sources.
 
@@ -36,16 +36,16 @@ def register_discovery_tools(mcp: FastMCP) -> None:
         result = await orchestrator.trigger_discovery()
         return result
 
-    @mcp.tool(name="registry_discovered")
+    @mcp.tool(name="hangar_discovered")
     @mcp_tool_wrapper(
-        tool_name="registry_discovered",
+        tool_name="hangar_discovered",
         rate_limit_key=key_global,
-        check_rate_limit=lambda key: check_rate_limit("registry_discovered"),
+        check_rate_limit=lambda key: check_rate_limit("hangar_discovered"),
         validate=None,
         error_mapper=lambda exc: tool_error_mapper(exc),
         on_error=tool_error_hook,
     )
-    def registry_discovered() -> dict:
+    def hangar_discovered() -> dict:
         """
         List all discovered providers pending registration.
 
@@ -70,16 +70,16 @@ def register_discovery_tools(mcp: FastMCP) -> None:
             ]
         }
 
-    @mcp.tool(name="registry_quarantine")
+    @mcp.tool(name="hangar_quarantine")
     @mcp_tool_wrapper(
-        tool_name="registry_quarantine",
+        tool_name="hangar_quarantine",
         rate_limit_key=key_global,
-        check_rate_limit=lambda key: check_rate_limit("registry_quarantine"),
+        check_rate_limit=lambda key: check_rate_limit("hangar_quarantine"),
         validate=None,
         error_mapper=lambda exc: tool_error_mapper(exc),
         on_error=tool_error_hook,
     )
-    def registry_quarantine() -> dict:
+    def hangar_quarantine() -> dict:
         """
         List quarantined providers with failure reasons.
 
@@ -103,16 +103,16 @@ def register_discovery_tools(mcp: FastMCP) -> None:
             ]
         }
 
-    @mcp.tool(name="registry_approve")
+    @mcp.tool(name="hangar_approve")
     @mcp_tool_wrapper(
-        tool_name="registry_approve",
-        rate_limit_key=lambda provider: f"registry_approve:{provider}",
+        tool_name="hangar_approve",
+        rate_limit_key=lambda provider: f"hangar_approve:{provider}",
         check_rate_limit=check_rate_limit,
         validate=validate_provider_id_input,
         error_mapper=lambda exc: tool_error_mapper(exc),
         on_error=lambda exc, ctx: tool_error_hook(exc, ctx),
     )
-    async def registry_approve(provider: str) -> dict:
+    async def hangar_approve(provider: str) -> dict:
         """
         Approve a quarantined provider for registration.
 
@@ -129,16 +129,16 @@ def register_discovery_tools(mcp: FastMCP) -> None:
         result = await orchestrator.approve_provider(provider)
         return result
 
-    @mcp.tool(name="registry_sources")
+    @mcp.tool(name="hangar_sources")
     @mcp_tool_wrapper(
-        tool_name="registry_sources",
+        tool_name="hangar_sources",
         rate_limit_key=key_global,
-        check_rate_limit=lambda key: check_rate_limit("registry_sources"),
+        check_rate_limit=lambda key: check_rate_limit("hangar_sources"),
         validate=None,
         error_mapper=lambda exc: tool_error_mapper(exc),
         on_error=tool_error_hook,
     )
-    async def registry_sources() -> dict:
+    async def hangar_sources() -> dict:
         """
         List configured discovery sources with health status.
 

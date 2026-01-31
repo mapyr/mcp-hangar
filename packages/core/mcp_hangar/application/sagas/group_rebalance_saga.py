@@ -9,8 +9,10 @@ serves as an event-driven bridge for external events (like health checks)
 that may not flow through the standard invoke path.
 """
 
+from __future__ import annotations
+
 from collections.abc import Callable
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from ...domain.events import (
     DomainEvent,
@@ -45,7 +47,7 @@ class GroupRebalanceSaga(EventTriggeredSaga):
     def __init__(
         self,
         group_lookup: Callable[[str], str | None] | None = None,
-        groups: dict[str, "ProviderGroup"] | None = None,
+        groups: dict[str, ProviderGroup] | None = None,
     ):
         """
         Initialize the saga.
@@ -91,7 +93,7 @@ class GroupRebalanceSaga(EventTriggeredSaga):
             return self._group_lookup(member_id)
         return None
 
-    def _get_group(self, group_id: str) -> Optional["ProviderGroup"]:
+    def _get_group(self, group_id: str) -> ProviderGroup | None:
         """Get group instance if available."""
         if self._groups:
             return self._groups.get(group_id)

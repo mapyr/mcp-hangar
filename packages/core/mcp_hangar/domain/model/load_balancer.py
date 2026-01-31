@@ -4,10 +4,12 @@ This module implements various load balancing strategies for distributing
 requests across group members.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 import random
 import threading
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from ..value_objects import LoadBalancerStrategy
 
@@ -19,7 +21,7 @@ class BaseStrategy(ABC):
     """Abstract base class for load balancing strategies."""
 
     @abstractmethod
-    def select(self, members: list["GroupMember"]) -> Optional["GroupMember"]:
+    def select(self, members: list[GroupMember]) -> GroupMember | None:
         """
         Select a member from available members.
 
@@ -47,7 +49,7 @@ class RoundRobinStrategy(BaseStrategy):
         self._index = 0
         self._lock = threading.Lock()
 
-    def select(self, members: list["GroupMember"]) -> Optional["GroupMember"]:
+    def select(self, members: list[GroupMember]) -> GroupMember | None:
         if not members:
             return None
         with self._lock:
@@ -72,7 +74,7 @@ class WeightedRoundRobinStrategy(BaseStrategy):
         self._current_weights: dict = {}
         self._lock = threading.Lock()
 
-    def select(self, members: list["GroupMember"]) -> Optional["GroupMember"]:
+    def select(self, members: list[GroupMember]) -> GroupMember | None:
         if not members:
             return None
 
@@ -106,7 +108,7 @@ class LeastConnectionsStrategy(BaseStrategy):
     Prefers members that haven't been selected recently.
     """
 
-    def select(self, members: list["GroupMember"]) -> Optional["GroupMember"]:
+    def select(self, members: list[GroupMember]) -> GroupMember | None:
         if not members:
             return None
         # Select member with oldest last_selected_at (least recently used)
@@ -123,7 +125,7 @@ class RandomStrategy(BaseStrategy):
     Uses weighted random selection where higher weight = higher probability.
     """
 
-    def select(self, members: list["GroupMember"]) -> Optional["GroupMember"]:
+    def select(self, members: list[GroupMember]) -> GroupMember | None:
         if not members:
             return None
         weights = [m.weight for m in members]
@@ -141,7 +143,7 @@ class PriorityStrategy(BaseStrategy):
     Useful for primary/backup scenarios.
     """
 
-    def select(self, members: list["GroupMember"]) -> Optional["GroupMember"]:
+    def select(self, members: list[GroupMember]) -> GroupMember | None:
         if not members:
             return None
         # Select member with lowest priority number (highest priority)
@@ -176,7 +178,7 @@ class LoadBalancer:
         """Get the current strategy type."""
         return self._strategy_type
 
-    def select(self, members: list["GroupMember"]) -> Optional["GroupMember"]:
+    def select(self, members: list[GroupMember]) -> GroupMember | None:
         """Select a member from available members."""
         return self._impl.select(members)
 

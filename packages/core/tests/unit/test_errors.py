@@ -254,7 +254,7 @@ class TestProviderNotFoundError:
         )
         error_str = str(error)
         # Should mention available providers
-        assert "registry_list" in error_str or len(error.recovery_hints) > 0
+        assert "hangar_list" in error_str or len(error.recovery_hints) > 0
 
 
 class TestToolNotFoundError:
@@ -282,7 +282,7 @@ class TestToolNotFoundError:
         )
         # Should find "add" as similar
         hints_str = " ".join(error.recovery_hints)
-        assert "add" in hints_str or "registry_tools" in hints_str
+        assert "add" in hints_str or "hangar_tools" in hints_str
 
 
 class TestTimeoutError:

@@ -21,12 +21,13 @@ Always begin by exploring what's available:
 
 ```
 hangar_list()                        # See all tools and their status
-hangar_tools(provider="math")        # Get detailed schema for a tool
+hangar_tools(provider="math")      # Get detailed schema for a tool
 hangar_status()                      # Quick status dashboard
-hangar_discover()                    # Refresh and find new tools
+hangar_discover()                  # Refresh and find new tools
 ```
 
 Tools come in two flavors:
+
 - **Static**: `math`, `filesystem`, `memory`, `fetch` - always available
 - **Discovered**: `math-discovered`, `memory-discovered`, etc. - auto-detected from containers
 
@@ -218,6 +219,7 @@ hangar_call(calls=[{"provider": "memory", "tool": "delete_entities", "arguments"
 ```
 
 **Use cases**:
+
 - Track test results and findings
 - Build documentation as you work
 - Create relationship maps between concepts
@@ -240,21 +242,91 @@ hangar_call(calls=[{"provider": "fetch", "tool": "fetch", "arguments": {
 
 ---
 
+## Hot-Loading Providers
+
+Load providers from the official MCP registry at runtime without restarting the server:
+
+```python
+# Load a verified provider (requires no secrets)
+hangar_load(name="mcp-server-time")
+
+# Load a provider that needs secrets (set env vars first)
+# STRIPE_API_KEY=sk_test_xxx hangar_load(name="stripe")
+
+# Load an unverified provider (use with caution)
+hangar_load(name="my-custom-provider", force_unverified=True)
+
+# Unload when no longer needed
+hangar_unload(provider_id="mcp-server-time")
+
+# Check runtime-loaded providers
+hangar_status()  # Shows "runtime_providers" section
+```
+
+**Response statuses:**
+
+- `loaded` - Provider successfully loaded and ready
+- `already_loaded` - Provider was already running
+- `missing_secrets` - Required environment variables not set
+- `unverified` - Provider not officially verified (use force_unverified=True)
+- `not_found` - Provider not in registry
+- `ambiguous` - Multiple providers match the name
+
+---
+
 ## System Commands
+
+All tools use the `hangar_*` naming convention.
+
+### Lifecycle & Status
 
 | Command | Description |
 |---------|-------------|
 | `hangar_list()` | Show all tools and their status (cold/ready) |
 | `hangar_status()` | Quick status dashboard with health overview |
-| `hangar_tools(provider="math")` | Get parameter schema |
-| `hangar_health()` | System health overview |
-| `hangar_warm("math,sqlite")` | Pre-start providers to avoid cold start latency |
-| `hangar_metrics()` | Get detailed metrics and statistics |
-| `hangar_metrics(format="detailed")` | Full metrics breakdown |
-| `hangar_discover()` | Refresh discovered tools |
-| `hangar_details(provider="math-cluster")` | Deep dive into groups |
 | `hangar_start(provider="math")` | Start a specific provider |
 | `hangar_stop(provider="math")` | Stop a running provider |
+| `hangar_call(calls=[...])` | Unified invocation API (single or batch) |
+
+### Provider Info
+
+| Command | Description |
+|---------|-------------|
+| `hangar_tools(provider="math")` | Get parameter schema for a provider |
+| `hangar_details(provider="math-cluster")` | Deep dive into provider/group details |
+| `hangar_warm("math,sqlite")` | Pre-start providers to avoid cold start latency |
+
+### Health & Metrics
+
+| Command | Description |
+|---------|-------------|
+| `hangar_health()` | System health overview |
+| `hangar_metrics()` | Get detailed metrics and statistics |
+| `hangar_metrics(format="prometheus")` | Raw Prometheus metrics |
+
+### Hot-Loading
+
+| Command | Description |
+|---------|-------------|
+| `hangar_load(name="stripe")` | Hot-load provider from official registry |
+| `hangar_unload(provider_id="...")` | Unload a hot-loaded provider |
+
+### Discovery
+
+| Command | Description |
+|---------|-------------|
+| `hangar_discover()` | Trigger discovery cycle across all sources |
+| `hangar_discovered()` | List providers pending registration |
+| `hangar_quarantine()` | List quarantined providers with failure reasons |
+| `hangar_approve(provider="...")` | Approve a quarantined provider |
+| `hangar_sources()` | List configured discovery sources with health |
+
+### Groups
+
+| Command | Description |
+|---------|-------------|
+| `hangar_group_list()` | List all provider groups with status |
+| `hangar_group_rebalance(group="math-cluster")` | Manually trigger group rebalancing |
 
 ### Status Dashboard
 
@@ -280,6 +352,7 @@ hangar_status()
 ## Example Workflows
 
 ### Full Infrastructure Test
+
 ```python
 # 1. Discover everything
 hangar_list()
@@ -318,6 +391,7 @@ hangar_call(calls=[
 ```
 
 ### Build a Knowledge Graph
+
 ```python
 # Create entities for your infrastructure
 hangar_call(calls=[{"provider": "memory", "tool": "create_entities", "arguments": {
@@ -340,6 +414,7 @@ hangar_call(calls=[{"provider": "memory", "tool": "read_graph", "arguments": {}}
 ```
 
 ### Research and Document
+
 ```python
 # Fetch external data
 hangar_call(calls=[{"provider": "fetch", "tool": "fetch", "arguments": {"url": "https://api.github.com/zen"}}])
@@ -398,5 +473,6 @@ hangar_call(
 - **Got an error?** - Read the recovery hints, they tell you what to do
 - **Pre-warm providers** - `hangar_warm("math,sqlite")` before heavy use
 - **Check status** - `hangar_status()` for quick health overview
+- **Load new providers** - `hangar_load("stripe")` to add from registry at runtime
 - **Document as you go** - use memory to track your work
 - **Chain everything** - math, file, memory creates powerful workflows

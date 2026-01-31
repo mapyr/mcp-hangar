@@ -158,73 +158,41 @@ class TestCreateBackgroundWorkers:
 
     def test_creates_two_workers(self):
         """Should create GC and health check workers."""
-        # Use sys.modules to get the actual module (not the re-exported function)
-        import mcp_hangar.server.bootstrap  # noqa: F401 - ensure module is loaded
-
-        bootstrap_mod = sys.modules["mcp_hangar.server.bootstrap"]
-
-        original_providers = bootstrap_mod.PROVIDERS
-        original_worker = bootstrap_mod.BackgroundWorker
-
         mock_worker_class = MagicMock()
-        bootstrap_mod.PROVIDERS = {}
-        bootstrap_mod.BackgroundWorker = mock_worker_class
 
-        try:
-            # Call through the module to pick up patches
-            workers = bootstrap_mod._create_background_workers()
-        finally:
-            bootstrap_mod.PROVIDERS = original_providers
-            bootstrap_mod.BackgroundWorker = original_worker
+        with patch("mcp_hangar.server.bootstrap.workers.BackgroundWorker", mock_worker_class):
+            with patch("mcp_hangar.server.bootstrap.workers.PROVIDERS", {}):
+                from mcp_hangar.server.bootstrap import _create_background_workers
+
+                workers = _create_background_workers()
 
         assert mock_worker_class.call_count == 2
         assert len(workers) == 2
 
     def test_workers_not_started(self):
         """Workers should be created but not started."""
-        import mcp_hangar.server.bootstrap  # noqa: F401
-
-        bootstrap_mod = sys.modules["mcp_hangar.server.bootstrap"]
-
-        original_providers = bootstrap_mod.PROVIDERS
-        original_worker = bootstrap_mod.BackgroundWorker
-
         mock_worker_class = MagicMock()
         mock_worker = MagicMock()
         mock_worker_class.return_value = mock_worker
 
-        bootstrap_mod.PROVIDERS = {}
-        bootstrap_mod.BackgroundWorker = mock_worker_class
+        with patch("mcp_hangar.server.bootstrap.workers.BackgroundWorker", mock_worker_class):
+            with patch("mcp_hangar.server.bootstrap.workers.PROVIDERS", {}):
+                from mcp_hangar.server.bootstrap import _create_background_workers
 
-        try:
-            # Call through the module to pick up patches
-            _workers = bootstrap_mod._create_background_workers()  # noqa: F841
-        finally:
-            bootstrap_mod.PROVIDERS = original_providers
-            bootstrap_mod.BackgroundWorker = original_worker
+                _workers = _create_background_workers()  # noqa: F841
 
         # Workers should not have start() called
         mock_worker.start.assert_not_called()
 
     def test_gc_worker_interval(self):
         """GC worker should use correct interval."""
-        import mcp_hangar.server.bootstrap  # noqa: F401
-
-        bootstrap_mod = sys.modules["mcp_hangar.server.bootstrap"]
-
-        original_providers = bootstrap_mod.PROVIDERS
-        original_worker = bootstrap_mod.BackgroundWorker
-
         mock_worker_class = MagicMock()
-        bootstrap_mod.PROVIDERS = {}
-        bootstrap_mod.BackgroundWorker = mock_worker_class
 
-        try:
-            # Call through the module to pick up patches
-            bootstrap_mod._create_background_workers()
-        finally:
-            bootstrap_mod.PROVIDERS = original_providers
-            bootstrap_mod.BackgroundWorker = original_worker
+        with patch("mcp_hangar.server.bootstrap.workers.BackgroundWorker", mock_worker_class):
+            with patch("mcp_hangar.server.bootstrap.workers.PROVIDERS", {}):
+                from mcp_hangar.server.bootstrap import _create_background_workers
+
+                _create_background_workers()
 
         # Find the GC worker call
         gc_call = None
@@ -238,23 +206,13 @@ class TestCreateBackgroundWorkers:
 
     def test_health_worker_interval(self):
         """Health worker should use correct interval."""
-        import mcp_hangar.server.bootstrap  # noqa: F401
-
-        bootstrap_mod = sys.modules["mcp_hangar.server.bootstrap"]
-
-        original_providers = bootstrap_mod.PROVIDERS
-        original_worker = bootstrap_mod.BackgroundWorker
-
         mock_worker_class = MagicMock()
-        bootstrap_mod.PROVIDERS = {}
-        bootstrap_mod.BackgroundWorker = mock_worker_class
 
-        try:
-            # Call through the module to pick up patches
-            bootstrap_mod._create_background_workers()
-        finally:
-            bootstrap_mod.PROVIDERS = original_providers
-            bootstrap_mod.BackgroundWorker = original_worker
+        with patch("mcp_hangar.server.bootstrap.workers.BackgroundWorker", mock_worker_class):
+            with patch("mcp_hangar.server.bootstrap.workers.PROVIDERS", {}):
+                from mcp_hangar.server.bootstrap import _create_background_workers
+
+                _create_background_workers()
 
         # Find the health worker call
         health_call = None
@@ -362,32 +320,7 @@ class TestBootstrap:
 
     @pytest.fixture
     def mock_dependencies(self):
-        """Mock all dependencies for bootstrap."""
-        import mcp_hangar.server.bootstrap  # noqa: F401
-
-        bootstrap_mod = sys.modules["mcp_hangar.server.bootstrap"]
-
-        # Store originals
-        originals = {}
-        attrs_to_mock = [
-            "_ensure_data_dir",
-            "get_runtime",
-            "init_context",
-            "_init_event_handlers",
-            "_init_cqrs",
-            "_init_saga",
-            "load_configuration",
-            "_init_retry_config",
-            "_init_knowledge_base",
-            "FastMCP",
-            "_register_all_tools",
-            "_create_background_workers",
-            "PROVIDERS",
-            "GROUPS",
-        ]
-        for attr in attrs_to_mock:
-            originals[attr] = getattr(bootstrap_mod, attr, None)
-
+        """Mock all dependencies for bootstrap using proper patch paths."""
         # Create mocks
         mock_data_dir = MagicMock()
         mock_get_runtime = MagicMock()
@@ -407,22 +340,39 @@ class TestBootstrap:
         mock_create_workers = MagicMock(return_value=[])
         mock_providers = MagicMock()
         mock_providers.keys.return_value = []
+        mock_init_event_store = MagicMock()
+        mock_init_hot_loading = MagicMock(return_value=(None, None))
+        mock_parse_auth = MagicMock(return_value={})
+        mock_bootstrap_auth = MagicMock()
+        mock_bootstrap_auth.return_value.enabled = False
+        mock_get_context = MagicMock()
 
-        # Apply mocks
-        bootstrap_mod._ensure_data_dir = mock_data_dir
-        bootstrap_mod.get_runtime = mock_get_runtime
-        bootstrap_mod.init_context = mock_init_context
-        bootstrap_mod._init_event_handlers = mock_init_eh
-        bootstrap_mod._init_cqrs = mock_init_cqrs
-        bootstrap_mod._init_saga = mock_init_saga
-        bootstrap_mod.load_configuration = mock_load_config
-        bootstrap_mod._init_retry_config = mock_init_retry
-        bootstrap_mod._init_knowledge_base = mock_init_kb
-        bootstrap_mod.FastMCP = mock_fastmcp
-        bootstrap_mod._register_all_tools = mock_reg_tools
-        bootstrap_mod._create_background_workers = mock_create_workers
-        bootstrap_mod.PROVIDERS = mock_providers
-        bootstrap_mod.GROUPS = {}
+        # Patch paths - use the actual module paths where functions are called
+        patches = [
+            patch("mcp_hangar.server.bootstrap._ensure_data_dir", mock_data_dir),
+            patch("mcp_hangar.server.bootstrap.get_runtime", mock_get_runtime),
+            patch("mcp_hangar.server.bootstrap.init_context", mock_init_context),
+            patch("mcp_hangar.server.bootstrap.init_event_handlers", mock_init_eh),
+            patch("mcp_hangar.server.bootstrap.init_cqrs", mock_init_cqrs),
+            patch("mcp_hangar.server.bootstrap.init_saga", mock_init_saga),
+            patch("mcp_hangar.server.bootstrap.load_configuration", mock_load_config),
+            patch("mcp_hangar.server.bootstrap.init_retry_config", mock_init_retry),
+            patch("mcp_hangar.server.bootstrap.init_knowledge_base", mock_init_kb),
+            patch("mcp_hangar.server.bootstrap.init_event_store", mock_init_event_store),
+            patch("mcp_hangar.server.bootstrap.init_hot_loading", mock_init_hot_loading),
+            patch("mcp_hangar.server.bootstrap.FastMCP", mock_fastmcp),
+            patch("mcp_hangar.server.bootstrap.register_all_tools", mock_reg_tools),
+            patch("mcp_hangar.server.bootstrap.create_background_workers", mock_create_workers),
+            patch("mcp_hangar.server.bootstrap.PROVIDERS", mock_providers),
+            patch("mcp_hangar.server.bootstrap.GROUPS", {}),
+            patch("mcp_hangar.server.bootstrap.parse_auth_config", mock_parse_auth),
+            patch("mcp_hangar.server.bootstrap.bootstrap_auth", mock_bootstrap_auth),
+            patch("mcp_hangar.server.bootstrap.get_context", mock_get_context),
+        ]
+
+        # Start all patches
+        for p in patches:
+            p.start()
 
         yield {
             "data_dir": mock_data_dir,
@@ -439,10 +389,9 @@ class TestBootstrap:
             "create_workers": mock_create_workers,
         }
 
-        # Restore originals
-        for attr, original in originals.items():
-            if original is not None:
-                setattr(bootstrap_mod, attr, original)
+        # Stop all patches
+        for p in patches:
+            p.stop()
 
     def test_bootstrap_returns_application_context(self, mock_dependencies):
         """Bootstrap should return ApplicationContext."""

@@ -1,10 +1,9 @@
-"""Provider interaction tools: tools, details, warm.
+"""Provider interaction tools: hangar_tools, hangar_details, hangar_warm.
 
 Uses ApplicationContext for dependency injection (DIP).
 Separates commands (write) from queries (read) following CQRS.
 
-Note: Tool invocation (registry_invoke, registry_invoke_ex, registry_invoke_stream)
-has been consolidated into hangar_call in batch.py.
+Note: Tool invocation is handled by hangar_call in batch/.
 """
 
 from typing import Any
@@ -79,23 +78,23 @@ def register_provider_tools(mcp: FastMCP) -> None:
     """Register provider interaction tools with MCP server.
 
     Registers:
-    - registry_tools: Get tool schemas for a provider
-    - registry_details: Get detailed provider/group info
-    - registry_warm: Pre-start providers to avoid cold start latency
+    - hangar_tools: Get tool schemas for a provider
+    - hangar_details: Get detailed provider/group info
+    - hangar_warm: Pre-start providers to avoid cold start latency
 
     Note: Tool invocation has been consolidated into hangar_call (batch.py).
     """
 
-    @mcp.tool(name="registry_tools")
+    @mcp.tool(name="hangar_tools")
     @mcp_tool_wrapper(
-        tool_name="registry_tools",
-        rate_limit_key=lambda provider: f"registry_tools:{provider}",
+        tool_name="hangar_tools",
+        rate_limit_key=lambda provider: f"hangar_tools:{provider}",
         check_rate_limit=check_rate_limit,
         validate=validate_provider_id_input,
         error_mapper=tool_error_mapper,
         on_error=lambda exc, ctx: tool_error_hook(exc, ctx),
     )
-    def registry_tools(provider: str) -> dict:
+    def hangar_tools(provider: str) -> dict:
         """
         Get detailed tool schemas for a provider.
 
@@ -120,16 +119,16 @@ def register_provider_tools(mcp: FastMCP) -> None:
 
         return _get_tools_for_provider(provider)
 
-    @mcp.tool(name="registry_details")
+    @mcp.tool(name="hangar_details")
     @mcp_tool_wrapper(
-        tool_name="registry_details",
-        rate_limit_key=lambda provider: f"registry_details:{provider}",
+        tool_name="hangar_details",
+        rate_limit_key=lambda provider: f"hangar_details:{provider}",
         check_rate_limit=check_rate_limit,
         validate=validate_provider_id_input,
         error_mapper=tool_error_mapper,
         on_error=lambda exc, ctx: tool_error_hook(exc, ctx),
     )
-    def registry_details(provider: str) -> dict:
+    def hangar_details(provider: str) -> dict:
         """
         Get detailed information about a provider or group.
 
@@ -155,16 +154,16 @@ def register_provider_tools(mcp: FastMCP) -> None:
         query = GetProviderQuery(provider_id=provider)
         return ctx.query_bus.execute(query).to_dict()
 
-    @mcp.tool(name="registry_warm")
+    @mcp.tool(name="hangar_warm")
     @mcp_tool_wrapper(
-        tool_name="registry_warm",
-        rate_limit_key=lambda providers="": "registry_warm",
+        tool_name="hangar_warm",
+        rate_limit_key=lambda providers="": "hangar_warm",
         check_rate_limit=check_rate_limit,
         validate=None,
         error_mapper=tool_error_mapper,
         on_error=lambda exc, ctx_dict: tool_error_hook(exc, ctx_dict),
     )
-    def registry_warm(providers: str | None = None) -> dict:
+    def hangar_warm(providers: str | None = None) -> dict:
         """
         Pre-start (warm up) providers to avoid cold start latency.
 
@@ -182,8 +181,8 @@ def register_provider_tools(mcp: FastMCP) -> None:
             - failed: List of providers that failed to start
 
         Example:
-            registry_warm("math,sqlite")  # Warm specific providers
-            registry_warm()               # Warm all providers
+            hangar_warm("math,sqlite")  # Warm specific providers
+            hangar_warm()               # Warm all providers
         """
         ctx = get_context()
 

@@ -13,16 +13,16 @@ from ..validation import check_rate_limit, tool_error_hook, tool_error_mapper, v
 def register_group_tools(mcp: FastMCP) -> None:
     """Register group management tools with MCP server."""
 
-    @mcp.tool(name="registry_group_list")
+    @mcp.tool(name="hangar_group_list")
     @mcp_tool_wrapper(
-        tool_name="registry_group_list",
+        tool_name="hangar_group_list",
         rate_limit_key=key_global,
-        check_rate_limit=lambda key: check_rate_limit("registry_group_list"),
+        check_rate_limit=lambda key: check_rate_limit("hangar_group_list"),
         validate=None,
         error_mapper=lambda exc: tool_error_mapper(exc),
         on_error=tool_error_hook,
     )
-    def registry_group_list() -> dict:
+    def hangar_group_list() -> dict:
         """
         List all provider groups with detailed status.
 
@@ -34,16 +34,16 @@ def register_group_tools(mcp: FastMCP) -> None:
         ctx = get_context()
         return {"groups": [group.to_status_dict() for group in ctx.groups.values()]}
 
-    @mcp.tool(name="registry_group_rebalance")
+    @mcp.tool(name="hangar_group_rebalance")
     @mcp_tool_wrapper(
-        tool_name="registry_group_rebalance",
-        rate_limit_key=lambda group: f"registry_group_rebalance:{group}",
+        tool_name="hangar_group_rebalance",
+        rate_limit_key=lambda group: f"hangar_group_rebalance:{group}",
         check_rate_limit=check_rate_limit,
         validate=validate_provider_id_input,
         error_mapper=lambda exc: tool_error_mapper(exc),
         on_error=lambda exc, ctx_dict: tool_error_hook(exc, ctx_dict),
     )
-    def registry_group_rebalance(group: str) -> dict:
+    def hangar_group_rebalance(group: str) -> dict:
         """
         Manually trigger rebalancing for a group.
 

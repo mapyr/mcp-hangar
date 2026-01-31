@@ -164,8 +164,8 @@ class TestBatchValidation:
         mock_ctx.get_provider.side_effect = lambda k: mock_provider if k == "math" else None
 
         with (
-            patch("mcp_hangar.server.tools.batch.get_context") as get_context,
-            patch("mcp_hangar.server.tools.batch.GROUPS") as groups,
+            patch("mcp_hangar.server.tools.batch.validator.get_context") as get_context,
+            patch("mcp_hangar.server.tools.batch.validator.GROUPS") as groups,
         ):
             get_context.return_value = mock_ctx
             groups.get.return_value = None
@@ -277,7 +277,10 @@ class TestBatchExecution:
         ctx.command_bus = Mock()
         ctx.command_bus.send.return_value = {"result": 42}
 
-        with patch("mcp_hangar.server.tools.batch.get_context", return_value=ctx):
+        with (
+            patch("mcp_hangar.server.tools.batch.validator.get_context", return_value=ctx),
+            patch("mcp_hangar.server.tools.batch.executor.get_context", return_value=ctx),
+        ):
             yield ctx
 
     @pytest.fixture
@@ -292,8 +295,12 @@ class TestBatchExecution:
         mock_context.get_provider.side_effect = lambda k: mock_provider if k == "math" else None
         mock_context.provider_exists.side_effect = lambda k: k == "math"
 
-        with patch("mcp_hangar.server.tools.batch.GROUPS") as groups:
+        with (
+            patch("mcp_hangar.server.tools.batch.validator.GROUPS") as groups,
+            patch("mcp_hangar.server.tools.batch.executor.GROUPS") as exec_groups,
+        ):
             groups.get.return_value = None
+            exec_groups.get.return_value = None
             yield mock_context, groups, mock_provider
 
     def test_execute_single_call(self, mock_context, mock_providers_for_execution):
@@ -467,10 +474,13 @@ class TestHangarCallToolBasic:
         ctx.provider_exists.side_effect = lambda k: k == "math"
 
         with (
-            patch("mcp_hangar.server.tools.batch.get_context", return_value=ctx),
-            patch("mcp_hangar.server.tools.batch.GROUPS") as groups,
+            patch("mcp_hangar.server.tools.batch.validator.get_context", return_value=ctx),
+            patch("mcp_hangar.server.tools.batch.validator.GROUPS") as groups,
+            patch("mcp_hangar.server.tools.batch.executor.get_context", return_value=ctx),
+            patch("mcp_hangar.server.tools.batch.executor.GROUPS") as exec_groups,
         ):
             groups.get.return_value = None
+            exec_groups.get.return_value = None
             yield ctx, mock_provider
 
     def test_empty_batch_returns_success(self, mock_all):
@@ -582,10 +592,13 @@ class TestResponseTruncation:
         ctx.provider_exists.side_effect = lambda k: k == "math"
 
         with (
-            patch("mcp_hangar.server.tools.batch.get_context", return_value=ctx),
-            patch("mcp_hangar.server.tools.batch.GROUPS") as groups,
+            patch("mcp_hangar.server.tools.batch.validator.get_context", return_value=ctx),
+            patch("mcp_hangar.server.tools.batch.validator.GROUPS") as groups,
+            patch("mcp_hangar.server.tools.batch.executor.get_context", return_value=ctx),
+            patch("mcp_hangar.server.tools.batch.executor.GROUPS") as exec_groups,
         ):
             groups.get.return_value = None
+            exec_groups.get.return_value = None
             yield ctx
 
     def test_truncates_large_response(self, mock_large_response):
@@ -646,10 +659,13 @@ class TestCrossProviderBatch:
         ctx.provider_exists.side_effect = lambda k: k in providers
 
         with (
-            patch("mcp_hangar.server.tools.batch.get_context", return_value=ctx),
-            patch("mcp_hangar.server.tools.batch.GROUPS") as groups,
+            patch("mcp_hangar.server.tools.batch.validator.get_context", return_value=ctx),
+            patch("mcp_hangar.server.tools.batch.validator.GROUPS") as groups,
+            patch("mcp_hangar.server.tools.batch.executor.get_context", return_value=ctx),
+            patch("mcp_hangar.server.tools.batch.executor.GROUPS") as exec_groups,
         ):
             groups.get.return_value = None
+            exec_groups.get.return_value = None
             yield ctx, providers
 
     def test_cross_provider_batch_success(self, mock_multiple_providers):
@@ -765,10 +781,13 @@ class TestHangarCallTool:
         ctx.provider_exists.side_effect = lambda k: k == "math"
 
         with (
-            patch("mcp_hangar.server.tools.batch.get_context", return_value=ctx),
-            patch("mcp_hangar.server.tools.batch.GROUPS") as groups,
+            patch("mcp_hangar.server.tools.batch.validator.get_context", return_value=ctx),
+            patch("mcp_hangar.server.tools.batch.validator.GROUPS") as groups,
+            patch("mcp_hangar.server.tools.batch.executor.get_context", return_value=ctx),
+            patch("mcp_hangar.server.tools.batch.executor.GROUPS") as exec_groups,
         ):
             groups.get.return_value = None
+            exec_groups.get.return_value = None
             yield ctx, mock_provider
 
     def test_empty_calls_returns_success(self, mock_all):
@@ -926,10 +945,13 @@ class TestRetryFunctionality:
         ctx.provider_exists.side_effect = lambda k: k == "math"
 
         with (
-            patch("mcp_hangar.server.tools.batch.get_context", return_value=ctx),
-            patch("mcp_hangar.server.tools.batch.GROUPS") as groups,
+            patch("mcp_hangar.server.tools.batch.validator.get_context", return_value=ctx),
+            patch("mcp_hangar.server.tools.batch.validator.GROUPS") as groups,
+            patch("mcp_hangar.server.tools.batch.executor.get_context", return_value=ctx),
+            patch("mcp_hangar.server.tools.batch.executor.GROUPS") as exec_groups,
         ):
             groups.get.return_value = None
+            exec_groups.get.return_value = None
             yield ctx, mock_provider
 
     def test_retry_on_transient_failure(self, mock_with_retry):

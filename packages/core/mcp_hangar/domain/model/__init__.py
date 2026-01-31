@@ -16,6 +16,14 @@ from .load_balancer import (
     WeightedRoundRobinStrategy,
 )
 from .provider import Provider
+from .provider_config import (
+    ContainerConfig,
+    ContainerResourceConfig,
+    HealthConfig,
+    ProviderConfig,
+    RemoteConfig,
+    SubprocessConfig,
+)
 from .provider_group import (
     GroupCircuitClosed,
     GroupCircuitOpened,
@@ -41,6 +49,12 @@ __all__ = [
     "ToolCatalog",
     "ToolSchema",
     "Provider",
+    "ProviderConfig",
+    "SubprocessConfig",
+    "ContainerConfig",
+    "ContainerResourceConfig",
+    "RemoteConfig",
+    "HealthConfig",
     "ProviderState",
     "EventSourcedProvider",
     "ProviderSnapshot",

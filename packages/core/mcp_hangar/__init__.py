@@ -54,7 +54,7 @@ from .domain.exceptions import (
     ToolTimeoutError,
     ValidationError,
 )
-from .domain.model import Provider
+from .domain.model import Provider, ToolSchema
 from .domain.value_objects import (
     CorrelationId,
     HealthStatus,
@@ -95,8 +95,7 @@ from .errors import (
 # High-level Facade API (recommended for most users)
 from .facade import Hangar, HangarConfig, HangarConfigData, HealthSummary, ProviderInfo, SyncHangar
 
-# Legacy imports - for backward compatibility (re-exports from domain)
-from .models import ToolSchema
+# Legacy imports - for backward compatibility
 from .progress import (
     create_progress_tracker,
     get_stage_message,

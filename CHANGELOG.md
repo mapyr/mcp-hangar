@@ -7,6 +7,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-01-31
+
+### Changed
+
+- **Unified tool naming**: All MCP tools now use `hangar_*` prefix for consistency
+  - `registry_tools` -> `hangar_tools`
+  - `registry_details` -> `hangar_details`
+  - `registry_warm` -> `hangar_warm`
+  - `registry_health` -> `hangar_health`
+  - `registry_metrics` -> `hangar_metrics`
+  - `registry_discover` -> `hangar_discover`
+  - `registry_discovered` -> `hangar_discovered`
+  - `registry_quarantine` -> `hangar_quarantine`
+  - `registry_approve` -> `hangar_approve`
+  - `registry_sources` -> `hangar_sources`
+  - `registry_group_list` -> `hangar_group_list`
+  - `registry_group_rebalance` -> `hangar_group_rebalance`
+
+- Updated error hints and recovery messages to use new tool names
+- Updated SYSTEM_PROMPT.md with correct tool names and documentation
+- Updated docs/guides/DISCOVERY.md with new tool names
+
+### Refactoring
+
+- **Bootstrap modularization**: Split `server/bootstrap.py` (890 LOC) into focused modules
+  - `server/bootstrap/__init__.py` - Main bootstrap orchestration
+  - `server/bootstrap/cqrs.py` - Command/query handler registration
+  - `server/bootstrap/discovery.py` - Discovery source configuration
+  - `server/bootstrap/event_handlers.py` - Event handler setup
+  - `server/bootstrap/event_store.py` - Event store initialization
+  - `server/bootstrap/hot_loading.py` - Hot-loading configuration
+  - `server/bootstrap/knowledge_base.py` - Knowledge base setup
+  - `server/bootstrap/tools.py` - MCP tool registration
+  - `server/bootstrap/workers.py` - Background worker creation
+
+- **Batch tool modularization**: Split `server/tools/batch.py` (952 LOC) into focused modules
+  - `server/tools/batch/__init__.py` - Public API (`hangar_call`)
+  - `server/tools/batch/executor.py` - Batch execution engine
+  - `server/tools/batch/models.py` - Data classes and constants
+  - `server/tools/batch/validator.py` - Validation logic
+
+- **Provider launcher modularization**: Split `domain/services/provider_launcher.py` into package
+  - `domain/services/provider_launcher/__init__.py` - Public API
+  - `domain/services/provider_launcher/base.py` - Base launcher interface
+  - `domain/services/provider_launcher/subprocess.py` - Subprocess launcher
+  - `domain/services/provider_launcher/docker.py` - Docker launcher
+  - `domain/services/provider_launcher/container.py` - Container utilities
+  - `domain/services/provider_launcher/http.py` - HTTP/SSE launcher
+  - `domain/services/provider_launcher/factory.py` - Launcher factory
+
+### Migration
+
+If you have scripts or integrations using the old `registry_*` tool names, update them to use `hangar_*`:
+
+```python
+# Before
+registry_tools(provider="math")
+registry_health()
+
+# After
+hangar_tools(provider="math")
+hangar_health()
+```
+
 ## [0.6.0] - 2026-01-31
 
 ### Added
