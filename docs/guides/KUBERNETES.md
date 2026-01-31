@@ -439,16 +439,19 @@ kubectl logs -n mcp-system deployment/mcp-hangar-operator -f
 ### Common Issues
 
 **Provider stuck in Initializing:**
+
 - Check pod logs: `kubectl logs mcp-provider-<name> -n <namespace>`
 - Verify image exists and is pullable
 - Check resource limits
 
 **Provider in Degraded state:**
+
 - Health checks failing
 - Check network connectivity to provider
 - Verify MCP-Hangar core is running
 
 **Discovery not finding providers:**
+
 - Verify namespace labels match selector
 - Check MCPDiscoverySource status
 - Review operator logs for discovery errors

@@ -13,6 +13,7 @@ MCP Hangar is organized as a monorepo:
 | **Helm Charts** | Deployment charts | `packages/helm-charts/` |
 
 **Key concepts:**
+
 - **Providers** — Subprocesses or containers exposing tools via JSON-RPC
 - **State machine** — COLD → INITIALIZING → READY → DEGRADED → DEAD
 - **Health monitoring** — Failure detection with circuit breaker
@@ -74,6 +75,7 @@ Background:
 ### Lock Hierarchy
 
 Acquire in order to avoid deadlocks:
+
 1. `Provider.lock` (per-provider)
 2. `StdioClient.pending_lock` (per-client)
 
@@ -155,6 +157,7 @@ class ProviderHealth:
 ## Performance
 
 **Hot path:**
+
 ```python
 # Good — state check without I/O
 with lock:
@@ -168,5 +171,6 @@ with lock:
 ```
 
 **Recommended TTL:**
+
 - Subprocess: 180-300s
 - Container: 300-600s

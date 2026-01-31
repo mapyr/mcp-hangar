@@ -162,6 +162,7 @@ echo '{"jsonrpc":"2.0","id":"1","method":"initialize","params":{}}' | \
 1. Use absolute paths
 2. Check host directory permissions
 3. Verify mount:
+
    ```bash
    podman run --rm -v /path/to/data:/data:rw --entrypoint sh \
      localhost/mcp-sqlite:latest -c "ls -la /data"

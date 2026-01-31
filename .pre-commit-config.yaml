@@ -29,6 +29,14 @@ repos:
         args: [ '--fix' ]
         files: ^packages/core/
 
+  # Markdown linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.43.0
+    hooks:
+      - id: markdownlint
+        args: [ '--fix', '--config', '.markdownlint.json' ]
+        files: \.(md|markdown)$
+
   # Built-in pre-commit hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0

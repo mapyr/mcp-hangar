@@ -97,12 +97,15 @@ result = traced_service.invoke_tool(
 ## Alternatives Considered
 
 ### 1. OpenTelemetry Only
+
 - **Rejected**: OpenTelemetry doesn't provide LLM-specific features (cost tracking, evals, prompt correlation)
 
 ### 2. Custom Solution
+
 - **Rejected**: Building custom observability would duplicate Langfuse's features
 
 ### 3. LangSmith
+
 - **Deferred**: Langfuse is open-source and can be self-hosted; LangSmith requires LangChain ecosystem
 
 ## References

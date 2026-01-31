@@ -7,6 +7,7 @@ Execute one or more tool invocations with a single unified API.
 The `hangar_call()` tool is the unified API for all tool invocations. Whether you need a single call or parallel batch execution, the format is consistent.
 
 **Key benefits:**
+
 - **Unified API** - One function for single calls and batches
 - **Parallel execution** - Multiple calls run concurrently
 - **Automatic retry** - Built-in retry with exponential backoff
@@ -248,6 +249,7 @@ When `max_retries > 1`:
 Effective timeout per call = `min(per_call_timeout, remaining_global_timeout)`
 
 Example:
+
 - Global timeout: 60s
 - Per-call timeout: 30s
 - Elapsed time: 50s

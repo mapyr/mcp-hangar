@@ -33,6 +33,7 @@ docker compose -f docker-compose.monitoring.yml --profile tracing up -d
 ```
 
 Access dashboards:
+
 - **Grafana**: http://localhost:3000 (admin/admin)
 - **Prometheus**: http://localhost:9090
 - **Jaeger**: http://localhost:16686
@@ -480,6 +481,7 @@ services:
 ```
 
 > **Note**: If curl is not available in your image, use Python:
+>
 > ```yaml
 > healthcheck:
 >   test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready', timeout=5)"]
@@ -689,6 +691,7 @@ except ProviderStartError as e:
 ### Metrics Not Visible
 
 1. **Verify endpoint accessibility**:
+
    ```bash
    curl http://localhost:8000/metrics
    ```
@@ -698,6 +701,7 @@ except ProviderStartError as e:
    - Verify MCP Hangar target is `UP`
 
 3. **Review Prometheus logs**:
+
    ```bash
    docker logs mcp-prometheus 2>&1 | grep -i error
    ```
@@ -705,21 +709,25 @@ except ProviderStartError as e:
 ### Traces Not Appearing
 
 1. **Verify tracing is enabled**:
+
    ```bash
    echo $MCP_TRACING_ENABLED  # Should be 'true' or unset
    ```
 
 2. **Check OTLP endpoint connectivity**:
+
    ```bash
    curl -v http://localhost:4317
    ```
 
 3. **Look for initialization errors**:
+
    ```bash
    grep -i "tracing" logs/mcp-hangar.log
    ```
 
 4. **Verify OpenTelemetry packages installed**:
+
    ```bash
    pip list | grep opentelemetry
    ```
@@ -727,11 +735,13 @@ except ProviderStartError as e:
 ### Health Check Failures
 
 1. **Get detailed health status**:
+
    ```bash
    curl -s http://localhost:8000/health/ready | jq .
    ```
 
 2. **Check individual check results**:
+
    ```python
    endpoint = get_health_endpoint()
    result = endpoint.get_last_result("providers")
@@ -743,6 +753,7 @@ except ProviderStartError as e:
 1. Review metric label values for unbounded sets
 2. Avoid user-provided values in labels
 3. Use label aggregation in queries:
+
    ```promql
    sum by (provider) (rate(mcp_hangar_tool_calls_total[5m]))
    ```

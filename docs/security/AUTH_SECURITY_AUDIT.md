@@ -24,6 +24,7 @@
 **Ryzyko:** Brute-force attacks, DoS
 
 **Dowód z testów:**
+
 ```
 100 failed attempts took 0.005s (should be rate-limited)
 ```
@@ -33,6 +34,7 @@ Aktualnie nie ma żadnego ograniczenia na liczbę nieudanych prób autentykacji.
 Atakujący może wykonać tysiące prób na sekundę.
 
 **Rekomendacja:**
+
 ```python
 # Dodać do AuthenticationMiddleware:
 class AuthRateLimiter:
@@ -57,11 +59,13 @@ class AuthRateLimiter:
 
 **Opis:**
 Zaimplementowano trzy backendy storage:
+
 - `memory` - dla development/testing (dane tracone przy restart)
 - `sqlite` - dla single-instance deployments
 - `postgresql` - dla multi-instance deployments (production)
 
 **Konfiguracja:**
+
 ```yaml
 auth:
   storage:
@@ -77,6 +81,7 @@ auth:
 ```
 
 **Pliki:**
+
 - `mcp_hangar/infrastructure/auth/sqlite_store.py`
 - `mcp_hangar/infrastructure/auth/postgres_store.py`
 
@@ -89,6 +94,7 @@ auth:
 **Ryzyko:** Kradzież klucza umożliwia dostęp z dowolnego IP
 
 **Dowód z testów:**
+
 ```python
 # Key from different IP is allowed
 for ip in ["192.168.1.1", "10.0.0.1", "172.16.0.1"]:
@@ -97,6 +103,7 @@ for ip in ["192.168.1.1", "10.0.0.1", "172.16.0.1"]:
 
 **Rekomendacja:**
 Dodać opcjonalne IP allowlist per klucz:
+
 ```python
 @dataclass
 class ApiKeyMetadata:
@@ -117,6 +124,7 @@ Nie ma mechanizmu automatycznej rotacji kluczy API.
 Klucze pozostają ważne do ręcznego unieważnienia.
 
 **Rekomendacja:**
+
 - Dodać `rotate_key()` method
 - Generować nowy klucz, stary ważny przez grace period
 - Webhook do powiadomienia o rotacji
@@ -128,6 +136,7 @@ Klucze pozostają ważne do ręcznego unieważnienia.
 **Status:** CZĘŚCIOWO ROZWIĄZANE
 
 **Dowód z testów:**
+
 ```
 Valid key avg: 0.069ms
 Invalid key avg: 0.088ms
@@ -140,6 +149,7 @@ jest niewielka (~0.02ms), ale teoretycznie wykrywalna przy wielu próbach.
 
 **Rekomendacja:**
 Użyć `hmac.compare_digest()` dla constant-time comparison:
+
 ```python
 import hmac
 
@@ -158,6 +168,7 @@ Klucze API są przechowywane jako hashe SHA-256, ale sam hash
 jest w pamięci w plaintext. Memory dump może ujawnić hashe.
 
 **Rekomendacja dla produkcji:**
+
 - Użyć secure enclave (HSM)
 - Lub szyfrować hashe kluczem z env var
 
@@ -172,6 +183,7 @@ JWT lifetime zależy od konfiguracji IdP (np. Keycloak).
 MCP-Hangar sprawdza `exp` claim, ale nie wymusza max lifetime.
 
 **Rekomendacja:**
+
 ```python
 MAX_TOKEN_LIFETIME = 3600  # 1 hour
 
@@ -187,29 +199,35 @@ def _validate_token_lifetime(self, claims: dict) -> None:
 ## ✅ Poprawnie zaimplementowane
 
 ### 8. Thread Safety
+
 - `InMemoryApiKeyStore` - RLock dodany ✅
 - `InMemoryRoleStore` - RLock dodany ✅
 - Concurrent tests przechodzą ✅
 
 ### 9. Input Validation
+
 - Walidacja długości klucza API (MAX=256) ✅
 - Walidacja formatu PrincipalId ✅
 - Unicode handling ✅
 
 ### 10. Token Expiration
+
 - Expired keys rejected ✅
 - JWT exp claim verified ✅
 - JWT nbf claim verified ✅
 
 ### 11. Key Revocation
+
 - Natychmiastowe odrzucenie ✅
 - Audit log ✅
 
 ### 12. HTTPS Warnings
+
 - Ostrzeżenia dla non-HTTPS OIDC issuer ✅
 - Ostrzeżenia dla non-HTTPS JWKS URI ✅
 
 ### 13. Trusted Proxies
+
 - X-Forwarded-For tylko z trusted proxies ✅
 - Konfigurowalny zestaw proxy ✅
 
@@ -218,6 +236,7 @@ def _validate_token_lifetime(self, claims: dict) -> None:
 ## 📋 Dodatkowe testy do wykonania
 
 ### Testy penetracyjne
+
 ```bash
 # 1. Brute-force API key
 for i in {1..10000}; do
@@ -237,12 +256,14 @@ curl -H "Authorization: Bearer $TOKEN" http://different-ip:9000/mcp  # IP2
 ```
 
 ### Load testing
+
 ```bash
 # Concurrent auth with k6
 k6 run -u 100 -d 60s auth_load_test.js
 ```
 
 ### Fuzzing
+
 ```python
 # Fuzz API key format
 import atheris
@@ -255,19 +276,22 @@ atheris.Fuzz()
 ## 🔧 Rekomendowane kolejne kroki
 
 ### Priorytet 1 (przed produkcją)
+
 1. **Implementować rate limiting** na autentykację per IP
 2. **Dodać persistent storage** (SQLite/PostgreSQL)
 3. **Dodać CLI** dla zarządzania kluczami (`mcp-hangar auth create-key`)
 
 ### Priorytet 2 (v1.1)
+
 4. Dodać IP allowlist dla kluczy
-5. Implementować rotację kluczy
-6. Dodać constant-time comparison
+2. Implementować rotację kluczy
+3. Dodać constant-time comparison
 
 ### Priorytet 3 (v1.2)
+
 7. Zintegrować z HashiCorp Vault
-8. Dodać SCIM provisioning
-9. Implementować mTLS authentication
+2. Dodać SCIM provisioning
+3. Implementować mTLS authentication
 
 ---
 

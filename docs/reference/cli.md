@@ -164,11 +164,13 @@ mcp-hangar --json status
 ### Output Columns
 
 **Standard view:**
+
 - Provider name
 - State indicator
 - Tools count
 
 **Detailed view (`--details`):**
+
 - Provider name
 - State indicator
 - Mode (subprocess/docker/remote)

@@ -264,6 +264,7 @@ All metrics renamed from `mcp_registry_*` to `mcp_hangar_*`:
 ### Technical Debt Notes
 
 The following items are documented technical debt introduced to enable CI:
+
 - **Mypy not in strict mode**: Currently using relaxed settings with many error codes disabled. Plan to gradually enable stricter checking. See `pyproject.toml` for full list of disabled error codes.
 - **Docker push disabled**: Requires organization package write permissions in GitHub settings.
 
@@ -286,6 +287,7 @@ The following items are documented technical debt introduced to enable CI:
 ### Added
 
 #### Authentication & Authorization (TASK-001)
+
 - **API Key Authentication**: Secure API key-based authentication
   - API key generation with `mcp_` prefix for easy identification
   - Key hashing with SHA-256 for secure storage
@@ -316,6 +318,7 @@ The following items are documented technical debt introduced to enable CI:
   - `mcp-hangar auth assign-role` - Assign roles
 
 #### Kubernetes Operator (TASK-002)
+
 - **MCPProvider CRD**: Declarative provider management
   - Container and remote provider modes
   - Configurable health checks and circuit breaker
@@ -342,17 +345,20 @@ The following items are documented technical debt introduced to enable CI:
   - Helm chart for deployment
 
 ### Changed
+
 - **Domain**: Changed API group from `mcp.hangar.io` to `mcp-hangar.io` for consistency
 - **Config**: Volume paths changed from absolute to relative in examples
 - **Documentation**: Added comprehensive Kubernetes and Authentication guides
 
 ### Security
+
 - All auth features are opt-in (disabled by default)
 - Secure defaults for pod security contexts
 - No hardcoded credentials in production code
 - Testcontainers-based security testing
 
 ### Documentation
+
 - New guide: `docs/guides/KUBERNETES.md` - Complete K8s integration guide
 - New guide: `docs/guides/AUTHENTICATION.md` - Auth configuration guide
 - Security audit: `docs/security/AUTH_SECURITY_AUDIT.md`
@@ -361,6 +367,7 @@ The following items are documented technical debt introduced to enable CI:
 ## [0.1.4] - 2026-01-16
 
 ### Added
+
 - **Event Store Implementation**: Full Event Sourcing support with persistence
   - `IEventStore` interface with SQLite and In-Memory implementations
   - Optimistic concurrency control for concurrent event appends
@@ -377,6 +384,7 @@ The following items are documented technical debt introduced to enable CI:
 ## [0.1.2] - 2026-01-13
 
 ### Added
+
 - **Langfuse Integration**: Optional LLM observability with Langfuse
   - Full trace lifecycle management (start, end, error handling)
   - Span nesting for tool invocations and provider operations
@@ -390,12 +398,14 @@ The following items are documented technical debt introduced to enable CI:
   - Conditional loading - tests work without testcontainers installed
 
 ### Changed
+
 - **Monitoring Stack Simplified**: Cleaner configuration structure
   - Combined critical/warning alerts into single `alerts.yaml`
   - Added Grafana datasource provisioning
   - Removed obsolete `version` attribute from docker-compose
 
 ### Fixed
+
 - Fixed testcontainers import error in CI when library not installed
 - Fixed Prometheus metrics `info` type (changed to `gauge` for compatibility)
 - Fixed import sorting across all modules (ruff isort)
@@ -405,6 +415,7 @@ The following items are documented technical debt introduced to enable CI:
 ## [0.1.1] - 2026-01-12
 
 ### Added
+
 - **Observability Module**: Comprehensive monitoring and tracing support
   - OpenTelemetry distributed tracing with OTLP/Jaeger export
   - Extended Prometheus metrics (circuit breaker, retry, queue depth, SLIs)
@@ -428,6 +439,7 @@ The following items are documented technical debt introduced to enable CI:
 ## [0.1.0] - 2025-12-16
 
 ### Added
+
 - Initial open source release
 - Hot-loading MCP provider management with automatic lifecycle control
 - Multiple transport modes: Stdio (default) and HTTP with Streamable HTTP support
@@ -464,6 +476,7 @@ The following items are documented technical debt introduced to enable CI:
   - Docker support guide
 
 ### Security
+
 - Input validation for all provider IDs, tool names, and arguments
 - Command sanitization to prevent shell injection attacks
 - Environment variable filtering to remove sensitive data

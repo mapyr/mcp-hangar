@@ -54,6 +54,7 @@ curl -H "X-API-Key: mcp_aBcDeFgHiJkLmNoPqRsTuVwXyZ..." \
 ### API Key Authentication
 
 Simple key-based authentication. Keys are:
+
 - Prefixed with `mcp_` for easy identification
 - Stored as SHA-256 hashes (never in plaintext)
 - Support expiration and revocation

@@ -129,11 +129,13 @@ def test_tool_invocation():
 2. Make changes following style guidelines
 3. Add tests
 4. Run checks:
+
    ```bash
    cd packages/core
    pytest -v -m "not slow"
    pre-commit run --all-files
    ```
+
 5. Update docs if needed
 
 ### PR Template
@@ -155,11 +157,13 @@ Brief description.
 ## Architecture Guidelines
 
 **Value Objects:**
+
 ```python
 provider_id = ProviderId("my-provider")  # Validated
 ```
 
 **Events:**
+
 ```python
 provider.ensure_ready()
 for event in provider.collect_events():
@@ -167,6 +171,7 @@ for event in provider.collect_events():
 ```
 
 **Exceptions:**
+
 ```python
 # Basic usage
 raise ProviderStartError(
@@ -191,6 +196,7 @@ except ProviderStartError as e:
 ```
 
 **Logging:**
+
 ```python
 logger.info("provider_started: %s, mode=%s", provider_id, mode)
 ```
@@ -219,6 +225,7 @@ Use the GitHub Actions workflow:
 5. Run (or use **dry run** to preview)
 
 The workflow will:
+
 - Update version in `pyproject.toml`
 - Update `CHANGELOG.md` with release date
 - Create and push the version tag
@@ -257,6 +264,7 @@ v1.0.0-rc.1     # Release candidate
 ```
 
 Install pre-release:
+
 ```bash
 pip install --index-url https://test.pypi.org/simple/ mcp-hangar==1.0.0rc1
 ```

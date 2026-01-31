@@ -153,6 +153,7 @@ If a release introduces critical issues that can't be hotfixed quickly.
 PyPI doesn't allow re-uploading deleted versions. Instead:
 
 1. **Yank the version** (marks as not recommended):
+
    ```bash
    # Via PyPI web interface or:
    pip install twine
@@ -164,6 +165,7 @@ PyPI doesn't allow re-uploading deleted versions. Instead:
 ### Docker Rollback
 
 1. **Update `latest` tag** to previous stable version:
+
    ```bash
    docker pull ghcr.io/mapyr/mcp-hangar:X.Y.Z-1
    docker tag ghcr.io/mapyr/mcp-hangar:X.Y.Z-1 ghcr.io/mapyr/mcp-hangar:latest
@@ -193,6 +195,7 @@ Error: Tests failed on Python 3.X
 ```
 
 **Resolution:**
+
 1. Check test logs in Actions
 2. Reproduce locally: `uv run pytest tests/ -v --tb=long`
 3. Fix and push to main
@@ -206,6 +209,7 @@ Error: 403 Forbidden - trusted publishing not configured
 ```
 
 **Resolution:**
+
 1. Verify PyPI Trusted Publisher is configured:
    - Go to PyPI → Project → Publishing
    - Add GitHub publisher: `mapyr/mcp-hangar`, workflow `release.yml`
@@ -218,6 +222,7 @@ Error: buildx failed for linux/arm64
 ```
 
 **Resolution:**
+
 1. Check if Dockerfile has architecture-specific dependencies
 2. May need to add platform-specific build stages
 3. Consider removing arm64 from platforms temporarily
@@ -229,8 +234,10 @@ Error: Version mismatch! pyproject.toml: X.Y.Z, Git tag: X.Y.W
 ```
 
 **Resolution:**
+
 1. Either update `pyproject.toml` to match tag
 2. Or delete tag and re-create with correct version:
+
    ```bash
    git push origin :refs/tags/vX.Y.W
    git tag -d vX.Y.W
