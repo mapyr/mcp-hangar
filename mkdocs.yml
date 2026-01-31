@@ -79,6 +79,8 @@ nav:
       - Testing: guides/TESTING.md
       - Containers: guides/CONTAINERS.md
       - Discovery: guides/DISCOVERY.md
+      - HTTP Transport: guides/HTTP_TRANSPORT.md
+      - Batch Invocations: guides/BATCH_INVOCATIONS.md
       - Observability: guides/OBSERVABILITY.md
       - Authentication: guides/AUTHENTICATION.md
       - Kubernetes: guides/KUBERNETES.md
@@ -86,6 +88,7 @@ nav:
       - Contributing: development/CONTRIBUTING.md
       - Release Process: runbooks/RELEASE.md
   - Reference:
+      - CLI: reference/cli.md
       - Changelog: changelog.md
       - Security: security.md
       - Auth Security Audit: security/AUTH_SECURITY_AUDIT.md

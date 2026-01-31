@@ -132,7 +132,7 @@ Make sure you have write access to the config directories:
 
 ## Next Steps
 
-- [Configuration Reference](../guides/CONFIGURATION.md) - All config options
+- [CLI Reference](../reference/cli.md) - All CLI commands and options
 - [Container Providers](../guides/CONTAINERS.md) - Using Docker/Podman providers
 - [Observability](../guides/OBSERVABILITY.md) - Metrics and monitoring
 - [Architecture](../architecture/OVERVIEW.md) - Understanding the design
