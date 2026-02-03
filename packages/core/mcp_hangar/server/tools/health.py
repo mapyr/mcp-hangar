@@ -176,23 +176,29 @@ def register_health_tools(mcp: FastMCP) -> None:
     def hangar_health() -> dict:
         """Get registry health status including security metrics.
 
-        For detailed metrics, use hangar_metrics instead.
+        CHOOSE THIS when: quick health check, monitoring dashboard, security overview.
+        CHOOSE hangar_metrics when: detailed per-provider stats, tool call counts, Prometheus.
+        CHOOSE hangar_status when: human-readable dashboard with visual indicators.
+
+        Side effects: None (read-only).
+
+        Args:
+            None
 
         Returns:
-            - status: "healthy" (always, currently)
-            - providers: {total, by_state}
-            - groups: {total, by_state, total_members, healthy_members}
-            - security: {rate_limiting: {active_buckets, config}}
+            {
+                status: str,
+                providers: {total: int, by_state: {cold: int, ready: int, degraded: int, dead: int}},
+                groups: {total: int, by_state: object, total_members: int, healthy_members: int},
+                security: {rate_limiting: {active_buckets: int, config: object}}
+            }
 
         Example:
             hangar_health()
-            # Returns:
-            # {
-            #   "status": "healthy",
-            #   "providers": {"total": 3, "by_state": {"ready": 2, "cold": 1}},
-            #   "groups": {"total": 1, "by_state": {"ready": 1}, "total_members": 3, "healthy_members": 2},
-            #   "security": {"rate_limiting": {"active_buckets": 5, "config": {...}}}
-            # }
+            # {"status": "healthy",
+            #  "providers": {"total": 3, "by_state": {"ready": 2, "cold": 1}},
+            #  "groups": {"total": 1, "by_state": {"ready": 1}, "total_members": 3, "healthy_members": 2},
+            #  "security": {"rate_limiting": {"active_buckets": 5, "config": {...}}}}
         """
         ctx = get_context()
         rate_limit_stats = ctx.rate_limiter.get_stats()
@@ -243,24 +249,35 @@ def register_health_tools(mcp: FastMCP) -> None:
     def hangar_metrics(format: str = "json") -> dict:
         """Get detailed metrics for providers, groups, and system components.
 
-        For a quick health check, use hangar_health instead.
+        CHOOSE THIS when: debugging, performance analysis, Prometheus scraping, tool call stats.
+        CHOOSE hangar_health when: quick health check with security metrics.
+        CHOOSE hangar_status when: human-readable overview for display.
+
+        Side effects: None (read-only).
 
         Args:
-            format: "json" (default) or "prometheus".
-                Use "json" unless the user explicitly requests Prometheus format.
+            format: str - Output format: "json" or "prometheus" (default: "json")
 
         Returns:
-            For json: {providers, groups, tool_calls, discovery, errors, summary}
-            For prometheus: {metrics: "raw exposition format text"}
+            JSON format: {
+                providers: {<id>: {state, mode, tools_count, invocations, errors, avg_latency_ms}},
+                groups: {<id>: {state, strategy, total_members, healthy_members}},
+                tool_calls: {<provider.tool>: {count, errors}},
+                discovery: object,
+                errors: {<type>: int},
+                performance: object,
+                summary: {total_providers, total_groups, total_tool_calls, total_errors}
+            }
+            Prometheus format: {metrics: str}
 
         Example:
             hangar_metrics()
-            # Returns:
-            # {
-            #   "providers": {"math": {"state": "ready", "invocations": 42, "errors": 0}},
-            #   "tool_calls": {"math.add": {"count": 30, "errors": 0}},
-            #   "summary": {"total_tool_calls": 42, "total_errors": 0}
-            # }
+            # {"providers": {"math": {"state": "ready", "mode": "subprocess", "invocations": 42}},
+            #  "tool_calls": {"math.add": {"count": 30, "errors": 0}},
+            #  "summary": {"total_providers": 1, "total_tool_calls": 42, "total_errors": 0}}
+
+            hangar_metrics(format="prometheus")
+            # {"metrics": "# HELP mcp_hangar_tool_calls_total ...\\nmcp_hangar_tool_calls_total{...} 42"}
         """
         ctx = get_context()
 

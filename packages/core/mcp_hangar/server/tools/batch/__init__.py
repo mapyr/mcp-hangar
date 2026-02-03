@@ -55,63 +55,100 @@ def hangar_call(
     max_concurrency: int = DEFAULT_MAX_CONCURRENCY,
     timeout: float = DEFAULT_TIMEOUT,
     fail_fast: bool = False,
-    max_retries: int = 1,
+    max_attempts: int = 1,
 ) -> dict[str, Any]:
-    """Invoke tools on MCP providers.
+    """Invoke tools on MCP providers (single or batch).
 
-    The single entry point for all tool invocations. Supports single calls,
-    batch execution, retries, and timeouts. Cold providers auto-start.
+    CHOOSE THIS when: you want to execute tool(s) on provider(s). This is the main entry point.
+    CHOOSE hangar_tools when: you need to discover available tools before calling.
+    CHOOSE hangar_start when: you only want to pre-warm without invoking.
+
+    Side effects: May start cold providers. Executes calls in parallel.
 
     Args:
-        calls: List of invocations. Each call requires:
-            - provider: Provider ID or Group ID (routes to healthy member)
-            - tool: Tool name (use hangar_tools to discover available tools)
-            - arguments: Tool arguments as dict
-            - timeout: (optional) Per-call timeout in seconds
-        max_concurrency: Parallel workers, 1-20 (default: 10)
-        timeout: Batch timeout in seconds, 1-300 (default: 60)
-        fail_fast: Stop on first error (default: false, continues all calls)
-        max_retries: Retry attempts per call, 1-10 (default: 1 = no retry)
+        calls: list[{provider, tool, arguments, timeout?}] - Invocations to execute
+        max_concurrency: int - Parallel workers (default: 10, range: 1-20)
+        timeout: float - Batch timeout in seconds (default: 60, range: 1-300)
+        fail_fast: bool - Stop batch on first error (default: false)
+        max_attempts: int - Total attempts per call including retries (default: 1, range: 1-10)
 
     Returns:
-        - batch_id: UUID for tracing
-        - success: true if ALL calls succeeded
-        - total/succeeded/failed: Call counts
-        - elapsed_ms: Total time
-        - results: Per-call results with index, success, result/error
-            If a result is truncated due to size, it will have:
-            {"truncated": true, "continuation_id": "cont_..."}
-            Use hangar_fetch_continuation with that ID to get the full response.
+        Success: {
+            batch_id: str,
+            success: true,
+            total: int,
+            succeeded: int,
+            failed: int,
+            elapsed_ms: float,
+            results: [{
+                index: int,
+                call_id: str,
+                success: true,
+                result: any,
+                error: null,
+                error_type: null,
+                elapsed_ms: float
+            }]
+        }
+        Partial failure: {
+            batch_id: str,
+            success: false,
+            total: int,
+            succeeded: int,
+            failed: int,
+            elapsed_ms: float,
+            results: [{
+                index: int,
+                call_id: str,
+                success: bool,
+                result: any | null,
+                error: str | null,
+                error_type: str | null,
+                elapsed_ms: float,
+                retry_metadata?: {attempts: int, retries: list}
+            }]
+        }
+        Validation error: {
+            batch_id: str,
+            success: false,
+            error: "Validation failed",
+            validation_errors: [{index: int, field: str, message: str}]
+        }
+        Truncated result: Individual result contains additional fields:
+            {truncated: true, truncated_reason: str, original_size_bytes: int, continuation_id: str}
+            Retrieve full data with hangar_fetch_continuation(continuation_id).
 
     Example:
-        # Single call
+        # Single call - success
         hangar_call(calls=[{"provider": "math", "tool": "add", "arguments": {"a": 1, "b": 2}}])
-        # Returns:
-        # {
-        #   "batch_id": "...",
-        #   "success": true,
-        #   "total": 1, "succeeded": 1, "failed": 0,
-        #   "elapsed_ms": 45.2,
-        #   "results": [{"index": 0, "success": true, "result": 3, "elapsed_ms": 42.1}]
-        # }
+        # {"batch_id": "abc-123", "success": true, "total": 1, "succeeded": 1, "failed": 0,
+        #  "elapsed_ms": 45.2, "results": [{"index": 0, "call_id": "def-456",
+        #  "success": true, "result": 3, "error": null, "elapsed_ms": 42.1}]}
 
-        # Call via group (auto-routes to healthy member)
-        hangar_call(calls=[{"provider": "llm-group", "tool": "complete", "arguments": {"prompt": "Hi"}}])
+        # Validation error - unknown provider
+        hangar_call(calls=[{"provider": "unknown", "tool": "x", "arguments": {}}])
+        # {"batch_id": "abc-123", "success": false, "error": "Validation failed",
+        #  "validation_errors": [{"index": 0, "field": "provider", "message": "..."}]}
 
-        # Batch with retry
-        hangar_call(
-            calls=[
-                {"provider": "math", "tool": "add", "arguments": {"a": 1, "b": 2}},
-                {"provider": "math", "tool": "divide", "arguments": {"a": 10, "b": 0}}
-            ],
-            max_retries=3
-        )
-        # Returns: {"success": false, "succeeded": 1, "failed": 1, "results": [...]}
+        # Partial failure - some succeed, some fail
+        hangar_call(calls=[
+            {"provider": "math", "tool": "add", "arguments": {"a": 1, "b": 2}},
+            {"provider": "math", "tool": "divide", "arguments": {"a": 1, "b": 0}}
+        ])
+        # {"batch_id": "...", "success": false, "total": 2, "succeeded": 1, "failed": 1,
+        #  "results": [
+        #    {"index": 0, "success": true, "result": 3, ...},
+        #    {"index": 1, "success": false, "error": "division by zero", "error_type": "ValueError"}
+        #  ]}
+
+        # With retry - shows retry_metadata on failure
+        hangar_call(calls=[...], max_attempts=3)
+        # On failure: {"results": [{"retry_metadata": {"attempts": 3, "retries": [...]}, ...}]}
     """
     batch_id = str(uuid.uuid4())
 
-    # Clamp max_retries to valid range
-    max_retries = max(1, min(max_retries, 10))
+    # Clamp max_attempts to valid range
+    max_attempts = max(1, min(max_attempts, 10))
 
     logger.info(
         "hangar_call_requested",
@@ -120,7 +157,7 @@ def hangar_call(
         max_concurrency=max_concurrency,
         timeout=timeout,
         fail_fast=fail_fast,
-        max_retries=max_retries,
+        max_attempts=max_attempts,
     )
 
     # Handle empty batch
@@ -168,7 +205,7 @@ def hangar_call(
             tool=call["tool"],
             arguments=call["arguments"],
             timeout=call.get("timeout"),
-            max_retries=max_retries,
+            max_retries=max_attempts,  # Internal field uses max_retries
         )
         for i, call in enumerate(calls)
     ]

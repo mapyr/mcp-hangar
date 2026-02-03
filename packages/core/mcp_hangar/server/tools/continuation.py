@@ -31,42 +31,42 @@ def register_continuation_tools(mcp: FastMCP) -> None:
     ) -> dict:
         """Fetch full or remaining content from a truncated batch response.
 
-        When a batch response exceeds size limits, individual results may be
-        truncated and include a continuation_id. Use this tool to retrieve
-        the complete content.
+        CHOOSE THIS when: hangar_call returned truncated result with continuation_id.
+        CHOOSE hangar_delete_continuation when: done with data and want to free memory.
+        SKIP THIS when: result was not truncated (no continuation_id in response).
+
+        Side effects: None (read-only cache access).
 
         Args:
-            continuation_id: The continuation ID from the truncated response.
-            offset: Byte offset to start reading from (for paginated retrieval).
-            limit: Maximum bytes to retrieve (default: 500KB, max: 2MB).
+            continuation_id: str - ID from truncated response (starts with "cont_")
+            offset: int - Byte offset to start reading (default: 0)
+            limit: int - Max bytes to retrieve (default: 500000, max: 2000000)
 
         Returns:
-            Dictionary containing:
-            - found: Whether the continuation ID was found
-            - data: The response data (complete or partial)
-            - total_size_bytes: Total size of the full response
-            - offset: Starting offset of returned data
-            - has_more: Whether more data is available
-            - complete: Whether this retrieval is the complete response
-
-        Raises:
-            ValueError: If continuation_id is empty or limit exceeds maximum.
+            Success: {
+                found: true,
+                data: any,
+                total_size_bytes: int,
+                offset: int,
+                has_more: bool,
+                complete: bool
+            }
+            Not found: {found: false, error: str}
+            Cache unavailable: {found: false, error: str}
 
         Example:
-            # From a truncated batch response:
-            # {"truncated": true, "continuation_id": "cont_abc123_0_f8a2b3c4"}
+            hangar_fetch_continuation("cont_abc123_0_f8a2b3c4")
+            # {"found": true, "data": {"result": "full data here"}, "total_size_bytes": 1024,
+            #  "offset": 0, "has_more": false, "complete": true}
 
-            # Fetch the full content:
-            result = hangar_fetch_continuation("cont_abc123_0_f8a2b3c4")
+            hangar_fetch_continuation("cont_abc123_0_f8a2b3c4", offset=500000, limit=500000)
+            # {"found": true, "data": ..., "has_more": true, "complete": false, ...}
 
-            # For very large responses, paginate:
-            chunk1 = hangar_fetch_continuation("cont_abc123_0_f8a2b3c4", offset=0, limit=500000)
-            if chunk1["has_more"]:
-                chunk2 = hangar_fetch_continuation(
-                    "cont_abc123_0_f8a2b3c4",
-                    offset=500000,
-                    limit=500000
-                )
+            hangar_fetch_continuation("cont_expired")
+            # {"found": false, "error": "Continuation not found (may have expired)"}
+
+            hangar_fetch_continuation("cont_x")  # when truncation disabled
+            # {"found": false, "error": "Truncation cache not available (truncation may be disabled)"}
         """
         if not continuation_id:
             raise ValueError("continuation_id is required")
@@ -133,17 +133,28 @@ def register_continuation_tools(mcp: FastMCP) -> None:
     def hangar_delete_continuation(continuation_id: str) -> dict:
         """Delete a cached continuation to free resources.
 
-        Manually delete a cached full response before it expires.
-        This is optional - cached entries will automatically expire
-        based on the configured TTL.
+        CHOOSE THIS when: done with continuation data and want to free memory now.
+        SKIP THIS for normal use - cached entries auto-expire based on TTL.
+
+        Side effects: Removes the cached response from memory.
 
         Args:
-            continuation_id: The continuation ID to delete.
+            continuation_id: str - ID of cached continuation (starts with "cont_")
 
         Returns:
-            Dictionary containing:
-            - deleted: Whether the entry was successfully deleted
-            - continuation_id: The ID that was processed
+            Success: {deleted: true, continuation_id: str}
+            Not found: {deleted: false, continuation_id: str}
+            Cache unavailable: {deleted: false, continuation_id: str, error: str}
+
+        Example:
+            hangar_delete_continuation("cont_abc123_0_f8a2b3c4")
+            # {"deleted": true, "continuation_id": "cont_abc123_0_f8a2b3c4"}
+
+            hangar_delete_continuation("cont_nonexistent")
+            # {"deleted": false, "continuation_id": "cont_nonexistent"}
+
+            hangar_delete_continuation("cont_x")  # when truncation disabled
+            # {"deleted": false, "continuation_id": "cont_x", "error": "Truncation cache not available"}
         """
         if not continuation_id:
             raise ValueError("continuation_id is required")

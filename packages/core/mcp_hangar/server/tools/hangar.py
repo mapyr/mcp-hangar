@@ -67,7 +67,7 @@ def hangar_list(state_filter: str | None = None) -> dict:
             continue
         runtime_providers_list.append(
             {
-                "provider_id": str(provider.provider_id),
+                "provider": str(provider.provider_id),
                 "state": provider_state,
                 "source": metadata.source,
                 "verified": metadata.verified,
@@ -97,41 +97,52 @@ def register_hangar_tools(mcp: FastMCP) -> None:
         on_error=tool_error_hook,
     )
     def _hangar_list(state_filter: str | None = None) -> dict:
-        """List all managed providers and groups with exact values and metadata.
+        """List all providers and groups with precise numeric values.
 
-        Returns structured data with precise numeric values (e.g., last_used_ago_s: 142).
-        Use hangar_status instead when you need a pre-formatted dashboard for display.
+        CHOOSE THIS when: you need exact data for processing, filtering, or automation.
+        CHOOSE hangar_status when: you need human-readable dashboard with visual indicators.
+        CHOOSE hangar_group_list when: you need member-level details (rotation, weights).
 
-        For detailed per-member information about groups (rotation status, weights),
-        use hangar_group_list.
+        Side effects: None (read-only).
 
         Args:
-            state_filter: Filter by state. Valid values: "cold", "ready", "degraded", "dead".
-                Pass null or omit to list all providers regardless of state.
+            state_filter: str - Filter by state: "cold", "ready", "degraded", "dead" (default: null)
 
         Returns:
-            Dictionary with:
-            - providers: List of provider summaries
-            - groups: List of group summaries (use hangar_group_list for member details)
-            - runtime_providers: List of hot-loaded providers
+            {
+                providers: [{
+                    provider: str,
+                    state: str,
+                    mode: str,
+                    alive: bool,
+                    tools_count: int,
+                    health_status: str,
+                    tools_predefined: bool,
+                    description?: str
+                }],
+                groups: [{group_id, state, strategy, healthy_count, total_members, ...}],
+                runtime_providers: [{
+                    provider: str,
+                    state: str,
+                    source: str,
+                    verified: bool,
+                    ephemeral: bool,
+                    loaded_at: str,
+                    lifetime_seconds: float
+                }]
+            }
 
         Example:
             hangar_list()
-            # Returns:
-            # {
-            #   "providers": [
-            #     {"provider_id": "math", "state": "ready", "mode": "subprocess",
-            #      "tools_count": 3, "last_used_ago_s": 42},
-            #     {"provider_id": "sqlite", "state": "cold", "mode": "subprocess", "tools_count": 0}
-            #   ],
-            #   "groups": [
-            #     {"group_id": "llm-group", "state": "ready", "strategy": "round_robin",
-            #      "healthy_count": 2, "total_count": 3}
-            #   ],
-            #   "runtime_providers": []
-            # }
+            # {"providers": [{"provider": "math", "state": "ready", "mode": "subprocess",
+            #   "alive": true, "tools_count": 2, "health_status": "healthy"}],
+            #  "groups": [], "runtime_providers": []}
 
-            hangar_list(state_filter="ready")  # Only ready providers
+            hangar_list(state_filter="ready")
+            # Returns only providers/groups in "ready" state
+
+            hangar_list(state_filter="cold")
+            # {"providers": [{"provider": "sqlite", "state": "cold", "alive": false}], ...}
         """
         return hangar_list(state_filter)
 
@@ -145,30 +156,33 @@ def register_hangar_tools(mcp: FastMCP) -> None:
         on_error=lambda exc, ctx: tool_error_hook(exc, ctx),
     )
     def hangar_start(provider: str) -> dict:
-        """Explicitly start a provider or all members of a group.
+        """Start a provider or all members of a group.
 
-        Transitions provider from COLD to READY state. If already running,
-        returns current state. For groups, starts all members.
+        CHOOSE THIS when: you need to verify startup works or pre-warm a specific provider/group.
+        CHOOSE hangar_warm when: you need to pre-warm multiple providers at once.
+        CHOOSE hangar_call when: you want to invoke a tool (auto-starts cold providers).
+        SKIP THIS when: you just want to call a tool - hangar_call auto-starts providers.
 
-        Note: Providers auto-start on first hangar_call invocation.
-        Use hangar_start only to pre-warm or verify startup before invoking tools.
+        Side effects: Starts provider process/container. State changes from cold to ready.
 
         Args:
-            provider: Provider ID or Group ID to start.
+            provider: str - Provider ID or Group ID
 
         Returns:
-            For a provider: {provider, state, tools}
-            For a group: {group, state, members_started, healthy_count, total_members}
-
-            Returns an error if the provider or group ID is unknown.
+            Provider: {provider: str, state: str, tools: list[str]}
+            Group: {group: str, state: str, members_started: int, healthy_count: int, total_members: int}
+            Error: ValueError with "unknown_provider: <id>" or "unknown_group: <id>"
 
         Example:
             hangar_start("math")
-            # Returns: {"provider": "math", "state": "ready", "tools": ["add", "multiply"]}
+            # {"provider": "math", "state": "ready", "tools": ["add", "multiply"]}
 
             hangar_start("llm-group")
-            # Returns: {"group": "llm-group", "state": "ready", "members_started": 2,
-            #           "healthy_count": 2, "total_members": 3}
+            # {"group": "llm-group", "state": "ready", "members_started": 2,
+            #  "healthy_count": 2, "total_members": 3}
+
+            hangar_start("unknown")
+            # Error: unknown_provider: unknown
         """
         ctx = get_context()
 
@@ -202,27 +216,31 @@ def register_hangar_tools(mcp: FastMCP) -> None:
         on_error=lambda exc, ctx_dict: tool_error_hook(exc, ctx_dict),
     )
     def hangar_stop(provider: str) -> dict:
-        """Explicitly stop a provider or all members of a group.
+        """Stop a provider or all members of a group.
 
-        Transitions provider from READY to COLD, releasing resources.
-        The provider will auto-start on next hangar_call.
+        CHOOSE THIS when: you need to force restart or free resources immediately.
+        CHOOSE hangar_unload when: removing a hot-loaded provider permanently.
+        SKIP THIS when: "cleaning up" between calls - providers auto-manage via idle_ttl.
 
-        Do NOT stop providers between calls to "clean up" - they auto-manage
-        their lifecycle via idle_ttl. Use this only when you need to force
-        a restart or free resources immediately.
+        Side effects: Stops provider process/container. State changes to cold.
 
         Args:
-            provider: Provider ID or Group ID to stop.
+            provider: str - Provider ID or Group ID
 
         Returns:
-            For a provider: {stopped: "<provider_id>", reason: "manual"}
-            For a group: {group, state, stopped: true}
-
-            Returns an error if unknown.
+            Provider: {stopped: str, reason: str}
+            Group: {group: str, state: str, stopped: bool}
+            Error: ValueError with "unknown_provider: <id>"
 
         Example:
             hangar_stop("math")
-            # Returns: {"stopped": "math", "reason": "manual"}
+            # {"stopped": "math", "reason": "manual"}
+
+            hangar_stop("llm-group")
+            # {"group": "llm-group", "state": "cold", "stopped": true}
+
+            hangar_stop("unknown")
+            # Error: unknown_provider: unknown
         """
         ctx = get_context()
 
@@ -254,27 +272,33 @@ def register_hangar_tools(mcp: FastMCP) -> None:
         on_error=tool_error_hook,
     )
     def hangar_status() -> dict:
-        """Get a pre-formatted status dashboard of the MCP Registry.
+        """Get human-readable status dashboard of the registry.
 
-        Returns a dashboard with human-readable values (e.g., "2h 15m" instead of 8100).
-        Use hangar_list when you need exact numeric values.
+        CHOOSE THIS when: you need to display status to user or quick health overview.
+        CHOOSE hangar_list when: you need exact values for processing or filtering.
+        CHOOSE hangar_health when: you need system health with security metrics.
+
+        Side effects: None (read-only).
+
+        Args:
+            None
 
         Returns:
-            - providers/groups: Each has an "indicator" field with status:
-                [READY]=running, [IDLE]=cold, [STARTING]=initializing,
-                [DEGRADED]=unhealthy, [DEAD]=failed
-            - summary: Aggregated counts and uptime
-            - formatted: ASCII dashboard for display
+            {
+                providers: [{id: str, indicator: str, state: str, mode: str, last_used?: str}],
+                groups: [{id: str, indicator: str, state: str, healthy_members: int, total_members: int}],
+                runtime_providers: [{id: str, indicator: str, state: str, source: str, verified: bool}],
+                summary: {healthy_providers: int, total_providers: int, uptime: str, uptime_seconds: float},
+                formatted: str
+            }
+            Indicator values: [READY], [COLD], [STARTING], [DEGRADED], [DEAD]
 
         Example:
             hangar_status()
-            # Returns:
-            # {
-            #   "providers": [{"id": "math", "indicator": "[READY]", "state": "ready"}],
-            #   "groups": [{"id": "llm-group", "indicator": "[READY]", "healthy_members": 2}],
-            #   "summary": {"healthy_providers": 3, "total_providers": 4, "uptime": "2h 15m"},
-            #   "formatted": "..."
-            # }
+            # {"providers": [{"id": "math", "indicator": "[READY]", "state": "ready", "mode": "subprocess"}],
+            #  "groups": [], "runtime_providers": [],
+            #  "summary": {"healthy_providers": 1, "total_providers": 1, "uptime": "2h 15m"},
+            #  "formatted": "...ASCII dashboard..."}
         """
         ctx = get_context()
 
@@ -373,7 +397,7 @@ def _get_status_indicator(state: str) -> str:
     """Get visual indicator for provider state."""
     indicators = {
         "ready": "[READY]",
-        "cold": "[IDLE]",
+        "cold": "[COLD]",
         "starting": "[STARTING]",
         "degraded": "[DEGRADED]",
         "dead": "[DEAD]",
@@ -468,34 +492,39 @@ def register_load_tools(mcp: FastMCP) -> None:
     async def hangar_load(name: str, force_unverified: bool = False) -> dict:
         """Load an MCP provider from the official registry at runtime.
 
-        Dynamically adds provider capabilities without server restart.
-        Loaded providers are ephemeral and do not persist across restarts.
+        CHOOSE THIS when: you need a capability not in configured providers.
+        CHOOSE hangar_start when: provider is already configured, just needs starting.
+        CHOOSE hangar_call when: provider is configured and you want to invoke it directly.
+        NOTE: Loaded providers are ephemeral (lost on restart). Browse: https://mcp.so/servers
 
-        To browse available providers, visit: https://mcp.so/servers
-        You can search by name, category, or functionality.
+        Side effects: Downloads and starts provider process. Adds to runtime registry.
 
         Args:
-            name: Provider name from the registry. Supports:
-                - Exact ID: "mcp-server-time"
-                - Short name: "time", "stripe", "github"
-                - Partial match: returns error with suggestions if ambiguous
-            force_unverified: Load unverified providers (security risk).
+            name: str - Provider name from registry (e.g., "time", "stripe", "mcp-server-github")
+            force_unverified: bool - Allow loading unverified providers (default: false)
 
         Returns:
-            - status: "loaded", "already_loaded", "not_found", "ambiguous",
-                "unverified", "missing_secrets", or "failed"
-            - provider_id: The provider ID (if loaded)
-            - tools: Available tool names (if loaded)
-            - matches: List of matching names (if ambiguous)
-            - missing: Required secrets not set (if missing_secrets)
-            - instructions: Setup instructions (if missing_secrets)
+            Success: {status: "loaded", provider: str, tools: list[str]}
+            Ambiguous: {status: "ambiguous", message: str, matches: list[str]}
+            Not found: {status: "not_found", message: str}
+            Missing secrets: {status: "missing_secrets", provider_name: str, missing: list[str], instructions: str}
+            Unverified: {status: "unverified", provider_name: str, message: str, instructions: str}
+            Not configured: {status: "failed", message: str}
 
         Example:
             hangar_load("time")
-            # Returns: {"status": "loaded", "provider_id": "mcp-server-time", "tools": ["get_current_time"]}
+            # {"status": "loaded", "provider_id": "mcp-server-time", "tools": ["get_current_time"]}
 
             hangar_load("sql")
-            # Returns: {"status": "ambiguous", "matches": ["mcp-server-sqlite", "mcp-server-postgres"]}
+            # {"status": "ambiguous", "message": "Multiple providers match 'sql'",
+            #  "matches": ["mcp-server-sqlite", "mcp-server-postgres"]}
+
+            hangar_load("stripe")
+            # {"status": "missing_secrets", "missing": ["STRIPE_API_KEY"],
+            #  "instructions": "Set STRIPE_API_KEY environment variable"}
+
+            hangar_load("untrusted-tool")
+            # {"status": "unverified", "instructions": "Use force_unverified=True to load"}
         """
         ctx = get_context()
 
@@ -549,31 +578,37 @@ def register_load_tools(mcp: FastMCP) -> None:
     @mcp.tool(name="hangar_unload")
     @mcp_tool_wrapper(
         tool_name="hangar_unload",
-        rate_limit_key=lambda provider_id=None, **kw: f"hangar_unload:{provider_id}",
+        rate_limit_key=lambda provider=None, **kw: f"hangar_unload:{provider}",
         check_rate_limit=check_rate_limit,
-        validate=lambda provider_id=None, **kw: validate_provider_id_input(provider_id),
+        validate=lambda provider=None, **kw: validate_provider_id_input(provider),
         error_mapper=lambda exc: tool_error_mapper(exc),
         on_error=tool_error_hook,
     )
-    def hangar_unload(provider_id: str) -> dict:
+    def hangar_unload(provider: str) -> dict:
         """Unload a hot-loaded provider.
 
-        Removes a provider loaded via hangar_load. Only hot-loaded providers
-        can be unloaded; for configured providers, use hangar_stop instead.
+        CHOOSE THIS when: removing a provider loaded via hangar_load.
+        CHOOSE hangar_stop when: stopping a configured provider (will auto-restart on call).
+        NOTE: Only works for hot-loaded providers, not configured ones.
+
+        Side effects: Stops provider process. Removes from runtime registry.
 
         Args:
-            provider_id: The provider ID to unload.
+            provider: str - Provider ID (from hangar_load result)
 
         Returns:
-            - status: "unloaded" or "not_hot_loaded"
-            - provider_id: The provider ID
-            - lifetime_seconds: How long it was loaded
-
-            Returns an error if the provider was not hot-loaded.
+            Success: {status: "unloaded", provider: str, message: str, lifetime_seconds: float}
+            Not hot-loaded: {status: "not_hot_loaded", provider: str, message: str}
+            Not configured: {status: "failed", message: str}
 
         Example:
             hangar_unload("mcp-server-time")
-            # Returns: {"status": "unloaded", "provider_id": "mcp-server-time", "lifetime_seconds": 3600}
+            # {"status": "unloaded", "provider": "mcp-server-time",
+            #  "message": "Successfully unloaded 'mcp-server-time'", "lifetime_seconds": 3600}
+
+            hangar_unload("math")
+            # {"status": "not_hot_loaded", "provider": "math",
+            #  "message": "Provider 'math' was not hot-loaded. Use hangar_stop for configured providers."}
         """
         ctx = get_context()
 
@@ -584,7 +619,7 @@ def register_load_tools(mcp: FastMCP) -> None:
             }
 
         command = UnloadProviderCommand(
-            provider_id=provider_id,
+            provider_id=provider,
             user_id=None,
         )
 
@@ -592,14 +627,14 @@ def register_load_tools(mcp: FastMCP) -> None:
             result = ctx.unload_provider_handler.handle(command)
             return {
                 "status": "unloaded",
-                "provider_id": provider_id,
-                "message": f"Successfully unloaded '{provider_id}'",
+                "provider": provider,
+                "message": f"Successfully unloaded '{provider}'",
                 "lifetime_seconds": result.get("lifetime_seconds", 0),
             }
 
         except ProviderNotHotLoadedError:
             return {
                 "status": "not_hot_loaded",
-                "provider_id": provider_id,
-                "message": f"Provider '{provider_id}' was not hot-loaded. Use hangar_stop for configured providers.",
+                "provider": provider,
+                "message": f"Provider '{provider}' was not hot-loaded. Use hangar_stop for configured providers.",
             }

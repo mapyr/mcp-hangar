@@ -53,7 +53,7 @@ class HangarLoadResult:
             "message": self.message,
         }
         if self.provider_id:
-            result["provider_id"] = self.provider_id
+            result["provider"] = self.provider_id  # Normalized key name
         if self.provider_name:
             result["provider_name"] = self.provider_name
         if self.tools is not None:
@@ -72,7 +72,7 @@ class HangarUnloadResult:
 
     Attributes:
         status: Result status ("unloaded", "not_found", "not_hot_loaded").
-        provider_id: Provider ID that was unloaded.
+        provider_id: Provider ID that was unloaded (internal field).
         message: Human-readable message.
         lifetime_seconds: How long the provider was loaded.
     """
@@ -86,7 +86,7 @@ class HangarUnloadResult:
         """Convert to dictionary for MCP response."""
         return {
             "status": self.status,
-            "provider_id": self.provider_id,
+            "provider": self.provider_id,  # Normalized key name
             "message": self.message,
             "lifetime_seconds": round(self.lifetime_seconds, 1),
         }

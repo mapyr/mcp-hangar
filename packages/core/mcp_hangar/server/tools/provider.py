@@ -95,41 +95,42 @@ def register_provider_tools(mcp: FastMCP) -> None:
         on_error=lambda exc, ctx: tool_error_hook(exc, ctx),
     )
     def hangar_tools(provider: str) -> dict:
-        """Get tool schemas for a provider.
+        """Get tool schemas (JSON Schema) for a provider.
 
-        Returns JSON Schema definitions for all tools. Use this to discover
-        available tools and their parameters before calling hangar_call.
+        CHOOSE THIS when: you need tool names and input schemas before calling.
+        CHOOSE hangar_details when: you need provider config, health, or runtime info.
+        CHOOSE hangar_call when: you already know the tool name and want to invoke it.
 
-        Note: If the provider is COLD, this will start it to discover tools.
+        Side effects: May start a cold provider to discover tools.
 
         Args:
-            provider: Provider ID or Group ID. For groups, selects a healthy member.
+            provider: str - Provider ID or Group ID
 
         Returns:
-            Returns an error if provider or group ID is unknown.
+            Provider: {
+                provider: str,
+                state: str,
+                predefined: bool,
+                tools: [{name: str, description: str, inputSchema: object}]
+            }
+            Group: {
+                provider: str,
+                group: true,
+                tools: [{name: str, description: str, inputSchema: object}]
+            }
+            Error: ValueError with "unknown_provider: <id>" or "no_healthy_members_in_group: <id>"
 
         Example:
             hangar_tools("math")
-            # Returns:
-            # {
-            #   "provider": "math",
-            #   "state": "ready",
-            #   "predefined": false,
-            #   "tools": [
-            #     {
-            #       "name": "add",
-            #       "description": "Add two numbers",
-            #       "inputSchema": {
-            #         "type": "object",
-            #         "properties": {"a": {"type": "number"}, "b": {"type": "number"}},
-            #         "required": ["a", "b"]
-            #       }
-            #     }
-            #   ]
-            # }
+            # {"provider": "math", "state": "ready", "predefined": false,
+            #  "tools": [{"name": "add", "description": "Add two numbers",
+            #             "inputSchema": {"properties": {"a": {"type": "number"}, "b": {"type": "number"}}}}]}
 
             hangar_tools("llm-group")
-            # Returns tools from a healthy group member, with "group": true
+            # {"provider": "llm-group", "group": true, "tools": [...]}
+
+            hangar_tools("unknown")
+            # Error: unknown_provider: unknown
         """
         ctx = get_context()
 
@@ -153,23 +154,52 @@ def register_provider_tools(mcp: FastMCP) -> None:
     def hangar_details(provider: str) -> dict:
         """Get configuration and runtime info for a provider or group.
 
-        Does not start the provider or modify any state.
+        CHOOSE THIS when: you need provider config, health history, or group membership.
+        CHOOSE hangar_tools when: you need tool schemas for invoking.
+        CHOOSE hangar_status when: you need quick overview of all providers.
+
+        Side effects: None (read-only).
 
         Args:
-            provider: Provider ID or Group ID.
+            provider: str - Provider ID or Group ID
 
         Returns:
-            For providers: {provider, state, mode, alive, tools, health, idle_time, meta}
-            For groups: {group_id, state, strategy, members, healthy_count, total_count}
-            Returns an error if unknown.
+            Provider: {
+                provider: str,
+                state: str,
+                mode: str,
+                alive: bool,
+                tools: [{name, description, inputSchema}],
+                health: {consecutive_failures: int, last_check: str, ...},
+                idle_time: float,
+                meta: object
+            }
+            Group: {
+                group_id: str,
+                description: str,
+                state: str,
+                strategy: str,
+                min_healthy: int,
+                healthy_count: int,
+                total_members: int,
+                is_available: bool,
+                circuit_open: bool,
+                members: [{id, state, in_rotation, weight, priority, consecutive_failures}]
+            }
+            Error: ValueError with "unknown_provider: <id>"
 
         Example:
             hangar_details("math")
-            # Returns: {"provider": "math", "state": "ready", "mode": "subprocess",
-            #           "alive": true, "tools": [...], "health": {...}, "idle_time": 0.0}
+            # {"provider": "math", "state": "ready", "mode": "subprocess",
+            #  "alive": true, "tools": [...], "health": {"consecutive_failures": 0},
+            #  "idle_time": 12.5, "meta": {}}
 
             hangar_details("llm-group")
-            # Returns: {"group_id": "llm-group", "members": [...], "healthy_count": 2}
+            # {"group_id": "llm-group", "state": "ready", "strategy": "round_robin",
+            #  "healthy_count": 2, "total_members": 3, "members": [...]}
+
+            hangar_details("unknown")
+            # Error: unknown_provider: unknown
         """
         ctx = get_context()
 
@@ -194,23 +224,37 @@ def register_provider_tools(mcp: FastMCP) -> None:
     def hangar_warm(providers: str | None = None) -> dict:
         """Pre-start providers to avoid cold start latency on first hangar_call.
 
+        CHOOSE THIS when: warming multiple providers before latency-sensitive batch.
+        CHOOSE hangar_start when: starting a specific provider or group.
+        CHOOSE hangar_call when: invoking tools (auto-starts, latency acceptable).
+        SKIP THIS for normal use - hangar_call auto-starts providers.
+
+        Side effects: Starts specified provider processes. Groups are skipped.
+
         Args:
-            providers: Comma-separated provider IDs (e.g., "math,sqlite").
-                Omit or pass null to warm ALL configured providers.
-                Groups are skipped (use hangar_start for groups).
+            providers: str - Comma-separated provider IDs, or null to warm all
 
         Returns:
-            - warmed: Provider IDs that were started
-            - already_warm: Provider IDs that were already running
-            - failed: List of {id, error} for providers that failed
-            - summary: Human-readable summary
+            {
+                warmed: list[str],
+                already_warm: list[str],
+                failed: list[{id: str, error: str}],
+                summary: str
+            }
 
         Example:
             hangar_warm("math,sqlite")
-            # Returns: {"warmed": ["math"], "already_warm": ["sqlite"], "failed": [], "summary": "Warmed 1..."}
+            # {"warmed": ["math"], "already_warm": ["sqlite"], "failed": [],
+            #  "summary": "Warmed 1 providers, 1 already warm, 0 failed"}
+
+            hangar_warm("unknown,math")
+            # {"warmed": ["math"], "already_warm": [],
+            #  "failed": [{"id": "unknown", "error": "Provider not found"}],
+            #  "summary": "Warmed 1 providers, 0 already warm, 1 failed"}
 
             hangar_warm()
-            # Warms all configured providers
+            # {"warmed": ["math", "sqlite"], "already_warm": [], "failed": [],
+            #  "summary": "Warmed 2 providers, 0 already warm, 0 failed"}
         """
         ctx = get_context()
 

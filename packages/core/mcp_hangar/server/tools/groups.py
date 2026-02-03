@@ -25,32 +25,42 @@ def register_group_tools(mcp: FastMCP) -> None:
     def hangar_group_list() -> dict:
         """List all provider groups with per-member details.
 
-        Use this instead of hangar_list when you need member-level information:
-        rotation status, weights, and individual member states.
+        CHOOSE THIS when: you need member-level details (rotation, weights, individual states).
+        CHOOSE hangar_list when: you need group summaries with provider list.
+        CHOOSE hangar_details when: you need full info for a specific group.
 
-        hangar_list returns group summaries (healthy_count, total_count).
-        hangar_group_list returns full member breakdown.
+        Side effects: None (read-only).
+
+        Args:
+            None
 
         Returns:
-            - groups: List of groups with member details
+            {
+                groups: [{
+                    group_id: str,
+                    description: str,
+                    state: str,
+                    strategy: str,
+                    min_healthy: int,
+                    healthy_count: int,
+                    total_members: int,
+                    is_available: bool,
+                    circuit_open: bool,
+                    members: [{id, state, in_rotation, weight, priority, consecutive_failures}]
+                }]
+            }
 
         Example:
             hangar_group_list()
-            # Returns:
-            # {
-            #   "groups": [{
-            #     "group_id": "llm-group",
-            #     "state": "ready",
-            #     "strategy": "round_robin",
-            #     "healthy_count": 2,
-            #     "total_count": 3,
-            #     "members": [
-            #       {"id": "llm-1", "state": "ready", "in_rotation": true, "weight": 1},
-            #       {"id": "llm-2", "state": "ready", "in_rotation": true, "weight": 2},
-            #       {"id": "llm-3", "state": "degraded", "in_rotation": false, "weight": 1}
-            #     ]
-            #   }]
-            # }
+            # {"groups": [{"group_id": "llm-group", "state": "ready", "strategy": "round_robin",
+            #   "healthy_count": 2, "total_members": 3, "members": [
+            #     {"id": "llm-1", "state": "ready", "in_rotation": true, "weight": 1},
+            #     {"id": "llm-2", "state": "ready", "in_rotation": true, "weight": 1},
+            #     {"id": "llm-3", "state": "degraded", "in_rotation": false, "weight": 1}
+            #   ]}]}
+
+            hangar_group_list()  # when no groups configured
+            # {"groups": []}
         """
         ctx = get_context()
         return {"groups": [group.to_status_dict() for group in ctx.groups.values()]}
@@ -65,28 +75,34 @@ def register_group_tools(mcp: FastMCP) -> None:
         on_error=lambda exc, ctx_dict: tool_error_hook(exc, ctx_dict),
     )
     def hangar_group_rebalance(group: str) -> dict:
-        """Force rebalancing for a group.
+        """Force rebalancing for a provider group.
 
-        Re-checks all members and updates rotation: recovered members rejoin,
-        failed members are removed. Rebalancing happens automatically on
-        health failures, but use this after manual intervention.
+        CHOOSE THIS when: after manual intervention, or to recover members faster than auto.
+        CHOOSE hangar_start when: starting all group members from cold state.
+        SKIP THIS for normal operation - rebalancing happens automatically on health failures.
+
+        Side effects: Re-checks all members. Recovered members rejoin rotation, failed removed.
 
         Args:
-            group: Group ID to rebalance.
+            group: str - Group ID
 
         Returns:
-            Returns an error if group ID is unknown.
+            {
+                group_id: str,
+                state: str,
+                healthy_count: int,
+                total_members: int,
+                members_in_rotation: list[str]
+            }
+            Error: ValueError with "unknown_group: <id>"
 
         Example:
             hangar_group_rebalance("llm-group")
-            # Returns:
-            # {
-            #   "group_id": "llm-group",
-            #   "state": "ready",
-            #   "healthy_count": 2,
-            #   "total_members": 3,
-            #   "members_in_rotation": ["llm-1", "llm-2"]
-            # }
+            # {"group_id": "llm-group", "state": "ready", "healthy_count": 2,
+            #  "total_members": 3, "members_in_rotation": ["llm-1", "llm-2"]}
+
+            hangar_group_rebalance("unknown")
+            # Error: unknown_group: unknown
         """
         ctx = get_context()
 

@@ -817,12 +817,12 @@ class TestHangarCallTool:
         assert result["results"][0]["success"] is True
 
     def test_single_call_with_retry_param(self, mock_all):
-        """Single call with max_retries parameter."""
+        """Single call with max_attempts parameter."""
         result = hangar_call(
             calls=[
                 {"provider": "math", "tool": "add", "arguments": {"a": 1, "b": 2}},
             ],
-            max_retries=3,
+            max_attempts=3,
         )
 
         assert result["success"] is True
@@ -844,19 +844,19 @@ class TestHangarCallTool:
         assert result["failed"] == 0
         assert len(result["results"]) == 2
 
-    def test_max_retries_clamped_to_valid_range(self, mock_all):
-        """max_retries is clamped to valid range (1-10)."""
+    def test_max_attempts_clamped_to_valid_range(self, mock_all):
+        """max_attempts is clamped to valid range (1-10)."""
         # Too low - should clamp to 1
         result = hangar_call(
             calls=[{"provider": "math", "tool": "add", "arguments": {}}],
-            max_retries=0,
+            max_attempts=0,
         )
         assert result["success"] is True
 
         # Too high - should clamp to 10
         result = hangar_call(
             calls=[{"provider": "math", "tool": "add", "arguments": {}}],
-            max_retries=100,
+            max_attempts=100,
         )
         assert result["success"] is True
 
@@ -970,7 +970,7 @@ class TestRetryFunctionality:
 
         result = hangar_call(
             calls=[{"provider": "math", "tool": "add", "arguments": {}}],
-            max_retries=5,
+            max_attempts=5,
         )
 
         assert result["success"] is True
@@ -990,7 +990,7 @@ class TestRetryFunctionality:
 
         result = hangar_call(
             calls=[{"provider": "math", "tool": "add", "arguments": {}}],
-            max_retries=3,
+            max_attempts=3,
         )
 
         assert result["success"] is False
@@ -1005,8 +1005,8 @@ class TestRetryFunctionality:
         # But our RetryMetadata.attempts shows the attempt_count from RetryResult
         assert call_result["retry_metadata"]["attempts"] >= 2  # At least 2 recorded attempts
 
-    def test_no_retry_when_max_retries_is_one(self, mock_with_retry):
-        """No retry when max_retries is 1 (default)."""
+    def test_no_retry_when_max_attempts_is_one(self, mock_with_retry):
+        """No retry when max_attempts is 1 (default)."""
         ctx, mock_provider = mock_with_retry
 
         call_count = [0]
@@ -1021,7 +1021,7 @@ class TestRetryFunctionality:
 
         result = hangar_call(
             calls=[{"provider": "math", "tool": "add", "arguments": {}}],
-            max_retries=1,  # No retry
+            max_attempts=1,  # No retry
         )
 
         # Should fail since no retry
@@ -1047,7 +1047,7 @@ class TestRetryFunctionality:
 
         result = hangar_call(
             calls=[{"provider": "math", "tool": "add", "arguments": {}}],
-            max_retries=5,
+            max_attempts=5,
         )
 
         assert result["success"] is True

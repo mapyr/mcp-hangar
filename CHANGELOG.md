@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.5] - 2026-02-03
+
+### Added
+
+- **Metrics Population**: Prometheus metrics now emit data from domain events
+  - Provider state metrics: `mcp_hangar_provider_state`, `mcp_hangar_provider_up`, `mcp_hangar_provider_starts_total`, `mcp_hangar_provider_stops_total`
+  - Tool call metrics: `mcp_hangar_tool_calls_total`, `mcp_hangar_tool_call_duration_seconds`, `mcp_hangar_tool_call_errors_total`
+  - Health check metrics: `mcp_hangar_health_checks_total`, `mcp_hangar_health_check_duration_seconds`, `mcp_hangar_health_check_consecutive_failures`
+  - Rate limiter metrics: `mcp_hangar_rate_limit_hits_total`
+  - HTTP client metrics: `mcp_hangar_http_requests_total`, `mcp_hangar_http_request_duration_seconds`, `mcp_hangar_http_errors_total`
+  - `MetricsEventHandler` bridges domain events to Prometheus
+  - HTTP client instrumented with provider label support
+
+### Fixed
+
+- Metrics that were defined but never populated now emit data correctly
+- Tool descriptions improved for LLM clarity (previous commit in 0.6.4)
+
+## [0.6.4] - 2026-02-03
+
+### Added
+
+- **Observability Bootstrap Integration**: Tracing and Langfuse initialization during application startup
+  - New `observability.py` module in bootstrap package
+  - OpenTelemetry tracing initialized during bootstrap
+  - Langfuse adapter initialization during bootstrap
+  - `ObservabilityAdapter` stored in `ApplicationContext`
+  - Proper shutdown sequence for tracing and Langfuse
+
+### Changed
+
+- **Alerts**: Reduced from 28 to 19 alerts (removed 9 using non-existent metrics)
+  - Added: `MCPHangarCircuitBreakerTripped`, `MCPHangarProviderUnhealthy`, `MCPHangarHealthCheckSlow`
+  - Adjusted thresholds: P95 latency 5s->3s, P99 10s->5s, batch slow 60s->30s
+  - Removed alerts referencing `provider_state`, `provider_up`, `discovery_*` (not yet populated)
+
+### Documentation
+
+- Complete rewrite of `docs/guides/OBSERVABILITY.md`
+  - Documented "Currently Exported Metrics" vs "Metrics Not Yet Implemented"
+  - Updated alert tables to match actual `alerts.yaml`
+  - Fixed PromQL examples with correct metric names
+  - Added production readiness checklist
+
+### Added (Dashboards)
+
+- New `alerts.json` Grafana dashboard for alert monitoring
+- New `provider-details.json` Grafana dashboard for per-provider deep dive
+
 ## [0.6.3] - 2026-02-01
 
 ### Added
@@ -582,7 +631,9 @@ The following items are documented technical debt introduced to enable CI:
 - Rate limiting to prevent denial of service
 - Audit logging for security-relevant events
 
-[Unreleased]: https://github.com/mapyr/mcp-hangar/compare/v0.6.3...HEAD
+[Unreleased]: https://github.com/mapyr/mcp-hangar/compare/v0.6.5...HEAD
+[0.6.5]: https://github.com/mapyr/mcp-hangar/compare/v0.6.4...v0.6.5
+[0.6.4]: https://github.com/mapyr/mcp-hangar/compare/v0.6.3...v0.6.4
 [0.6.3]: https://github.com/mapyr/mcp-hangar/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/mapyr/mcp-hangar/compare/v0.6.0...v0.6.2
 [0.6.0]: https://github.com/mapyr/mcp-hangar/compare/v0.5.0...v0.6.0
