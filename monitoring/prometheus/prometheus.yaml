@@ -1,8 +1,12 @@
 # Prometheus configuration for MCP Hangar monitoring
+# Updated: 2026-02-03
 
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
+  external_labels:
+    environment: 'development'
+    cluster: 'local'
 
 # Alertmanager configuration
 alerting:
@@ -17,25 +21,52 @@ rule_files:
 
 # Scrape configs
 scrape_configs:
-  # MCP Hangar metrics
+  # ==========================================================================
+  # MCP Hangar - Primary target
+  # ==========================================================================
   - job_name: 'mcp-hangar'
     static_configs:
       - targets: ['host.docker.internal:8000']
+        labels:
+          service: 'mcp-hangar'
+          tier: 'application'
     metrics_path: /metrics
     scrape_interval: 10s
     scrape_timeout: 5s
+    # Relabel to add instance name
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: 'host.docker.internal:(.*)'
+        replacement: 'mcp-hangar:${1}'
 
+  # ==========================================================================
   # Prometheus self-monitoring
+  # ==========================================================================
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+          tier: 'monitoring'
 
-  # Node exporter (optional - for host metrics)
-  - job_name: 'node'
+  # ==========================================================================
+  # Alertmanager
+  # ==========================================================================
+  - job_name: 'alertmanager'
     static_configs:
-      - targets: ['node-exporter:9100']
+      - targets: ['alertmanager:9093']
+        labels:
+          service: 'alertmanager'
+          tier: 'monitoring'
 
-  # cAdvisor (optional - for container metrics)
-  - job_name: 'cadvisor'
+  # ==========================================================================
+  # Grafana
+  # ==========================================================================
+  - job_name: 'grafana'
     static_configs:
-      - targets: ['cadvisor:8080']
+      - targets: ['grafana:3000']
+        labels:
+          service: 'grafana'
+          tier: 'monitoring'
+    metrics_path: /metrics

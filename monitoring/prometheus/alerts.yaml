@@ -1,35 +1,19 @@
 # MCP Hangar Alert Rules
 # Critical alerts page on-call, warnings notify via Slack/email
+#
+# Metric prefix: mcp_hangar_*
+# Updated: 2026-02-03
+#
+# NOTE: Some alerts are commented out because the corresponding metrics
+# are not yet populated by MCP Hangar. Uncomment when metrics are implemented.
 
 groups:
+  # ============================================================================
+  # CRITICAL ALERTS - Page on-call immediately
+  # ============================================================================
   - name: mcp-hangar-critical
     rules:
-      - alert: MCPHangarAllProvidersDown
-        expr: sum(mcp_registry_provider_state{state="ready"}) == 0 and sum(mcp_registry_provider_state) > 0
-        for: 1m
-        labels:
-          severity: critical
-        annotations:
-          summary: "All MCP providers are down"
-          description: "No providers in ready state"
-
-      - alert: MCPHangarHighErrorRate
-        expr: (rate(mcp_registry_errors_total[5m]) / (rate(mcp_registry_tool_calls_total[5m]) + 0.001)) > 0.1
-        for: 2m
-        labels:
-          severity: critical
-        annotations:
-          summary: "Error rate > 10%"
-          description: "Error rate: {{ $value | humanizePercentage }}"
-
-      - alert: MCPHangarCircuitBreakerOpen
-        expr: mcp_registry_circuit_breaker_state == 1
-        for: 0m
-        labels:
-          severity: critical
-        annotations:
-          summary: "Circuit breaker open for {{ $labels.provider }}"
-
+      # --- Availability ---
       - alert: MCPHangarNotResponding
         expr: up{job="mcp-hangar"} == 0
         for: 1m
@@ -37,80 +21,256 @@ groups:
           severity: critical
         annotations:
           summary: "MCP Hangar not responding"
-          description: "Cannot scrape metrics"
+          description: "Cannot scrape metrics from MCP Hangar instance"
+          runbook_url: "https://docs.mcp-hangar.io/runbooks/not-responding"
 
-      - alert: MCPHangarStartupFailed
-        expr: mcp_registry_provider_state{state="dead"} == 1 and on(provider) increase(mcp_registry_cold_starts_total[5m]) > 3
+      # --- Error Rate ---
+      - alert: MCPHangarHighErrorRate
+        expr: |
+          (
+            sum(rate(mcp_hangar_tool_call_errors_total[5m]))
+            / (sum(rate(mcp_hangar_tool_calls_total[5m])) + 0.001)
+          ) > 0.1
         for: 2m
         labels:
           severity: critical
         annotations:
-          summary: "Provider {{ $labels.provider }} repeatedly failing to start"
+          summary: "Tool call error rate > 10%"
+          description: "Error rate: {{ $value | humanizePercentage }}"
+          runbook_url: "https://docs.mcp-hangar.io/runbooks/high-error-rate"
 
+      # --- Batch Critical ---
+      - alert: MCPHangarBatchHighFailureRate
+        expr: |
+          (
+            sum(rate(mcp_hangar_batch_calls_total{result="failure"}[5m]))
+            / (sum(rate(mcp_hangar_batch_calls_total[5m])) + 0.001)
+          ) > 0.2
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Batch invocation failure rate > 20%"
+          description: "Batch failure rate: {{ $value | humanizePercentage }}"
+          runbook_url: "https://docs.mcp-hangar.io/runbooks/batch-failures"
+
+      # --- Circuit Breaker ---
+      - alert: MCPHangarCircuitBreakerTripped
+        expr: |
+          increase(mcp_hangar_batch_circuit_breaker_rejections_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Circuit breaker rejecting requests"
+          description: "{{ $value }} requests rejected by circuit breaker in last 5m"
+          runbook_url: "https://docs.mcp-hangar.io/runbooks/circuit-breaker"
+
+      # --- Health Check Critical ---
+      - alert: MCPHangarProviderUnhealthy
+        expr: mcp_hangar_health_check_consecutive_failures > 5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Provider {{ $labels.provider }} critically unhealthy"
+          description: "{{ $value }} consecutive health check failures"
+          runbook_url: "https://docs.mcp-hangar.io/runbooks/provider-unhealthy"
+
+  # ============================================================================
+  # WARNING ALERTS - Notify via Slack/email
+  # ============================================================================
   - name: mcp-hangar-warning
     rules:
-      - alert: MCPHangarProviderDegraded
-        expr: mcp_registry_provider_state{state="degraded"} == 1
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "Provider {{ $labels.provider }} degraded"
-
-      - alert: MCPHangarHighLatencyP95
-        expr: histogram_quantile(0.95, rate(mcp_registry_tool_call_duration_seconds_bucket[5m])) > 5
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "P95 latency > 5s"
-          description: "P95: {{ $value | humanizeDuration }}"
-
-      - alert: MCPHangarFrequentColdStarts
-        expr: rate(mcp_registry_cold_starts_total[15m]) > 0.1
-        for: 10m
-        labels:
-          severity: warning
-        annotations:
-          summary: "Frequent cold starts - consider increasing idle TTL"
-
-      - alert: MCPHangarDiscoverySourceUnhealthy
-        expr: mcp_registry_discovery_sources_healthy == 0
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "Discovery source {{ $labels.source_type }} unhealthy"
-
+      # --- Provider Health ---
       - alert: MCPHangarHighConsecutiveFailures
-        expr: mcp_registry_health_check_consecutive_failures > 2
+        expr: mcp_hangar_health_check_consecutive_failures > 2
         for: 2m
         labels:
           severity: warning
         annotations:
-          summary: "Provider {{ $labels.provider }} has {{ $value }} consecutive failures"
+          summary: "Provider {{ $labels.provider }} failing health checks"
+          description: "{{ $value }} consecutive health check failures"
+          runbook_url: "https://docs.mcp-hangar.io/runbooks/health-failures"
 
-      - alert: MCPHangarLowAvailability
-        expr: (sum(mcp_registry_provider_state{state="ready"}) / sum(mcp_registry_provider_state)) < 0.8
+      - alert: MCPHangarHealthCheckSlow
+        expr: |
+          histogram_quantile(0.95, sum(rate(mcp_hangar_health_check_duration_seconds_bucket[5m])) by (le, provider))
+          > 5
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "Availability below 80%"
-          description: "{{ $value | humanizePercentage }} providers ready"
+          summary: "Slow health checks for {{ $labels.provider }}"
+          description: "P95 health check duration: {{ $value | humanizeDuration }}"
 
+      # --- Latency ---
+      - alert: MCPHangarHighLatencyP95
+        expr: |
+          histogram_quantile(0.95, sum(rate(mcp_hangar_tool_call_duration_seconds_bucket[5m])) by (le))
+          > 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Tool call P95 latency > 3s"
+          description: "P95 latency: {{ $value | humanizeDuration }}"
+          runbook_url: "https://docs.mcp-hangar.io/runbooks/high-latency"
+
+      - alert: MCPHangarHighLatencyP99
+        expr: |
+          histogram_quantile(0.99, sum(rate(mcp_hangar_tool_call_duration_seconds_bucket[5m])) by (le))
+          > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Tool call P99 latency > 5s"
+          description: "P99 latency: {{ $value | humanizeDuration }}"
+
+      - alert: MCPHangarHighLatencyByTool
+        expr: |
+          histogram_quantile(0.95, sum(rate(mcp_hangar_tool_call_duration_seconds_bucket[5m])) by (le, provider, tool))
+          > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency for {{ $labels.provider }}/{{ $labels.tool }}"
+          description: "P95 latency: {{ $value | humanizeDuration }}"
+
+      # --- Cold Start Frequency ---
+      - alert: MCPHangarFrequentColdStarts
+        expr: |
+          sum(rate(mcp_hangar_provider_starts_total[15m])) by (provider) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Frequent cold starts for {{ $labels.provider }}"
+          description: "Consider increasing idle_ttl. Rate: {{ $value }}/s"
+
+      # --- Batch ---
+      - alert: MCPHangarBatchSlowExecution
+        expr: |
+          histogram_quantile(0.95, sum(rate(mcp_hangar_batch_duration_seconds_bucket[5m])) by (le))
+          > 30
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow batch executions"
+          description: "P95 batch duration: {{ $value | humanizeDuration }}. Consider reducing batch size."
+
+      - alert: MCPHangarBatchHighCancellationRate
+        expr: |
+          sum(rate(mcp_hangar_batch_cancellations_total[5m]))
+          / (sum(rate(mcp_hangar_batch_calls_total[5m])) + 0.001)
+          > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High batch cancellation rate"
+          description: "Cancellation rate: {{ $value | humanizePercentage }}"
+
+      - alert: MCPHangarBatchSizeTooLarge
+        expr: |
+          histogram_quantile(0.95, sum(rate(mcp_hangar_batch_size_bucket[5m])) by (le))
+          > 50
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Batch sizes are large"
+          description: "P95 batch size: {{ $value }} calls. Consider smaller batches."
+
+      # --- GC ---
+      - alert: MCPHangarGCSlowCycles
+        expr: |
+          histogram_quantile(0.95, sum(rate(mcp_hangar_gc_cycle_duration_seconds_bucket[5m])) by (le))
+          > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow GC cycles"
+          description: "P95 GC duration: {{ $value | humanizeDuration }}"
+
+      # --- Resource Usage ---
       - alert: MCPHangarHighMemoryUsage
         expr: process_resident_memory_bytes{job="mcp-hangar"} / (1024 * 1024 * 1024) > 2
         for: 10m
         labels:
           severity: warning
         annotations:
-          summary: "Memory usage > 2GB"
+          summary: "MCP Hangar memory usage > 2GB"
+          description: "Memory usage: {{ $value | humanize1024 }}B"
 
-      - alert: MCPHangarRetryExhaustion
-        expr: rate(mcp_registry_retry_exhausted_total[5m]) > 0.1
-        for: 5m
+      - alert: MCPHangarHighCPUUsage
+        expr: |
+          rate(process_cpu_seconds_total{job="mcp-hangar"}[5m]) > 0.8
+        for: 10m
         labels:
           severity: warning
         annotations:
-          summary: "High retry exhaustion for {{ $labels.provider }}/{{ $labels.tool }}"
+          summary: "MCP Hangar CPU usage > 80%"
+          description: "CPU usage: {{ $value | humanizePercentage }}"
+
+  # ============================================================================
+  # INFO ALERTS - For dashboards and tracking
+  # ============================================================================
+  - name: mcp-hangar-info
+    rules:
+      - alert: MCPHangarProviderStarted
+        expr: increase(mcp_hangar_provider_starts_total[1m]) > 0
+        for: 0m
+        labels:
+          severity: info
+        annotations:
+          summary: "Provider {{ $labels.provider }} started"
+
+      - alert: MCPHangarHighToolCallVolume
+        expr: sum(rate(mcp_hangar_tool_calls_total[5m])) > 100
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: "High tool call volume"
+          description: "Tool call rate: {{ $value }}/s"
+
+  # ============================================================================
+  # PLACEHOLDER ALERTS - Uncomment when metrics are implemented
+  # ============================================================================
+  # These alerts are ready but the corresponding metrics are not yet populated
+  # by MCP Hangar. Track issue: https://github.com/your-org/mcp-hangar/issues/XXX
+  #
+  # - name: mcp-hangar-future
+  #   rules:
+  #     # Provider state alerts (needs mcp_hangar_provider_state metric)
+  #     # - alert: MCPHangarProviderDegraded
+  #     #   expr: mcp_hangar_provider_state == 3
+  #     #   for: 5m
+  #     #   labels:
+  #     #     severity: warning
+  #     #   annotations:
+  #     #     summary: "Provider {{ $labels.provider }} degraded"
+  #
+  #     # - alert: MCPHangarAllProvidersDown
+  #     #   expr: sum(mcp_hangar_provider_up) == 0 and sum(mcp_hangar_provider_info) > 0
+  #     #   for: 1m
+  #     #   labels:
+  #     #     severity: critical
+  #
+  #     # Discovery alerts (needs mcp_hangar_discovery_* metrics)
+  #     # - alert: MCPHangarDiscoverySourceUnhealthy
+  #     #   expr: mcp_hangar_discovery_sources_healthy == 0
+  #     #   for: 5m
+  #
+  #     # HTTP transport alerts (needs mcp_hangar_http_* metrics)
+  #     # - alert: MCPHangarRemoteProviderUnreachable
+  #     #   expr: increase(mcp_hangar_http_errors_total{error_type="connection_refused"}[5m]) > 10
+  #
+  #     # Rate limiting alerts (needs mcp_hangar_rate_limit_hits_total metric)
+  #     # - alert: MCPHangarHighRateLimitHits
+  #     #   expr: sum(rate(mcp_hangar_rate_limit_hits_total[5m])) by (endpoint) > 1

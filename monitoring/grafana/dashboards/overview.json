@@ -1,6 +1,16 @@
 {
   "annotations": {
-    "list": []
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
@@ -34,7 +44,7 @@
           "unit": "percentunit"
         }
       },
-      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 },
+      "gridPos": { "h": 5, "w": 4, "x": 0, "y": 1 },
       "id": 2,
       "options": {
         "colorMode": "value",
@@ -46,7 +56,7 @@
       },
       "targets": [
         {
-          "expr": "sum(mcp_hangar_provider_state{state=\"ready\"}) / sum(mcp_hangar_provider_state)",
+          "expr": "sum(mcp_hangar_provider_up) / (count(mcp_hangar_provider_up) + 0.001)",
           "legendFormat": "Availability",
           "refId": "A"
         }
@@ -64,7 +74,7 @@
           "unit": "short"
         }
       },
-      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 1 },
+      "gridPos": { "h": 5, "w": 4, "x": 4, "y": 1 },
       "id": 3,
       "options": {
         "colorMode": "value",
@@ -75,7 +85,7 @@
       },
       "targets": [
         {
-          "expr": "sum(mcp_hangar_provider_state{state=\"ready\"})",
+          "expr": "sum(mcp_hangar_provider_up)",
           "legendFormat": "Ready",
           "refId": "A"
         }
@@ -90,10 +100,39 @@
           "color": { "mode": "palette-classic" },
           "mappings": [],
           "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 5, "w": 4, "x": 8, "y": 1 },
+      "id": 100,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "targets": [
+        {
+          "expr": "count(mcp_hangar_provider_info)",
+          "legendFormat": "Total",
+          "refId": "A"
+        }
+      ],
+      "title": "Total Providers",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
           "unit": "reqps"
         }
       },
-      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 1 },
+      "gridPos": { "h": 5, "w": 4, "x": 12, "y": 1 },
       "id": 4,
       "options": {
         "colorMode": "value",
@@ -129,7 +168,7 @@
           "unit": "percentunit"
         }
       },
-      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 1 },
+      "gridPos": { "h": 5, "w": 4, "x": 16, "y": 1 },
       "id": 5,
       "options": {
         "colorMode": "value",
@@ -140,7 +179,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(mcp_hangar_errors_total[5m])) / (sum(rate(mcp_hangar_tool_calls_total[5m])) + 0.001)",
+          "expr": "sum(rate(mcp_hangar_tool_call_errors_total[5m])) / (sum(rate(mcp_hangar_tool_calls_total[5m])) + 0.001)",
           "legendFormat": "Error Rate",
           "refId": "A"
         }
@@ -149,12 +188,143 @@
       "type": "stat"
     },
     {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 3 }
+            ]
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 5, "w": 4, "x": 20, "y": 1 },
+      "id": 101,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(mcp_hangar_tool_call_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "P95 Latency",
+          "refId": "A"
+        }
+      ],
+      "title": "P95 Latency",
+      "type": "stat"
+    },
+    {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 },
       "id": 6,
       "panels": [],
-      "title": "Latency",
+      "title": "Tool Invocations (RED)",
       "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 7 },
+      "id": 7,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(mcp_hangar_tool_calls_total{status=\"success\"}[5m])) by (provider)",
+          "legendFormat": "{{ provider }} (success)",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(mcp_hangar_tool_calls_total{status=\"error\"}[5m])) by (provider)",
+          "legendFormat": "{{ provider }} (error)",
+          "refId": "B"
+        }
+      ],
+      "title": "Request Rate by Provider",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 7 },
+      "id": 8,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(mcp_hangar_tool_call_errors_total[5m])) by (provider) / (sum(rate(mcp_hangar_tool_calls_total[5m])) by (provider) + 0.001)",
+          "legendFormat": "{{ provider }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Error Rate by Provider",
+      "type": "timeseries"
     },
     {
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
@@ -185,8 +355,8 @@
           "unit": "s"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
-      "id": 7,
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 7 },
+      "id": 9,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
         "tooltip": { "mode": "multi", "sort": "desc" }
@@ -212,6 +382,103 @@
       "type": "timeseries"
     },
     {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 15 },
+      "id": 10,
+      "panels": [],
+      "title": "Providers",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "blue", "index": 0, "text": "COLD" } }, "type": "value" },
+            { "options": { "1": { "color": "yellow", "index": 1, "text": "INITIALIZING" } }, "type": "value" },
+            { "options": { "2": { "color": "green", "index": 2, "text": "READY" } }, "type": "value" },
+            { "options": { "3": { "color": "orange", "index": 3, "text": "DEGRADED" } }, "type": "value" },
+            { "options": { "4": { "color": "red", "index": 4, "text": "DEAD" } }, "type": "value" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "green", "value": 2 },
+              { "color": "orange", "value": 3 },
+              { "color": "red", "value": 4 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 16 },
+      "id": 11,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "mcp_hangar_provider_state",
+          "legendFormat": "{{ provider }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Provider States",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 16 },
+      "id": 12,
+      "options": {
+        "legend": { "calcs": [], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "mcp_hangar_health_check_consecutive_failures",
+          "legendFormat": "{{ provider }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Consecutive Health Failures",
+      "type": "timeseries"
+    },
+    {
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "fieldConfig": {
         "defaults": {
@@ -240,15 +507,15 @@
           "unit": "s"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "id": 8,
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 22 },
+      "id": 13,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
         "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(mcp_hangar_cold_start_duration_seconds_bucket[5m])) by (le, provider))",
+          "expr": "histogram_quantile(0.95, sum(rate(mcp_hangar_provider_cold_start_seconds_bucket[15m])) by (le, provider))",
           "legendFormat": "{{ provider }}",
           "refId": "A"
         }
@@ -257,11 +524,60 @@
       "type": "timeseries"
     },
     {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": ".*success.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": ".*failure.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 22 },
+      "id": 14,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(mcp_hangar_provider_starts_total[1h])) by (provider, result)",
+          "legendFormat": "{{ provider }} ({{ result }})",
+          "refId": "A"
+        }
+      ],
+      "title": "Provider Starts (Last Hour)",
+      "type": "timeseries"
+    },
+    {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
-      "id": 9,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 28 },
+      "id": 20,
       "panels": [],
-      "title": "Providers",
+      "title": "Batch Invocations",
       "type": "row"
     },
     {
@@ -274,45 +590,100 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
-            "fillOpacity": 80,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
             "lineWidth": 1,
-            "scaleDistribution": { "type": "linear" }
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
           },
           "mappings": [],
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "reqps"
         },
         "overrides": [
-          { "matcher": { "id": "byName", "options": "ready" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
-          { "matcher": { "id": "byName", "options": "cold" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
-          { "matcher": { "id": "byName", "options": "degraded" }, "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] },
-          { "matcher": { "id": "byName", "options": "dead" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+          { "matcher": { "id": "byRegexp", "options": ".*success.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": ".*partial.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": ".*failure.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
         ]
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 17 },
-      "id": 10,
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 29 },
+      "id": 21,
       "options": {
-        "barRadius": 0,
-        "barWidth": 0.97,
-        "groupWidth": 0.7,
-        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" },
-        "orientation": "auto",
-        "showValue": "auto",
-        "stacking": "normal",
-        "tooltip": { "mode": "single", "sort": "none" },
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0
+        "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
         {
-          "expr": "sum(mcp_hangar_provider_state) by (state)",
-          "legendFormat": "{{ state }}",
+          "expr": "sum(rate(mcp_hangar_batch_calls_total[5m])) by (result)",
+          "legendFormat": "{{ result }}",
           "refId": "A"
         }
       ],
-      "title": "Provider States",
-      "type": "barchart"
+      "title": "Batch Call Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 29 },
+      "id": 22,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(mcp_hangar_batch_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "P50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(mcp_hangar_batch_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "P95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(mcp_hangar_batch_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "P99",
+          "refId": "C"
+        }
+      ],
+      "title": "Batch Duration",
+      "type": "timeseries"
     },
     {
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
@@ -343,28 +714,634 @@
           "unit": "short"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 17 },
-      "id": 11,
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 29 },
+      "id": 23,
+      "options": {
+        "legend": { "calcs": ["mean", "sum"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(mcp_hangar_batch_truncations_total[5m])) by (reason)",
+          "legendFormat": "{{ reason }}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(mcp_hangar_batch_cancellations_total[5m])) by (reason)",
+          "legendFormat": "cancel: {{ reason }}",
+          "refId": "B"
+        }
+      ],
+      "title": "Batch Truncations & Cancellations",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 },
+      "id": 30,
+      "panels": [],
+      "title": "HTTP Transport (Remote Providers)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 37 },
+      "id": 31,
+      "options": {
+        "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(mcp_hangar_http_requests_total[5m])) by (provider)",
+          "legendFormat": "{{ provider }}",
+          "refId": "A"
+        }
+      ],
+      "title": "HTTP Request Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 37 },
+      "id": 32,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(mcp_hangar_http_request_duration_seconds_bucket[5m])) by (le, provider))",
+          "legendFormat": "{{ provider }}",
+          "refId": "A"
+        }
+      ],
+      "title": "HTTP Latency (P95)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 37 },
+      "id": 33,
       "options": {
         "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom" },
         "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
         {
-          "expr": "sum(rate(mcp_hangar_tool_calls_total[5m])) by (provider)",
-          "legendFormat": "{{ provider }}",
+          "expr": "sum(rate(mcp_hangar_http_errors_total[5m])) by (provider, error_type)",
+          "legendFormat": "{{ provider }}: {{ error_type }}",
           "refId": "A"
         }
       ],
-      "title": "Tool Calls by Provider",
+      "title": "HTTP Errors",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 7, "w": 6, "x": 0, "y": 44 },
+      "id": 34,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "targets": [
+        {
+          "expr": "sum(mcp_hangar_http_sse_streams_active)",
+          "legendFormat": "Active SSE",
+          "refId": "A"
+        }
+      ],
+      "title": "Active SSE Streams",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 7, "w": 18, "x": 6, "y": 44 },
+      "id": 35,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(mcp_hangar_http_retries_total[5m])) by (provider, retry_reason)",
+          "legendFormat": "{{ provider }}: {{ retry_reason }}",
+          "refId": "A"
+        }
+      ],
+      "title": "HTTP Retries",
       "type": "timeseries"
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 25 },
-      "id": 12,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 51 },
+      "id": 40,
       "panels": [],
-      "title": "Errors & Health",
+      "title": "Discovery",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "index": 0, "text": "UNHEALTHY" } }, "type": "value" },
+            { "options": { "1": { "color": "green", "index": 1, "text": "HEALTHY" } }, "type": "value" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 52 },
+      "id": 41,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "mcp_hangar_discovery_sources_healthy",
+          "legendFormat": "{{ source_type }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Discovery Source Health",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 52 },
+      "id": 42,
+      "options": {
+        "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "mcp_hangar_discovery_providers{status=\"discovered\"}",
+          "legendFormat": "{{ source_type }} discovered",
+          "refId": "A"
+        },
+        {
+          "expr": "mcp_hangar_discovery_providers{status=\"registered\"}",
+          "legendFormat": "{{ source_type }} registered",
+          "refId": "B"
+        },
+        {
+          "expr": "mcp_hangar_discovery_providers{status=\"quarantined\"}",
+          "legendFormat": "{{ source_type }} quarantined",
+          "refId": "C"
+        }
+      ],
+      "title": "Discovered Providers",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 52 },
+      "id": 43,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(mcp_hangar_discovery_cycle_duration_seconds_bucket[5m])) by (le, source_type))",
+          "legendFormat": "{{ source_type }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Discovery Cycle Duration (P95)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 58 },
+      "id": 44,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(mcp_hangar_discovery_registrations_total[1h])) by (source_type)",
+          "legendFormat": "{{ source_type }} +",
+          "refId": "A"
+        },
+        {
+          "expr": "-sum(increase(mcp_hangar_discovery_deregistrations_total[1h])) by (source_type)",
+          "legendFormat": "{{ source_type }} -",
+          "refId": "B"
+        }
+      ],
+      "title": "Discovery Registrations/Deregistrations (Last Hour)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 58 },
+      "id": 45,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(mcp_hangar_discovery_errors_total[5m])) by (source_type, error_type)",
+          "legendFormat": "{{ source_type }}: {{ error_type }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Discovery Errors",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 64 },
+      "id": 50,
+      "panels": [],
+      "title": "Resources & GC",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 65 },
+      "id": 51,
+      "options": {
+        "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "sum(mcp_hangar_connections_active) by (provider)",
+          "legendFormat": "{{ provider }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Active Connections",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 65 },
+      "id": 52,
+      "options": {
+        "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "rate(mcp_hangar_gc_cycles_total[5m])",
+          "legendFormat": "GC cycles",
+          "refId": "A"
+        }
+      ],
+      "title": "GC Cycle Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 65 },
+      "id": 53,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(mcp_hangar_gc_providers_collected_total[1h])) by (reason)",
+          "legendFormat": "{{ reason }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Providers Collected by GC (Last Hour)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 72 },
+      "id": 60,
+      "panels": [],
+      "title": "Errors & Rate Limiting",
       "type": "row"
     },
     {
@@ -396,20 +1373,20 @@
           "unit": "short"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 26 },
-      "id": 13,
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 73 },
+      "id": 61,
       "options": {
         "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom" },
         "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
         {
-          "expr": "sum(rate(mcp_hangar_errors_total[5m])) by (error_type)",
-          "legendFormat": "{{ error_type }}",
+          "expr": "sum(rate(mcp_hangar_errors_total[5m])) by (component, error_type)",
+          "legendFormat": "{{ component }}: {{ error_type }}",
           "refId": "A"
         }
       ],
-      "title": "Errors by Type",
+      "title": "Errors by Component & Type",
       "type": "timeseries"
     },
     {
@@ -438,30 +1415,30 @@
           },
           "mappings": [],
           "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
-          "unit": "short"
+          "unit": "reqps"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 26 },
-      "id": 14,
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 73 },
+      "id": 62,
       "options": {
-        "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom" },
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom" },
         "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
         {
-          "expr": "mcp_hangar_health_check_consecutive_failures",
-          "legendFormat": "{{ provider }}",
+          "expr": "sum(rate(mcp_hangar_rate_limit_hits_total[5m])) by (endpoint)",
+          "legendFormat": "{{ endpoint }}",
           "refId": "A"
         }
       ],
-      "title": "Consecutive Health Failures",
+      "title": "Rate Limit Hits",
       "type": "timeseries"
     }
   ],
   "refresh": "10s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["mcp-hangar"],
+  "tags": ["mcp-hangar", "observability"],
   "templating": {
     "list": [
       {
@@ -478,6 +1455,24 @@
         "regex": "",
         "skipUrlSync": false,
         "type": "datasource"
+      },
+      {
+        "allValue": ".*",
+        "current": { "selected": true, "text": "All", "value": "$__all" },
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "definition": "label_values(mcp_hangar_provider_info, provider)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Provider",
+        "multi": true,
+        "name": "provider",
+        "options": [],
+        "query": { "query": "label_values(mcp_hangar_provider_info, provider)", "refId": "StandardVariableQuery" },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
       }
     ]
   },
@@ -486,6 +1481,6 @@
   "timezone": "",
   "title": "MCP Hangar Overview",
   "uid": "mcp-hangar-overview",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }

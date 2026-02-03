@@ -5,12 +5,14 @@ This guide covers MCP Hangar's observability features: metrics, tracing, logging
 ## Table of Contents
 
 - [Quick Start](#quick-start)
+- [Monitoring Stack](#monitoring-stack)
 - [Metrics](#metrics)
+- [Grafana Dashboards](#grafana-dashboards)
+- [Alerting](#alerting)
 - [Tracing](#tracing)
 - [Langfuse Integration](#langfuse-integration)
 - [Logging](#logging)
 - [Health Checks](#health-checks)
-- [Alerting](#alerting)
 - [SLIs/SLOs](#slisslos)
 - [Troubleshooting](#troubleshooting)
 - [Best Practices](#best-practices)
@@ -19,545 +21,302 @@ This guide covers MCP Hangar's observability features: metrics, tracing, logging
 
 ### Prerequisites
 
-For full tracing support, install OpenTelemetry dependencies:
-
 ```bash
-pip install opentelemetry-api opentelemetry-sdk opentelemetry-exporter-otlp
+# Core package
+pip install mcp-hangar
+
+# For full observability support
+pip install mcp-hangar[observability]
 ```
 
-### Enable Full Observability Stack
+### Start Monitoring Stack
+
+The monitoring stack is in `monitoring/` and includes Prometheus, Grafana, and Alertmanager:
 
 ```bash
-# Start monitoring stack (Prometheus, Grafana, Jaeger)
-docker compose -f docker-compose.monitoring.yml --profile tracing up -d
+# Using Docker Compose
+cd monitoring
+docker compose up -d
+
+# Using Podman
+cd monitoring
+podman compose up -d
 ```
 
 Access dashboards:
 
-- **Grafana**: http://localhost:3000 (admin/admin)
-- **Prometheus**: http://localhost:9090
-- **Jaeger**: http://localhost:16686
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| Grafana | http://localhost:3000 | admin / admin |
+| Prometheus | http://localhost:9090 | - |
+| Alertmanager | http://localhost:9093 | - |
 
-### Configure MCP Hangar
+### Start MCP Hangar with Metrics
+
+```bash
+# HTTP mode (exposes /metrics endpoint)
+mcp-hangar serve --http --port 8000
+
+# With custom config
+MCP_CONFIG=config.yaml mcp-hangar serve --http --port 8000
+```
+
+Verify metrics are exposed:
+
+```bash
+curl http://localhost:8000/metrics | grep mcp_hangar
+```
+
+## Monitoring Stack
+
+### Architecture
+
+```
++----------------+     scrape      +------------+
+|  MCP Hangar    |---------------->| Prometheus |
+|  :8000/metrics |                 |   :9090    |
++----------------+                 +-----+------+
+                                         |
+                                         | query
+                                         v
+                                   +------------+
+                                   |  Grafana   |
+                                   |   :3000    |
+                                   +------------+
+
++----------------+     alerts      +-------------+
+|  Prometheus    |---------------->| Alertmanager|
+|  alert rules   |                 |    :9093    |
++----------------+                 +-------------+
+```
+
+### Configuration Files
+
+| File | Purpose |
+|------|---------|
+| `monitoring/docker-compose.yaml` | Container orchestration |
+| `monitoring/prometheus/prometheus.yaml` | Scrape configuration |
+| `monitoring/prometheus/alerts.yaml` | Alert rules |
+| `monitoring/alertmanager/alertmanager.yaml` | Notification routing |
+| `monitoring/grafana/provisioning/` | Dashboard/datasource provisioning |
+| `monitoring/grafana/dashboards/` | Pre-built dashboard JSON files |
+
+### Prometheus Configuration
+
+The default configuration scrapes MCP Hangar every 10 seconds:
 
 ```yaml
-# config.yaml
-logging:
-  level: INFO
-  json_format: true
+# monitoring/prometheus/prometheus.yaml
+scrape_configs:
+  - job_name: 'mcp-hangar'
+    static_configs:
+      - targets: ['host.docker.internal:8000']
+        labels:
+          service: 'mcp-hangar'
+          tier: 'application'
+    metrics_path: /metrics
+    scrape_interval: 10s
+    scrape_timeout: 5s
+```
 
-observability:
-  tracing:
-    enabled: true
-    otlp_endpoint: http://localhost:4317
-  metrics:
-    enabled: true
-    endpoint: /metrics
+For Kubernetes deployments, use service discovery:
+
+```yaml
+scrape_configs:
+  - job_name: 'mcp-hangar'
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        regex: mcp-hangar
+        action: keep
 ```
 
 ## Metrics
 
-### Available Metrics
+MCP Hangar exports Prometheus metrics at `/metrics`. All metrics use the `mcp_hangar_` prefix.
 
-MCP Hangar exports Prometheus metrics at `/metrics`:
+### Currently Exported Metrics
 
 #### Tool Invocations
 
 | Metric | Type | Labels | Description |
 |--------|------|--------|-------------|
-| `mcp_hangar_tool_calls_total` | Counter | provider, tool | Total tool invocations |
-| `mcp_hangar_tool_call_duration_seconds` | Histogram | provider, tool | Invocation latency |
-| `mcp_hangar_tool_call_errors_total` | Counter | provider, tool, error_type | Failed invocations |
+| `mcp_hangar_tool_calls_total` | Counter | provider, tool, status | Total tool invocations |
+| `mcp_hangar_tool_call_duration_seconds` | Histogram | provider, tool | Invocation latency (buckets: 0.01-30s) |
+| `mcp_hangar_tool_call_errors_total` | Counter | provider, tool, error_type | Failed invocations by error type |
 
-#### Provider State
+**Example queries:**
+
+```promql
+# Tool call rate by provider
+sum(rate(mcp_hangar_tool_calls_total[5m])) by (provider)
+
+# P95 latency by tool
+histogram_quantile(0.95, sum(rate(mcp_hangar_tool_call_duration_seconds_bucket[5m])) by (le, tool))
+
+# Error rate
+sum(rate(mcp_hangar_tool_call_errors_total[5m])) / sum(rate(mcp_hangar_tool_calls_total[5m]))
+```
+
+#### Batch Invocations
 
 | Metric | Type | Labels | Description |
 |--------|------|--------|-------------|
-| `mcp_hangar_provider_state` | Gauge | provider, state | Current provider state |
-| `mcp_hangar_cold_starts_total` | Counter | provider, mode | Cold start count |
-| `mcp_hangar_cold_start_duration_seconds` | Histogram | provider, mode | Cold start latency |
+| `mcp_hangar_batch_calls_total` | Counter | result | Batch invocations (success/failure) |
+| `mcp_hangar_batch_duration_seconds` | Histogram | - | Batch execution time |
+| `mcp_hangar_batch_size` | Histogram | - | Number of calls per batch |
+| `mcp_hangar_batch_cancellations_total` | Counter | - | Cancelled batches |
+| `mcp_hangar_batch_circuit_breaker_rejections_total` | Counter | - | Circuit breaker rejections |
+| `mcp_hangar_batch_concurrency` | Gauge | - | Current parallel executions |
+
+**Example queries:**
+
+```promql
+# Batch success rate
+sum(rate(mcp_hangar_batch_calls_total{result="success"}[5m]))
+/ sum(rate(mcp_hangar_batch_calls_total[5m]))
+
+# Average batch size
+rate(mcp_hangar_batch_size_sum[5m]) / rate(mcp_hangar_batch_size_count[5m])
+```
 
 #### Health Checks
 
 | Metric | Type | Labels | Description |
 |--------|------|--------|-------------|
-| `mcp_hangar_health_checks` | Counter | provider, result | Health check executions |
-| `mcp_hangar_health_check_consecutive_failures` | Gauge | provider | Consecutive failures |
+| `mcp_hangar_health_checks_total` | Counter | provider, result | Health check executions |
+| `mcp_hangar_health_check_duration_seconds` | Histogram | provider | Health check latency |
+| `mcp_hangar_health_check_consecutive_failures` | Gauge | provider | Current consecutive failure count |
 
-#### Circuit Breaker
+**Example queries:**
+
+```promql
+# Unhealthy providers (>2 consecutive failures)
+mcp_hangar_health_check_consecutive_failures > 2
+
+# Health check success rate
+sum(rate(mcp_hangar_health_checks_total{result="healthy"}[5m])) by (provider)
+/ sum(rate(mcp_hangar_health_checks_total[5m])) by (provider)
+```
+
+#### Provider Lifecycle
 
 | Metric | Type | Labels | Description |
 |--------|------|--------|-------------|
-| `mcp_hangar_circuit_breaker_state` | Gauge | provider | State: 0=closed, 1=open, 2=half_open |
-| `mcp_hangar_circuit_breaker_failures_total` | Counter | provider | Circuit breaker trip count |
+| `mcp_hangar_provider_starts_total` | Counter | provider | Provider start attempts |
+| `mcp_hangar_provider_initialized` | Gauge | provider | 1 if provider has been initialized |
 
-#### Retry Metrics
+#### GC (Garbage Collection)
 
 | Metric | Type | Labels | Description |
 |--------|------|--------|-------------|
-| `mcp_hangar_retry_attempts_total` | Counter | provider, tool, attempt_number | Retry attempts |
-| `mcp_hangar_retry_exhausted_total` | Counter | provider, tool | Retries exhausted |
-| `mcp_hangar_retry_succeeded_total` | Counter | provider, tool, attempt_number | Successful retries |
+| `mcp_hangar_gc_cycles_total` | Counter | - | GC cycle executions |
+| `mcp_hangar_gc_cycle_duration_seconds` | Histogram | - | GC cycle duration |
 
-### Prometheus Configuration
+### Metrics Not Yet Implemented
 
-```yaml
-# prometheus.yml
-global:
-  scrape_interval: 15s
+The following metrics are defined in code but not currently populated. They are planned for future releases:
 
-scrape_configs:
-  - job_name: 'mcp-hangar'
-    static_configs:
-      - targets: ['localhost:8000']
-    metrics_path: /metrics
-    scrape_interval: 10s
-```
+- `mcp_hangar_provider_state` - Provider state gauge (cold/ready/degraded/dead)
+- `mcp_hangar_provider_up` - Provider availability
+- `mcp_hangar_provider_cold_start_seconds` - Cold start latency histogram
+- `mcp_hangar_discovery_*` - Auto-discovery metrics
+- `mcp_hangar_http_*` - HTTP transport metrics (for remote providers)
+- `mcp_hangar_rate_limit_hits_total` - Rate limiting metrics
+- `mcp_hangar_connections_*` - Connection tracking
 
-### Grafana Dashboards
+## Grafana Dashboards
 
-Pre-built dashboards are in `monitoring/grafana/dashboards/`:
+Pre-built dashboards are provisioned automatically from `monitoring/grafana/dashboards/`:
 
-| Dashboard | Description |
-|-----------|-------------|
-| **overview.json** | High-level health, latency percentiles, error rates |
-| **providers.json** | Per-provider details and state transitions |
-| **discovery.json** | Auto-discovery metrics and source health |
+### Overview Dashboard
 
-Import via Grafana UI or use the provisioning configuration in `monitoring/grafana/provisioning/`.
+**File:** `overview.json`
+**URL:** http://localhost:3000/d/mcp-hangar-overview
 
-## Tracing
+Provides high-level system health:
 
-### OpenTelemetry Integration
+- Request rate and error rate trends
+- Latency percentiles (P50, P95, P99)
+- Provider health status
+- Batch invocation success/failure rates
+- Health check results
+- GC cycle performance
 
-MCP Hangar supports distributed tracing via OpenTelemetry:
+### Provider Details Dashboard
 
-```python
-from mcp_hangar.observability import init_tracing, get_tracer
+**File:** `provider-details.json`
+**URL:** http://localhost:3000/d/mcp-hangar-provider-details
 
-# Initialize once at application startup
-init_tracing(
-    service_name="mcp-hangar",
-    otlp_endpoint="http://localhost:4317",
-)
+Deep dive into individual providers:
 
-# Get a tracer for your module
-tracer = get_tracer(__name__)
+- Tool call breakdown by tool name
+- Per-tool latency histograms
+- Error distribution by type
+- Health check history
+- Consecutive failure tracking
 
-# Create spans for operations
-with tracer.start_as_current_span("process_request") as span:
-    span.set_attribute("request.id", request_id)
-    span.set_attribute("provider.id", provider_id)
-    result = process_request()
-```
+### Alerts Dashboard
 
-### Using trace_span Context Manager
+**File:** `alerts.json`
+**URL:** http://localhost:3000/d/mcp-hangar-alerts
 
-For simpler usage:
+Alert monitoring and trends:
 
-```python
-from mcp_hangar.observability import trace_span
+- Active alerts by severity
+- Alert condition trends (error rate, latency, health)
+- Historical alert timeline
 
-with trace_span("my_operation", {"key": "value"}) as span:
-    span.add_event("checkpoint_reached")
-    do_work()
-```
+### Importing Dashboards Manually
 
-### Environment Variables
+If not using provisioning:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MCP_TRACING_ENABLED` | `true` | Enable/disable tracing |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:4317` | OTLP collector endpoint (gRPC) |
-| `OTEL_SERVICE_NAME` | `mcp-hangar` | Service name in traces |
-| `MCP_ENVIRONMENT` | `development` | Deployment environment tag |
-
-### Trace Context Propagation
-
-Propagate trace context across service boundaries:
-
-```python
-from mcp_hangar.observability import inject_trace_context, extract_trace_context
-
-# Inject context into outgoing request headers
-headers = {}
-inject_trace_context(headers)
-# headers now contains 'traceparent' and 'tracestate'
-
-# Extract context from incoming request
-context = extract_trace_context(request_headers)
-```
-
-### Getting Current Trace Information
-
-```python
-from mcp_hangar.observability import get_current_trace_id, get_current_span_id
-
-# Get current trace ID for logging correlation
-trace_id = get_current_trace_id()  # Returns hex string or None
-span_id = get_current_span_id()    # Returns hex string or None
-```
-
-### Viewing Traces
-
-1. Open Jaeger UI at http://localhost:16686
-2. Select service `mcp-hangar` from dropdown
-3. Set time range and click **Find Traces**
-4. Click on a trace to see the span tree
-
-## Langfuse Integration
-
-MCP Hangar integrates with [Langfuse](https://langfuse.com) for LLM-specific observability, providing end-to-end tracing of tool invocations from your LLM application through MCP Hangar to individual providers.
-
-### Why Langfuse?
-
-| Feature | Benefit |
-|---------|---------|
-| **End-to-end traces** | See the complete journey from LLM prompt → tool call → provider response |
-| **Cost attribution** | Track costs per provider, tool, user, or session |
-| **Latency analysis** | Identify slow providers and optimize performance |
-| **Quality scoring** | Correlate provider health with LLM response quality |
-| **Evals** | Run automated evaluations on tool outputs |
-
-### Installation
-
-```bash
-pip install mcp-hangar[observability]
-```
-
-### Configuration
-
-#### Via Environment Variables
-
-```bash
-export HANGAR_LANGFUSE_ENABLED=true
-export LANGFUSE_PUBLIC_KEY=pk-lf-...
-export LANGFUSE_SECRET_KEY=sk-lf-...
-export LANGFUSE_HOST=https://cloud.langfuse.com  # or self-hosted URL
-```
-
-#### Via config.yaml
-
-```yaml
-observability:
-  langfuse:
-    enabled: true
-    public_key: ${LANGFUSE_PUBLIC_KEY}
-    secret_key: ${LANGFUSE_SECRET_KEY}
-    host: https://cloud.langfuse.com
-    sample_rate: 1.0          # 0.0-1.0, fraction of traces to sample
-    scrub_inputs: false       # Redact sensitive input data
-    scrub_outputs: false      # Redact sensitive output data
-```
-
-### Trace Propagation
-
-To correlate traces from your LLM application with MCP Hangar, pass a `trace_id` when invoking tools:
-
-```python
-from mcp_hangar.application.services import TracedProviderService
-
-# Invoke with trace context from your LLM application
-result = traced_service.invoke_tool(
-    provider_id="math",
-    tool_name="add",
-    arguments={"a": 1, "b": 2},
-    trace_id="your-langfuse-trace-id",    # Correlates with LLM trace
-    user_id="user-123",                    # For cost attribution
-    session_id="session-456",              # For grouping related calls
-)
-```
-
-### What Gets Traced
-
-| Event | Recorded Data |
-|-------|---------------|
-| **Tool invocation** | Provider, tool, input params, output, latency, success/error |
-| **Health check** | Provider, healthy status, latency |
-
-### Recorded Scores
-
-| Score Name | Description |
-|------------|-------------|
-| `tool_success` | 1.0 for success, 0.0 for error |
-| `tool_latency_ms` | Invocation latency in milliseconds |
-| `provider_healthy` | 1.0 if healthy, 0.0 if unhealthy |
-| `health_check_latency_ms` | Health check latency |
-
-### Using TracedProviderService
-
-The `TracedProviderService` wraps `ProviderService` to automatically trace operations:
-
-```python
-from mcp_hangar.application.services import ProviderService, TracedProviderService
-from mcp_hangar.infrastructure.observability import LangfuseObservabilityAdapter, LangfuseConfig
-
-# Create the observability adapter
-langfuse_config = LangfuseConfig(
-    enabled=True,
-    public_key="pk-lf-...",
-    secret_key="sk-lf-...",
-)
-observability = LangfuseObservabilityAdapter(langfuse_config)
-
-# Wrap your existing service
-traced_service = TracedProviderService(
-    provider_service=provider_service,
-    observability=observability,
-)
-
-# All tool invocations are now traced
-result = traced_service.invoke_tool("math", "add", {"a": 1, "b": 2})
-```
-
-### GDPR Compliance
-
-Enable input/output scrubbing to avoid sending sensitive data to Langfuse:
-
-```yaml
-observability:
-  langfuse:
-    enabled: true
-    scrub_inputs: true    # Only sends parameter keys, not values
-    scrub_outputs: true   # Only sends output structure, not content
-```
-
-### Viewing Traces in Langfuse
-
-1. Open Langfuse dashboard at https://cloud.langfuse.com
-2. Navigate to **Traces**
-3. Filter by:
-   - `metadata.mcp_hangar = true` for MCP Hangar traces
-   - `metadata.provider = math` for specific providers
-4. Click on a trace to see:
-   - Input parameters
-   - Output results
-   - Latency breakdown
-   - Recorded scores
-
-### Combining with OpenTelemetry
-
-Langfuse and OpenTelemetry can run simultaneously. Langfuse focuses on LLM-specific observability while OpenTelemetry provides infrastructure-level tracing:
-
-```yaml
-observability:
-  tracing:
-    enabled: true
-    otlp_endpoint: http://localhost:4317
-  langfuse:
-    enabled: true
-    public_key: ${LANGFUSE_PUBLIC_KEY}
-    secret_key: ${LANGFUSE_SECRET_KEY}
-```
-
-## Logging
-
-### Structured Logging
-
-MCP Hangar uses structlog for structured JSON logging:
-
-```json
-{
-  "timestamp": "2026-01-09T10:30:00.123Z",
-  "level": "info",
-  "event": "tool_invoked",
-  "provider": "sqlite",
-  "tool": "query",
-  "duration_ms": 150,
-  "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
-  "span_id": "00f067aa0ba902b7",
-  "service": "mcp-hangar"
-}
-```
-
-### Log Correlation with Traces
-
-Include trace IDs in logs for correlation:
-
-```python
-from mcp_hangar.observability import get_current_trace_id
-from mcp_hangar.logging_config import get_logger
-
-logger = get_logger(__name__)
-
-def handle_request():
-    trace_id = get_current_trace_id()
-    logger.info("processing_request", trace_id=trace_id, request_id=req_id)
-```
-
-### Configuration
-
-```yaml
-# config.yaml
-logging:
-  level: INFO          # DEBUG, INFO, WARNING, ERROR, CRITICAL
-  json_format: true    # Enable JSON output for log aggregation
-  file: logs/mcp-hangar.log  # Optional file output
-```
-
-Environment variable override:
-
-```bash
-MCP_LOG_LEVEL=DEBUG python -m mcp_hangar.server
-```
-
-## Health Checks
-
-### HTTP Endpoints
-
-MCP Hangar provides standard health endpoints compatible with Kubernetes and other orchestrators:
-
-| Endpoint | HTTP Method | Purpose | Use Case |
-|----------|-------------|---------|----------|
-| `/health/live` | GET | Liveness check | Container restart decisions |
-| `/health/ready` | GET | Readiness check | Traffic routing decisions |
-| `/health/startup` | GET | Startup check | Startup completion gate |
-
-### Response Format
-
-```json
-{
-  "status": "healthy",
-  "checks": [
-    {
-      "name": "providers",
-      "status": "healthy",
-      "duration_ms": 1.2,
-      "message": "Check passed"
-    }
-  ],
-  "version": "0.1.0",
-  "uptime_seconds": 3600.5
-}
-```
-
-### Container Orchestration Configuration
-
-#### Kubernetes
-
-```yaml
-apiVersion: v1
-kind: Pod
-spec:
-  containers:
-    - name: mcp-hangar
-      image: mcp-hangar:latest
-      ports:
-        - containerPort: 8000
-      livenessProbe:
-        httpGet:
-          path: /health/live
-          port: 8000
-        initialDelaySeconds: 5
-        periodSeconds: 10
-        failureThreshold: 3
-      readinessProbe:
-        httpGet:
-          path: /health/ready
-          port: 8000
-        initialDelaySeconds: 10
-        periodSeconds: 5
-        failureThreshold: 3
-      startupProbe:
-        httpGet:
-          path: /health/startup
-          port: 8000
-        failureThreshold: 30
-        periodSeconds: 2
-```
-
-#### Docker Compose
-
-```yaml
-services:
-  mcp-hangar:
-    image: mcp-hangar:latest
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health/ready"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-```
-
-> **Note**: If curl is not available in your image, use Python:
->
-> ```yaml
-> healthcheck:
->   test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready', timeout=5)"]
-> ```
-
-### Custom Health Checks
-
-Register application-specific health checks:
-
-```python
-from mcp_hangar.observability import HealthCheck, get_health_endpoint
-
-def check_database_connection():
-    """Return True if database is reachable."""
-    try:
-        db.execute("SELECT 1")
-        return True
-    except Exception:
-        return False
-
-# Register the check
-endpoint = get_health_endpoint()
-endpoint.register_check(HealthCheck(
-    name="database",
-    check_fn=check_database_connection,
-    timeout_seconds=5.0,
-    critical=True,  # False = degraded instead of unhealthy on failure
-))
-
-# Mark startup complete when ready
-endpoint.mark_startup_complete()
-```
-
-### Async Health Checks
-
-```python
-async def check_external_service():
-    """Async health check example."""
-    async with aiohttp.ClientSession() as session:
-        async with session.get("http://external-service/health") as resp:
-            return resp.status == 200
-
-endpoint.register_check(HealthCheck(
-    name="external_service",
-    check_fn=check_external_service,
-    timeout_seconds=3.0,
-    critical=False,  # Non-critical: failure results in degraded state
-))
-```
+1. Open Grafana at http://localhost:3000
+2. Go to Dashboards > Import
+3. Upload JSON file from `monitoring/grafana/dashboards/`
+4. Select Prometheus data source
+5. Click Import
 
 ## Alerting
 
-### Alert Rules
+### Alert Configuration
 
-Pre-configured alert rules are in `monitoring/prometheus/alerts/`:
+Alert rules are defined in `monitoring/prometheus/alerts.yaml` and organized by severity:
 
-#### Critical Alerts (Immediate Response Required)
+#### Critical Alerts (Page On-Call)
+
+| Alert | Condition | For | Description |
+|-------|-----------|-----|-------------|
+| `MCPHangarNotResponding` | `up{job="mcp-hangar"} == 0` | 1m | Service unreachable |
+| `MCPHangarHighErrorRate` | Error rate > 10% | 2m | Significant failures |
+| `MCPHangarBatchHighFailureRate` | Batch failure > 20% | 3m | Batch operations failing |
+| `MCPHangarCircuitBreakerTripped` | CB rejections > 10/5m | 2m | Provider isolated |
+| `MCPHangarProviderUnhealthy` | Consecutive failures > 5 | 2m | Provider critically unhealthy |
+
+#### Warning Alerts (Investigate)
+
+| Alert | Condition | For | Description |
+|-------|-----------|-----|-------------|
+| `MCPHangarHighConsecutiveFailures` | Consecutive failures > 2 | 2m | Health check issues |
+| `MCPHangarHealthCheckSlow` | P95 health check > 5s | 5m | Slow health checks |
+| `MCPHangarHighLatencyP95` | P95 latency > 3s | 5m | Performance degradation |
+| `MCPHangarHighLatencyP99` | P99 latency > 5s | 5m | Tail latency issues |
+| `MCPHangarHighLatencyByTool` | P95 per-tool > 5s | 5m | Specific tool slow |
+| `MCPHangarFrequentColdStarts` | Start rate > 0.1/s | 10m | Consider increasing idle_ttl |
+| `MCPHangarBatchSlowExecution` | P95 batch > 30s | 5m | Slow batch processing |
+| `MCPHangarBatchHighCancellationRate` | Cancellation > 10% | 5m | Batches timing out |
+| `MCPHangarBatchSizeTooLarge` | P95 size > 50 | 5m | Consider smaller batches |
+| `MCPHangarGCSlowCycles` | P95 GC > 0.5s | 5m | GC performance issue |
+| `MCPHangarHighMemoryUsage` | Memory > 2GB | 10m | Memory pressure |
+| `MCPHangarHighCPUUsage` | CPU > 80% | 10m | CPU saturation |
+
+#### Info Alerts (Tracking)
 
 | Alert | Condition | Description |
 |-------|-----------|-------------|
-| `MCPHangarAllProvidersDown` | No ready providers for 1m | Complete service outage |
-| `MCPHangarHighErrorRate` | Error rate > 10% for 2m | Significant failures |
-| `MCPHangarCircuitBreakerOpen` | Any circuit breaker open | Provider isolation triggered |
-| `MCPHangarNotResponding` | Scrape failures for 1m | Service unreachable |
-| `MCPHangarStartupFailed` | Repeated startup failures | Provider cannot initialize |
-
-#### Warning Alerts (Investigation Required)
-
-| Alert | Condition | Description |
-|-------|-----------|-------------|
-| `MCPHangarProviderDegraded` | Provider degraded for 5m | Provider experiencing issues |
-| `MCPHangarHighLatencyP95` | P95 > 5s for 5m | Performance degradation |
-| `MCPHangarFrequentColdStarts` | Cold start rate > 0.1/s | Consider increasing idle TTL |
-| `MCPHangarDiscoverySourceUnhealthy` | Source unhealthy for 5m | Discovery issues |
-| `MCPHangarLowAvailability` | Availability < 80% for 5m | Multiple providers affected |
-| `MCPHangarRetryExhaustion` | High retry exhaustion rate | Persistent failures |
+| `MCPHangarProviderStarted` | Any provider start | Provider lifecycle event |
+| `MCPHangarHighToolCallVolume` | Rate > 100/s | High traffic notification |
 
 ### Alertmanager Configuration
 
@@ -586,200 +345,322 @@ receivers:
   - name: 'pagerduty'
     pagerduty_configs:
       - service_key: '<your-service-key>'
-        severity: critical
 
   - name: 'slack'
     slack_configs:
       - api_url: '<your-slack-webhook-url>'
-        channel: '#alerts'
+        channel: '#mcp-hangar-alerts'
         title: '{{ .CommonAnnotations.summary }}'
         text: '{{ .CommonAnnotations.description }}'
+```
+
+### Testing Alerts
+
+Verify alert rules are loaded:
+
+```bash
+# Check Prometheus rules
+curl -s http://localhost:9090/api/v1/rules | jq '.data.groups[].rules[].name'
+
+# Check for firing alerts
+curl -s http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | select(.state=="firing")'
+```
+
+## Tracing
+
+### OpenTelemetry Integration
+
+MCP Hangar supports distributed tracing via OpenTelemetry:
+
+```python
+from mcp_hangar.observability import init_tracing, trace_span
+
+# Initialize once at startup
+init_tracing(
+    service_name="mcp-hangar",
+    otlp_endpoint="http://localhost:4317",
+)
+
+# Create spans for operations
+with trace_span("process_request", {"request.id": req_id}) as span:
+    span.add_event("checkpoint_reached")
+    result = do_work()
+```
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MCP_TRACING_ENABLED` | `true` | Enable/disable tracing |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:4317` | OTLP collector endpoint |
+| `OTEL_SERVICE_NAME` | `mcp-hangar` | Service name in traces |
+
+### Trace Context Propagation
+
+```python
+from mcp_hangar.observability import inject_trace_context, extract_trace_context
+
+# Inject into outgoing requests
+headers = {}
+inject_trace_context(headers)
+
+# Extract from incoming requests
+context = extract_trace_context(request_headers)
+```
+
+## Langfuse Integration
+
+MCP Hangar integrates with [Langfuse](https://langfuse.com) for LLM-specific observability.
+
+### Configuration
+
+```bash
+export MCP_LANGFUSE_ENABLED=true
+export LANGFUSE_PUBLIC_KEY=pk-lf-...
+export LANGFUSE_SECRET_KEY=sk-lf-...
+export LANGFUSE_HOST=https://cloud.langfuse.com
+```
+
+Or via config.yaml:
+
+```yaml
+observability:
+  langfuse:
+    enabled: true
+    public_key: ${LANGFUSE_PUBLIC_KEY}
+    secret_key: ${LANGFUSE_SECRET_KEY}
+    host: https://cloud.langfuse.com
+    sample_rate: 1.0
+```
+
+### Trace Propagation
+
+```python
+from mcp_hangar.application.services import TracedProviderService
+
+result = traced_service.invoke_tool(
+    provider_id="math",
+    tool_name="add",
+    arguments={"a": 1, "b": 2},
+    trace_id="your-langfuse-trace-id",
+    user_id="user-123",
+    session_id="session-456",
+)
+```
+
+See [ADR-001](../adr/001-langfuse-integration.md) for architectural details.
+
+## Logging
+
+### Structured Logging
+
+MCP Hangar uses structlog for structured JSON logging:
+
+```json
+{
+  "timestamp": "2026-02-03T10:30:00.123Z",
+  "level": "info",
+  "event": "tool_invoked",
+  "provider": "math",
+  "tool": "add",
+  "duration_ms": 150,
+  "service": "mcp-hangar"
+}
+```
+
+### Configuration
+
+```yaml
+logging:
+  level: INFO          # DEBUG, INFO, WARNING, ERROR
+  json_format: true    # JSON output for log aggregation
+```
+
+Environment variable:
+
+```bash
+MCP_LOG_LEVEL=DEBUG mcp-hangar serve --http
+```
+
+### Log Correlation
+
+Include trace IDs for correlation with distributed traces:
+
+```python
+from mcp_hangar.observability import get_current_trace_id
+from mcp_hangar.logging_config import get_logger
+
+logger = get_logger(__name__)
+logger.info("processing", trace_id=get_current_trace_id())
+```
+
+## Health Checks
+
+### HTTP Endpoints
+
+| Endpoint | Purpose | Use Case |
+|----------|---------|----------|
+| `/health/live` | Liveness | Container restart decisions |
+| `/health/ready` | Readiness | Traffic routing |
+| `/health/startup` | Startup | Initial boot gate |
+
+### Response Format
+
+```json
+{
+  "status": "healthy",
+  "checks": [
+    {
+      "name": "providers",
+      "status": "healthy",
+      "duration_ms": 1.2
+    }
+  ],
+  "version": "0.6.3",
+  "uptime_seconds": 3600.5
+}
+```
+
+### Kubernetes Configuration
+
+```yaml
+livenessProbe:
+  httpGet:
+    path: /health/live
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /health/ready
+    port: 8000
+  initialDelaySeconds: 10
+  periodSeconds: 5
 ```
 
 ## SLIs/SLOs
 
 ### Service Level Indicators
 
-| SLI | Metric | Good Event |
-|-----|--------|------------|
-| Availability | Provider ready state | `mcp_hangar_provider_state{state="ready"}` |
-| Latency | Tool invocation duration | Request < 2s |
-| Error Rate | Failed invocations | `mcp_hangar_errors_total` |
+| SLI | Metric | Measurement |
+|-----|--------|-------------|
+| Availability | Service up | `up{job="mcp-hangar"}` |
+| Latency | Tool call duration | P95 < 3s |
+| Error Rate | Failed invocations | Error rate < 1% |
+| Batch Success | Batch completion | Success rate > 95% |
 
 ### Recommended SLOs
 
-| SLI | Target | Measurement Window |
-|-----|--------|-------------------|
-| Availability | 99.9% | 30 days rolling |
-| Latency (P95) | < 2s | 5 minute window |
-| Error Rate | < 1% | 5 minute window |
+| SLI | Target | Window |
+|-----|--------|--------|
+| Availability | 99.9% | 30 days |
+| Latency (P95) | < 3s | 5 minutes |
+| Error Rate | < 1% | 5 minutes |
+| Batch Success | > 95% | 5 minutes |
 
-### Error Budget Calculation
+### PromQL Queries
 
 ```promql
-# Error budget remaining (1.0 = full budget, 0.0 = exhausted)
+# Availability (service up ratio over 30d)
+avg_over_time(up{job="mcp-hangar"}[30d])
+
+# Error budget remaining
 1 - (
-  sum(increase(mcp_hangar_errors_total[30d])) /
-  sum(increase(mcp_hangar_tool_calls_total[30d]))
-) / 0.001
-```
+  sum(increase(mcp_hangar_tool_call_errors_total[30d]))
+  / sum(increase(mcp_hangar_tool_calls_total[30d]))
+) / 0.01
 
-### Availability Query
+# P95 latency
+histogram_quantile(0.95,
+  sum(rate(mcp_hangar_tool_call_duration_seconds_bucket[5m])) by (le)
+)
 
-```promql
-# Current availability ratio
-sum(mcp_hangar_provider_state{state="ready"}) /
-sum(mcp_hangar_provider_state)
+# Batch success rate
+sum(rate(mcp_hangar_batch_calls_total{result="success"}[5m]))
+/ sum(rate(mcp_hangar_batch_calls_total[5m]))
 ```
 
 ## Troubleshooting
 
-### Provider Startup Errors
-
-MCP Hangar provides detailed diagnostics when providers fail to start. The `ProviderStartError` exception includes:
-
-- **stderr**: Captured process output for debugging
-- **exit_code**: Process exit code
-- **suggestion**: Actionable fix based on error patterns
-
-#### Common Error Patterns and Suggestions
-
-| Error Pattern | Exit Code | Suggestion |
-|---------------|-----------|------------|
-| `ModuleNotFoundError` | - | Install missing Python dependencies. Check your virtual environment is activated. |
-| `ImportError` | - | Check that all required packages are installed and import paths are correct. |
-| `SyntaxError` | - | Fix the syntax error in the provider code before starting. |
-| `PermissionError` | - | Check file permissions. Ensure the provider script is executable. |
-| `FileNotFoundError` | - | Check that all referenced files and paths exist. |
-| `ConnectionRefused` | - | The target service is not running or not accepting connections. |
-| `timeout` | - | The operation timed out. Check network connectivity and service availability. |
-| `docker not found` | - | Ensure Docker/Podman is installed and running. Check that the image exists. |
-| `MemoryError` | - | The provider ran out of memory. Consider increasing memory limits. |
-| - | 1 | General error. Check the provider logs for more details. |
-| - | 126 | Command not executable. Check file permissions (chmod +x). |
-| - | 127 | Command not found. Check that the command exists and PATH is correct. |
-| - | 137 | Process was killed (OOM or SIGKILL). Consider increasing memory limits. |
-| - | 139 | Segmentation fault. This indicates a bug in the provider code. |
-
-#### Example Error Output
-
-```
-Failed to start provider 'my-provider': ModuleNotFoundError: No module named fastapi
-  Exit code: 1
-  Process output:
-    Traceback (most recent call last):
-    File "server.py", line 1
-    ModuleNotFoundError: No module named fastapi
-  Suggestion: Install missing Python dependencies. Check your virtual environment is activated.
-```
-
-#### Programmatic Access to Diagnostics
-
-```python
-from mcp_hangar.domain.exceptions import ProviderStartError
-
-try:
-    provider.ensure_ready()
-except ProviderStartError as e:
-    print(e.get_user_message())  # Human-readable message
-    print(f"Exit code: {e.exit_code}")
-    print(f"Stderr: {e.stderr}")
-    print(f"Suggestion: {e.suggestion}")
-    print(f"Details: {e.details}")  # All diagnostics as dict
-```
-
 ### Metrics Not Visible
 
-1. **Verify endpoint accessibility**:
+1. Verify endpoint:
 
    ```bash
-   curl http://localhost:8000/metrics
+   curl http://localhost:8000/metrics | head -20
    ```
 
-2. **Check Prometheus targets**:
-   - Open http://localhost:9090/targets
-   - Verify MCP Hangar target is `UP`
+2. Check Prometheus targets at http://localhost:9090/targets
 
-3. **Review Prometheus logs**:
+3. Verify network connectivity (use `host.docker.internal` for Docker on Mac/Windows)
+
+### Alerts Not Firing
+
+1. Check alert rules loaded:
 
    ```bash
-   docker logs mcp-prometheus 2>&1 | grep -i error
+   curl http://localhost:9090/api/v1/rules | jq '.data.groups[].name'
    ```
 
-### Traces Not Appearing
+2. Verify metrics exist for alert expressions
 
-1. **Verify tracing is enabled**:
+3. Check Alertmanager connectivity:
 
    ```bash
-   echo $MCP_TRACING_ENABLED  # Should be 'true' or unset
+   curl http://localhost:9093/api/v1/status
    ```
 
-2. **Check OTLP endpoint connectivity**:
+### High Consecutive Failures
+
+If `MCPHangarHighConsecutiveFailures` fires:
+
+1. Check provider logs for errors
+2. Verify provider command/configuration
+3. Test provider manually:
 
    ```bash
-   curl -v http://localhost:4317
+   mcp-hangar provider start <provider-id>
    ```
 
-3. **Look for initialization errors**:
+### Provider Start Errors
 
-   ```bash
-   grep -i "tracing" logs/mcp-hangar.log
-   ```
+Common patterns and fixes:
 
-4. **Verify OpenTelemetry packages installed**:
-
-   ```bash
-   pip list | grep opentelemetry
-   ```
-
-### Health Check Failures
-
-1. **Get detailed health status**:
-
-   ```bash
-   curl -s http://localhost:8000/health/ready | jq .
-   ```
-
-2. **Check individual check results**:
-
-   ```python
-   endpoint = get_health_endpoint()
-   result = endpoint.get_last_result("providers")
-   print(result.to_dict())
-   ```
-
-### High Cardinality Warnings
-
-1. Review metric label values for unbounded sets
-2. Avoid user-provided values in labels
-3. Use label aggregation in queries:
-
-   ```promql
-   sum by (provider) (rate(mcp_hangar_tool_calls_total[5m]))
-   ```
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `ModuleNotFoundError` | Missing dependency | `pip install <package>` |
+| `FileNotFoundError` | Wrong path | Check command in config |
+| `PermissionError` | Not executable | `chmod +x <script>` |
+| Exit code 137 | OOM killed | Increase memory limits |
 
 ## Best Practices
 
 ### Metrics
 
-1. **Use meaningful labels** - Include provider, tool, and outcome
-2. **Avoid high cardinality** - Don't use request IDs or timestamps as labels
-3. **Set retention appropriately** - 15 days for metrics, 7 days for traces
-
-### Tracing
-
-1. **Initialize early** - Call `init_tracing()` at application startup
-2. **Use semantic attributes** - Follow OpenTelemetry conventions
-3. **Propagate context** - Inject/extract for cross-service traces
+1. **Monitor the right things** - Focus on user-facing SLIs
+2. **Set appropriate retention** - 15 days for metrics, 7 days for traces
+3. **Avoid high cardinality** - Don't use unbounded values as labels
 
 ### Alerting
 
-1. **Create runbooks** - Document response procedures for each alert
-2. **Test alerts regularly** - Verify notification channels work
-3. **Tune thresholds** - Adjust based on baseline behavior
+1. **Create runbooks** - Document response procedures
+2. **Start conservative** - Tune thresholds based on baseline
+3. **Test regularly** - Verify notification channels work
+4. **Use severity correctly** - Critical = page, Warning = ticket
 
-### Health Checks
+### Dashboards
 
-1. **Keep checks fast** - Use short timeouts (< 5s)
-2. **Distinguish critical vs non-critical** - Use `critical=False` for degraded states
-3. **Monitor the monitors** - Alert on Prometheus/Grafana health
+1. **Layer information** - Overview -> Details -> Debug
+2. **Include time selectors** - Allow drilling into incidents
+3. **Add annotations** - Mark deployments and incidents
+
+### Production Readiness Checklist
+
+- [ ] Prometheus scraping MCP Hangar metrics
+- [ ] Grafana dashboards imported and working
+- [ ] Alertmanager configured with notification routes
+- [ ] Critical alerts tested (e.g., stop service, verify page)
+- [ ] Runbooks created for each alert
+- [ ] Log aggregation configured (ELK, Loki, etc.)
+- [ ] Tracing enabled and traces visible in Jaeger/Langfuse

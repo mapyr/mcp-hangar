@@ -5,15 +5,16 @@ application components. It is the composition root of the application.
 
 The bootstrap process:
 1. Load configuration
-2. Initialize runtime (event bus, command bus, query bus)
-3. Initialize event store (for event sourcing)
-4. Register event handlers
-5. Register CQRS handlers
-6. Initialize sagas
-7. Load providers from config
-8. Initialize discovery (if enabled)
-9. Create MCP server with tools
-10. Create background workers (DO NOT START)
+2. Initialize observability (tracing, Langfuse)
+3. Initialize runtime (event bus, command bus, query bus)
+4. Initialize event store (for event sourcing)
+5. Register event handlers
+6. Register CQRS handlers
+7. Initialize sagas
+8. Load providers from config
+9. Initialize discovery (if enabled)
+10. Create MCP server with tools
+11. Create background workers (DO NOT START)
 
 Key principle: Bootstrap returns a fully configured but NOT running application.
 Starting is handled by the lifecycle module.
@@ -28,6 +29,7 @@ from mcp.server.fastmcp import FastMCP
 
 from ...application.commands.load_handlers import LoadProviderHandler, UnloadProviderHandler
 from ...application.discovery import DiscoveryOrchestrator
+from ...application.ports.observability import ObservabilityPort
 from ...gc import BackgroundWorker
 from ...logging_config import get_logger
 from ..auth_bootstrap import AuthComponents, bootstrap_auth
@@ -41,6 +43,7 @@ from .event_handlers import init_event_handlers
 from .event_store import init_event_store
 from .hot_loading import init_hot_loading
 from .knowledge_base import init_knowledge_base
+from .observability import init_observability, shutdown_observability
 from .retry_config import init_retry_config
 from .tools import register_all_tools
 from .truncation import init_truncation
@@ -84,6 +87,9 @@ class ApplicationContext:
     unload_provider_handler: UnloadProviderHandler | None = None
     """Handler for unloading providers at runtime."""
 
+    observability_adapter: ObservabilityPort | None = None
+    """Observability adapter for tracing (Langfuse, etc.)."""
+
     @property
     def providers(self) -> dict[str, Any]:
         """Get providers dictionary for easy access."""
@@ -92,7 +98,7 @@ class ApplicationContext:
     def shutdown(self) -> None:
         """Graceful shutdown of all components.
 
-        Stops background workers, discovery orchestrator, and cleans up resources.
+        Stops background workers, discovery orchestrator, observability, and cleans up resources.
         """
         logger.info("application_context_shutdown_start")
 
@@ -124,6 +130,9 @@ class ApplicationContext:
                     provider_id=provider_id,
                     error=str(e),
                 )
+
+        # Shutdown observability (tracing, Langfuse)
+        shutdown_observability(self.observability_adapter)
 
         logger.info("application_context_shutdown_complete")
 
@@ -187,6 +196,9 @@ def bootstrap(
             load_config(providers_config)
     else:
         full_config = load_configuration(config_path)
+
+    # Initialize observability (tracing, Langfuse) early
+    _, observability_adapter = init_observability(full_config)
 
     # Initialize event store for event sourcing
     init_event_store(runtime, full_config)
@@ -258,6 +270,7 @@ def bootstrap(
         config=full_config,
         load_provider_handler=load_handler,
         unload_provider_handler=unload_handler,
+        observability_adapter=observability_adapter,
     )
 
     # Update application context for tools to access
@@ -277,6 +290,7 @@ _init_retry_config = init_retry_config
 _init_knowledge_base = init_knowledge_base
 _init_truncation = init_truncation
 _init_hot_loading = init_hot_loading
+_init_observability = init_observability
 _register_all_tools = register_all_tools
 _create_background_workers = create_background_workers
 _create_discovery_orchestrator = create_discovery_orchestrator
@@ -293,9 +307,11 @@ __all__ = [
     "init_event_store",
     "init_hot_loading",
     "init_knowledge_base",
+    "init_observability",
     "init_retry_config",
     "init_saga",
     "init_truncation",
+    "shutdown_observability",
     "create_background_workers",
     "create_discovery_orchestrator",
     "register_all_tools",
@@ -305,6 +321,7 @@ __all__ = [
     "_init_event_store",
     "_init_hot_loading",
     "_init_knowledge_base",
+    "_init_observability",
     "_init_retry_config",
     "_init_saga",
     "_init_truncation",
