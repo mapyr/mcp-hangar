@@ -6,6 +6,7 @@ Thread-safe HTTP client with:
 - Connection pooling and retry logic
 - TLS/HTTPS support with custom CA certificates
 - Request/response correlation
+- Prometheus metrics instrumentation
 
 Follows the same interface as StdioClient for consistency.
 """
@@ -22,6 +23,7 @@ import uuid
 
 import httpx
 
+from . import metrics as prometheus_metrics
 from .domain.exceptions import ClientError
 from .logging_config import get_logger
 
@@ -153,6 +155,7 @@ class HttpClient:
         endpoint: str,
         auth_config: AuthConfig | None = None,
         http_config: HttpClientConfig | None = None,
+        provider_id: str | None = None,
     ):
         """
         Initialize HTTP client for a remote MCP provider.
@@ -161,10 +164,12 @@ class HttpClient:
             endpoint: Base URL of the MCP provider (e.g., https://mcp.example.com)
             auth_config: Authentication configuration
             http_config: HTTP client configuration
+            provider_id: Optional provider ID for metrics labeling
         """
         self._endpoint = endpoint.rstrip("/")
         self._auth_config = auth_config or AuthConfig()
         self._http_config = http_config or HttpClientConfig()
+        self._provider_id = provider_id
 
         # Parse endpoint URL
         self._scheme, self._host, self._port, self._base_path = self._parse_endpoint(endpoint)
@@ -307,6 +312,9 @@ class HttpClient:
 
         start_time = time.time()
 
+        # Get provider label for metrics (use provider_id or extract from host)
+        provider_label = self._provider_id or self._host
+
         try:
             response = self._client.post(
                 url,
@@ -314,7 +322,13 @@ class HttpClient:
                 timeout=timeout,
             )
 
-            duration_ms = (time.time() - start_time) * 1000
+            duration_s = time.time() - start_time
+            duration_ms = duration_s * 1000
+            status_code = str(response.status_code)
+
+            # Record HTTP request metrics
+            prometheus_metrics.HTTP_REQUESTS_TOTAL.inc(provider=provider_label, method=method, status_code=status_code)
+            prometheus_metrics.HTTP_REQUEST_DURATION_SECONDS.observe(duration_s, provider=provider_label, method=method)
 
             # Check for SSE response (streaming)
             content_type = response.headers.get("Content-Type", "")
@@ -331,6 +345,7 @@ class HttpClient:
             )
 
             if response.status_code >= 400:
+                prometheus_metrics.HTTP_ERRORS_TOTAL.inc(provider=provider_label, error_type=f"http_{status_code}")
                 return {
                     "error": {
                         "code": -32000,
@@ -343,6 +358,7 @@ class HttpClient:
                 result = response.json()
                 return result
             except json.JSONDecodeError as e:
+                prometheus_metrics.HTTP_ERRORS_TOTAL.inc(provider=provider_label, error_type="json_decode_error")
                 return {
                     "error": {
                         "code": -32700,
@@ -351,33 +367,43 @@ class HttpClient:
                 }
 
         except httpx.TimeoutException as e:
-            duration_ms = (time.time() - start_time) * 1000
+            duration_s = time.time() - start_time
+            duration_ms = duration_s * 1000
             logger.error(
                 "http_client_timeout",
                 request_id=request_id,
                 error=str(e),
                 duration_ms=duration_ms,
             )
+            # Record timeout error
+            prometheus_metrics.HTTP_ERRORS_TOTAL.inc(provider=provider_label, error_type="timeout")
+            prometheus_metrics.HTTP_REQUEST_DURATION_SECONDS.observe(duration_s, provider=provider_label, method=method)
             raise TimeoutError(f"timeout: {method} after {timeout}s") from e
 
         except httpx.ConnectError as e:
-            duration_ms = (time.time() - start_time) * 1000
+            duration_s = time.time() - start_time
+            duration_ms = duration_s * 1000
             logger.error(
                 "http_client_connection_error",
                 request_id=request_id,
                 error=str(e),
                 duration_ms=duration_ms,
             )
+            # Record connection error
+            prometheus_metrics.HTTP_ERRORS_TOTAL.inc(provider=provider_label, error_type="connection_refused")
             raise ClientError(f"connection_failed: {e}") from e
 
         except Exception as e:
-            duration_ms = (time.time() - start_time) * 1000
+            duration_s = time.time() - start_time
+            duration_ms = duration_s * 1000
             logger.error(
                 "http_client_request_failed",
                 request_id=request_id,
                 error=str(e),
                 duration_ms=duration_ms,
             )
+            # Record generic error
+            prometheus_metrics.HTTP_ERRORS_TOTAL.inc(provider=provider_label, error_type="request_failed")
             raise ClientError(f"request_failed: {e}") from e
 
     def _parse_sse_body(self, body: str, request_id: str) -> dict[str, Any]:

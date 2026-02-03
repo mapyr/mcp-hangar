@@ -4,6 +4,7 @@ This module provides validation functions that use the ApplicationContext
 for accessing rate limiter and security handler, following DIP.
 """
 
+from .. import metrics as prometheus_metrics
 from ..application.mcp.tooling import ToolErrorPayload
 from ..domain.exceptions import RateLimitExceeded
 from ..domain.security.input_validator import (
@@ -19,10 +20,14 @@ def check_rate_limit(key: str = "global") -> None:
     """Check rate limit and raise exception if exceeded.
 
     Gets rate limiter from application context (DIP).
+    Updates Prometheus metrics when rate limit is hit.
     """
     ctx = get_context()
     result = ctx.rate_limiter.consume(key)
     if not result.allowed:
+        # Update Prometheus metrics
+        prometheus_metrics.RATE_LIMIT_HITS_TOTAL.inc(endpoint=key)
+
         ctx.security_handler.log_rate_limit_exceeded(
             limit=result.limit,
             window_seconds=int(1.0 / result.limit) if result.limit else 1,
