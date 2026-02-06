@@ -127,13 +127,14 @@ class TestConfigReloadWorkerIntegration:
         worker = ConfigReloadWorker(
             config_path=temp_config_file,
             command_bus=mock_command_bus,
+            interval_s=1,  # Fallback interval if watchdog unavailable
             use_watchdog=True,
         )
 
         worker.start()
 
         try:
-            # Wait for watchdog to fully initialize (observer thread startup + inotify registration)
+            # Wait for watchdog/polling to fully initialize
             time.sleep(1.5)
 
             # Modify the file
@@ -143,7 +144,8 @@ class TestConfigReloadWorkerIntegration:
             # Force flush
             os.sync() if hasattr(os, "sync") else None
 
-            # Wait for debounce (1s) + watchdog processing + command execution
+            # Wait for debounce (1s) + processing + command execution
+            # Need extra time for polling fallback (interval_s=1)
             time.sleep(3.0)
 
             # Check that reload was triggered
