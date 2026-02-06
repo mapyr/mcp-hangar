@@ -7,7 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.6] - 2026-02-06
+
 ### Added
+
+- **Cookbook Documentation**: Step-by-step production recipes for MCP Hangar
+  - Recipe 01 — HTTP Gateway: Single MCP provider behind Hangar as control plane
+  - Recipe 02 — Health Checks: Automatic health monitoring with state transitions on failure
+  - Recipe 03 — Circuit Breaker: Provider groups with circuit breaker for fast-fail protection
+  - Recipe 04 — Failover: Automatic failover to backup provider with priority-based routing
+  - All recipes include complete config, step-by-step Try It sections, and technical explanations
+  - Recipes build on each other sequentially (01 → 02 → 03 → 04)
+  - Each recipe validated with working configs and real Hangar tests
+  - Located in `docs/cookbook/` with index and schema documentation
 
 - **Hot-Reload Configuration**: Live configuration reloading without process restart
   - Automatic file watching via watchdog (inotify/fsevents) with polling fallback
@@ -31,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Init Smoke Test**: `mcp-hangar init` now tests providers after configuration
   - Step 5 starts each provider and waits for READY state (max 10s total)
-  - Shows green checkmark per provider on success: `OK filesystem ready (1234ms)`
+  - Shows green checkmark per provider on success: `✓ filesystem ready (1234ms)`
   - Shows detailed error with actionable suggestion on failure
   - Summary shows pass/fail count before "Restart Claude Desktop" prompt
   - Skip with `--skip-test` flag if needed
@@ -78,6 +90,7 @@ config_reload:
 
 ### Documentation
 
+- New cookbook documentation: `docs/cookbook/` with 4 production recipes
 - New reference documentation: `docs/reference/hot-reload.md`
 
 ## [0.6.5] - 2026-02-03
@@ -704,7 +717,8 @@ The following items are documented technical debt introduced to enable CI:
 - Rate limiting to prevent denial of service
 - Audit logging for security-relevant events
 
-[Unreleased]: https://github.com/mapyr/mcp-hangar/compare/v0.6.5...HEAD
+[Unreleased]: https://github.com/mapyr/mcp-hangar/compare/v0.6.6...HEAD
+[0.6.6]: https://github.com/mapyr/mcp-hangar/compare/v0.6.5...v0.6.6
 [0.6.5]: https://github.com/mapyr/mcp-hangar/compare/v0.6.4...v0.6.5
 [0.6.4]: https://github.com/mapyr/mcp-hangar/compare/v0.6.3...v0.6.4
 [0.6.3]: https://github.com/mapyr/mcp-hangar/compare/v0.6.2...v0.6.3

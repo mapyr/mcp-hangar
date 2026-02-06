@@ -70,6 +70,12 @@ nav:
   - Getting Started:
       - Installation: getting-started/installation.md
       - Quick Start: getting-started/quickstart.md
+  - Cookbook:
+      - Overview: cookbook/index.md
+      - 01 — HTTP Gateway: cookbook/01-http-gateway.md
+      - 02 — Health Checks: cookbook/02-health-checks.md
+      - 03 — Circuit Breaker: cookbook/03-circuit-breaker.md
+      - 04 — Failover: cookbook/04-failover.md
   - Architecture:
       - Overview: architecture/OVERVIEW.md
       - Event Sourcing: architecture/EVENT_SOURCING.md

@@ -1,0 +1,43 @@
+# Cookbook
+
+From zero to production in 13 recipes. Start at 01 and go in order, or jump to what you need.
+
+## The Path (sequential)
+
+Recipes 01–06 build on each other. Start at 01 and work through in order.
+
+| # | Recipe | What it adds |
+|---|--------|--------------|
+| 01 | [HTTP Gateway](01-http-gateway.md) | Single MCP provider behind Hangar |
+| 02 | [Health Checks](02-health-checks.md) | Know when your provider is dead |
+| 03 | [Circuit Breaker](03-circuit-breaker.md) | Stop hammering a failing provider |
+| 04 | [Failover](04-failover.md) | Automatic switch to backup provider |
+| 05 | Load Balancing | Distribute load across multiple providers |
+| 06 | Rate Limiting | Protect providers from overload |
+
+## Standalone Recipes
+
+These recipes can be done independently but assume basic Hangar setup from recipe 01.
+
+| # | Recipe | Prerequisite |
+|---|--------|--------------|
+| 07 | Observability: Metrics | 01 |
+| 08 | Observability: Langfuse | 01 |
+| 09 | Subprocess Providers | 01 |
+| 10 | Discovery: Docker | 01 |
+| 11 | Discovery: Kubernetes | 01 |
+| 12 | Auth & RBAC | 01 |
+| 13 | Production Checklist | 01–06 |
+
+## How to Use This Cookbook
+
+Each recipe follows the same structure:
+
+1. **The Problem** — What pain you're solving
+2. **The Config** — Complete, copy-pasteable configuration
+3. **Try It** — Step-by-step commands with expected output
+4. **What Just Happened** — Technical explanation
+5. **Key Config Reference** — New configuration options
+6. **What's Next** — Link to the next recipe
+
+Config blocks show the COMPLETE file, not fragments. New additions are marked with `# NEW` comments.

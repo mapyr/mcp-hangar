@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.1] - 2026-01-24
 
 ### Added
+
 - Enhanced `ProviderStartError` with diagnostic information:
   - `stderr`: Captured process stderr output
   - `exit_code`: Process exit code for failed starts
@@ -26,17 +27,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2026-01-21
 
 ### Added
+
 - Facade API: `Hangar` class for simplified provider management
 - HangarConfig Builder with fluent API
 - RichToolInvocationError with detailed diagnostics
 - Error categorization (user_error, provider_error, infra_error)
 
 ### Improved
+
 - Thread-safe lock hierarchy with `HierarchicalLockManager`
 
 ## [0.2.3] - 2026-01-20
 
 ### Fixed
+
 - Improved error diagnostics for provider startup failures
 - `StdioClient` now captures stderr when process dies
 - `Provider._handle_start_failure()` receives actual exception
@@ -44,18 +48,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.2] - 2026-01-19
 
 ### Fixed
+
 - Re-enable mypy type checking with gradual adoption
 - Configure mypy with relaxed settings
 
 ## [0.2.1] - 2026-01-18
 
 ### Fixed
+
 - Add missing `ToolSchema` export in `models.py`
 - Fix Python lint errors
 
 ## [0.2.0] - 2026-01-18
 
 ### Added
+
 - Monorepo structure with packages/core for Python code
 - CQRS + Event Sourcing architecture
 - Provider state machine with COLD -> INITIALIZING -> READY -> DEGRADED -> DEAD transitions
@@ -65,11 +72,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Authentication & Authorization (API Key, JWT/OIDC, RBAC)
 
 ### Changed
+
 - Restructured from flat layout to packages/core/
 
 ## [0.1.0] - 2025-01-01
 
 ### Added
+
 - Initial release
 - Basic provider management
 - MCP protocol support

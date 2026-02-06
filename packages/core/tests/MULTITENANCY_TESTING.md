@@ -7,9 +7,11 @@ Comprehensive testing for MCP-Hangar's multi-tenancy and governance features.
 ## Test Coverage
 
 ### Unit Tests (`tests/unit/test_tenant.py`)
+
 **19 tests** covering core domain logic:
 
 #### Tenant Aggregate (11 tests)
+
 - ✅ Create tenant with default/custom quotas
 - ✅ Suspend/reactivate tenant
 - ✅ Quota checks (allow/block/warning)
@@ -18,24 +20,29 @@ Comprehensive testing for MCP-Hangar's multi-tenancy and governance features.
 - ✅ Quota updates with events
 
 #### Namespace Aggregate (6 tests)
+
 - ✅ Create namespace
 - ✅ Provider tracking (add/remove)
 - ✅ Effective quotas (override/inherit from tenant)
 - ✅ Quota capping at tenant limit
 
 #### Value Objects (2 tests)
+
 - ✅ TenantId validation (K8s naming rules)
 - ✅ NamespaceId validation (K8s naming rules)
 
 ### Integration Tests (`tests/integration/test_multitenancy.py`)
+
 **24 tests** covering cross-aggregate interactions:
 
 #### Tenant Isolation (3 tests)
+
 - ✅ Cross-tenant namespace isolation
 - ✅ Namespace-tenant ownership
 - ✅ Tenant namespace tracking
 
 #### Quota Enforcement (5 tests)
+
 - ✅ Block operations beyond quota
 - ✅ Allow operations within quota
 - ✅ Per-namespace quota overrides
@@ -43,27 +50,32 @@ Comprehensive testing for MCP-Hangar's multi-tenancy and governance features.
 - ✅ Warning at 80% threshold
 
 #### Suspended Tenant Behavior (3 tests)
+
 - ✅ Block namespace creation when suspended
 - ✅ Block provider creation when suspended
 - ✅ Resume operations after reactivation
 
 #### Cross-Aggregate Interactions (4 tests)
+
 - ✅ Namespace creation updates tenant usage
 - ✅ Provider creation updates namespace and tenant
 - ✅ Namespace deletion updates tenant
 - ✅ Provider deletion updates counts
 
 #### Event Sourcing (3 tests)
+
 - ✅ Tenant lifecycle events
 - ✅ Quota exceeded events
 - ✅ Namespace creation events
 
 #### Principal-Tenant Association (3 tests)
+
 - ✅ Principal with tenant_id
 - ✅ Organization-level principal (no tenant)
 - ✅ System principal access
 
 #### Resource Scope Hierarchy (3 tests)
+
 - ✅ Organization scope includes all tenants
 - ✅ Tenant scope includes own namespaces
 - ✅ Namespace scope requires exact match
@@ -71,21 +83,25 @@ Comprehensive testing for MCP-Hangar's multi-tenancy and governance features.
 ## Running Tests
 
 ### All Multi-Tenancy Tests
+
 ```bash
 pytest tests/unit/test_tenant.py tests/integration/test_multitenancy.py -v
 ```
 
 ### Unit Tests Only
+
 ```bash
 pytest tests/unit/test_tenant.py -v
 ```
 
 ### Integration Tests Only
+
 ```bash
 pytest tests/integration/test_multitenancy.py -v
 ```
 
 ### With Coverage
+
 ```bash
 pytest tests/unit/test_tenant.py tests/integration/test_multitenancy.py --cov=mcp_hangar.domain.model --cov-report=html
 ```
@@ -103,6 +119,7 @@ Total: 43 tests
 ## Test Scenarios
 
 ### Quota Enforcement Flow
+
 ```python
 # 1. Create tenant with quota
 tenant = Tenant(quotas=TenantQuotas(max_providers=5))
@@ -121,6 +138,7 @@ assert result.allowed is False  # Quota exceeded
 ```
 
 ### Tenant Isolation
+
 ```python
 # Each tenant has isolated namespaces
 tenant_a = Tenant(tenant_id=TenantId("team-a"), ...)
@@ -134,6 +152,7 @@ assert namespace_a.tenant_id != namespace_b.tenant_id
 ```
 
 ### Namespace Quota Overrides
+
 ```python
 # Tenant has max_providers=100
 tenant = Tenant(quotas=TenantQuotas(max_providers=100))
@@ -169,6 +188,7 @@ assert any(isinstance(e, QuotaExceeded) for e in events)
 ## Testing Patterns
 
 ### Arrange-Act-Assert
+
 ```python
 def test_quota_check_blocks_when_exceeded(self):
     # Arrange
@@ -185,6 +205,7 @@ def test_quota_check_blocks_when_exceeded(self):
 ```
 
 ### Event Collection
+
 ```python
 def test_suspend_emits_event(self):
     tenant = Tenant(...)

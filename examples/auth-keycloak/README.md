@@ -12,6 +12,7 @@ docker-compose up -d
 ```
 
 This starts:
+
 - **Keycloak** on http://localhost:8080
 - **MCP-Hangar** on http://localhost:9000 (with auth enabled)
 
@@ -76,6 +77,7 @@ echo "$TOKEN" | cut -d'.' -f2 | base64 -d | jq .
 ```
 
 Example claims:
+
 ```json
 {
   "sub": "12345-abcde-...",
@@ -89,11 +91,13 @@ Example claims:
 ## Keycloak Admin Console
 
 Access the Keycloak admin console at:
+
 - URL: http://localhost:8080/admin
 - Username: `admin`
 - Password: `admin`
 
 From here you can:
+
 - Create/modify users
 - Manage groups and roles
 - Configure client settings
@@ -126,6 +130,7 @@ auth:
 ### Keycloak Client Settings
 
 The `mcp-hangar` client in Keycloak is configured with:
+
 - Protocol mappers to include `groups` and `roles` in JWT
 - Direct access grants enabled (for password flow)
 - Client secret: `mcp-hangar-secret`
@@ -151,11 +156,13 @@ Keycloak takes 30-60 seconds to start. Wait for the health check to pass.
 ### Token not working
 
 Decode the token and verify:
+
 ```bash
 echo "$TOKEN" | cut -d'.' -f2 | base64 -d | jq .
 ```
 
 Check that:
+
 - `iss` matches your issuer URL
 - `aud` contains your client_id
 - `exp` is in the future

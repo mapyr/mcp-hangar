@@ -8,6 +8,7 @@ from ...logging_config import get_logger
 
 if TYPE_CHECKING:
     from ...infrastructure.lock_hierarchy import TrackedLock
+
 from ..contracts.metrics_publisher import IMetricsPublisher, NullMetricsPublisher
 from ..events import (
     HealthCheckFailed,
