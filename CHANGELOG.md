@@ -99,15 +99,6 @@ config_reload:
   interval_s: 5       # polling interval when watchdog unavailable
 ```
 
-### Fixed
-
-- **ConfigReloadWorker tests**: Fixed timing issues in integration tests
-  - `test_watchdog_detects_file_modification`: Increased watchdog initialization time and debounce wait
-  - `test_multiple_rapid_changes_debounced_in_watchdog`: Added explicit polling interval configuration
-  - `test_polling_detects_file_modification`: Ensured sufficient mtime difference for detection
-- **CLI add provider test**: Fixed assertion to accept both uvx and npx package names
-  - Test now correctly validates `mcp-server-fetch` (uvx) or `@modelcontextprotocol/server-fetch` (npx)
-
 ### Documentation
 
 - New cookbook documentation: `docs/cookbook/` with 4 production recipes
@@ -737,7 +728,8 @@ The following items are documented technical debt introduced to enable CI:
 - Rate limiting to prevent denial of service
 - Audit logging for security-relevant events
 
-[Unreleased]: https://github.com/mapyr/mcp-hangar/compare/v0.6.6...HEAD
+[Unreleased]: https://github.com/mapyr/mcp-hangar/compare/v0.6.7...HEAD
+[0.6.7]: https://github.com/mapyr/mcp-hangar/compare/v0.6.6...v0.6.7
 [0.6.6]: https://github.com/mapyr/mcp-hangar/compare/v0.6.5...v0.6.6
 [0.6.5]: https://github.com/mapyr/mcp-hangar/compare/v0.6.4...v0.6.5
 [0.6.4]: https://github.com/mapyr/mcp-hangar/compare/v0.6.3...v0.6.4
