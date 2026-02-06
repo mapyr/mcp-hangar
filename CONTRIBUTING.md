@@ -15,7 +15,7 @@ MCP Hangar is a monorepo containing multiple packages:
 ## Quick Start
 
 ```bash
-git clone https://github.com/mapyr/mcp-hangar.git
+git clone https://github.com/mcp-hangar/mcp-hangar.git
 cd mcp-hangar
 
 # Python core development

@@ -3,7 +3,7 @@
 ## Setup
 
 ```bash
-git clone https://github.com/mapyr/mcp-hangar.git
+git clone https://github.com/mcp-hangar/mcp-hangar.git
 cd mcp-hangar
 
 # Python core development
@@ -297,7 +297,7 @@ Each release produces:
 | Artifact | Location | Tags |
 |----------|----------|------|
 | Python Package | [PyPI](https://pypi.org/project/mcp-hangar/) | Version number |
-| Docker Image | [GHCR](https://ghcr.io/mapyr/mcp-hangar) | `latest`, `X.Y.Z`, `X.Y`, `X` |
+| Docker Image | [GHCR](https://ghcr.io/mcp-hangar/mcp-hangar) | `latest`, `X.Y.Z`, `X.Y`, `X` |
 | GitHub Release | Repository Releases | Changelog, install instructions |
 
 ### Hotfix Process
@@ -331,6 +331,6 @@ Please read our [Code of Conduct](../code-of-conduct.md) before contributing.
 
 ## First Contribution?
 
-Look for issues labeled [`good first issue`](https://github.com/mapyr/mcp-hangar/labels/good%20first%20issue).
+Look for issues labeled [`good first issue`](https://github.com/mcp-hangar/mcp-hangar/labels/good%20first%20issue).
 
-Questions? Open a [Discussion](https://github.com/mapyr/mcp-hangar/discussions).
+Questions? Open a [Discussion](https://github.com/mcp-hangar/mcp-hangar/discussions).

@@ -53,7 +53,7 @@ After version tag is pushed, the Release workflow triggers automatically:
 4. **Publish Docker** — Builds multi-arch images, pushes to GHCR
 5. **Create Release** — Creates GitHub Release with changelog
 
-Monitor at: `https://github.com/mapyr/mcp-hangar/actions`
+Monitor at: `https://github.com/mcp-hangar/mcp-hangar/actions`
 
 #### Step 4: Verify Artifacts
 
@@ -62,8 +62,8 @@ Monitor at: `https://github.com/mapyr/mcp-hangar/actions`
 pip install mcp-hangar==<VERSION> --dry-run
 
 # Verify Docker image
-docker pull ghcr.io/mapyr/mcp-hangar:<VERSION>
-docker run --rm ghcr.io/mapyr/mcp-hangar:<VERSION> --version
+docker pull ghcr.io/mcp-hangar/mcp-hangar:<VERSION>
+docker run --rm ghcr.io/mcp-hangar/mcp-hangar:<VERSION> --version
 ```
 
 #### Step 5: Post-Release
@@ -167,9 +167,9 @@ PyPI doesn't allow re-uploading deleted versions. Instead:
 1. **Update `latest` tag** to previous stable version:
 
    ```bash
-   docker pull ghcr.io/mapyr/mcp-hangar:X.Y.Z-1
-   docker tag ghcr.io/mapyr/mcp-hangar:X.Y.Z-1 ghcr.io/mapyr/mcp-hangar:latest
-   docker push ghcr.io/mapyr/mcp-hangar:latest
+   docker pull ghcr.io/mcp-hangar/mcp-hangar:X.Y.Z-1
+   docker tag ghcr.io/mcp-hangar/mcp-hangar:X.Y.Z-1 ghcr.io/mcp-hangar/mcp-hangar:latest
+   docker push ghcr.io/mcp-hangar/mcp-hangar:latest
    ```
 
 2. **Document the issue** in GitHub Release notes.
@@ -212,7 +212,7 @@ Error: 403 Forbidden - trusted publishing not configured
 
 1. Verify PyPI Trusted Publisher is configured:
    - Go to PyPI → Project → Publishing
-   - Add GitHub publisher: `mapyr/mcp-hangar`, workflow `release.yml`
+   - Add GitHub publisher: `mcp-hangar/mcp-hangar`, workflow `release.yml`
 2. Ensure `environment: pypi` is set in workflow
 
 #### Docker Build Failure
@@ -256,8 +256,8 @@ twine upload dist/*
 
 # Build and push Docker
 docker buildx build --platform linux/amd64,linux/arm64 \
-  -t ghcr.io/mapyr/mcp-hangar:X.Y.Z \
-  -t ghcr.io/mapyr/mcp-hangar:latest \
+  -t ghcr.io/mcp-hangar/mcp-hangar:X.Y.Z \
+  -t ghcr.io/mcp-hangar/mcp-hangar:latest \
   --push .
 ```
 
@@ -268,7 +268,7 @@ docker buildx build --platform linux/amd64,linux/arm64 \
 | Role | Contact |
 |------|---------|
 | Release Manager | @maintainer |
-| Security Issues | [GitHub Security](https://github.com/mapyr/mcp-hangar/security) |
+| Security Issues | [GitHub Security](https://github.com/mcp-hangar/mcp-hangar/security) |
 | Infrastructure | @infra-team |
 
 ---

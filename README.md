@@ -169,4 +169,4 @@ MIT — use it, fork it, ship it.
 
 ---
 
-[Docs](https://mcp-hangar.io) · [PyPI](https://pypi.org/project/mcp-hangar/) · [GitHub](https://github.com/mapyr/mcp-hangar)
+[Docs](https://mcp-hangar.io) · [PyPI](https://pypi.org/project/mcp-hangar/) · [GitHub](https://github.com/mcp-hangar/mcp-hangar)

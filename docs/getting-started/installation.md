@@ -34,7 +34,7 @@ mcp-hangar/
 ### Python Core Package
 
 ```bash
-git clone https://github.com/mapyr/mcp-hangar.git
+git clone https://github.com/mcp-hangar/mcp-hangar.git
 cd mcp-hangar/packages/core
 pip install -e .
 ```
@@ -42,7 +42,7 @@ pip install -e .
 ### Development Installation
 
 ```bash
-git clone https://github.com/mapyr/mcp-hangar.git
+git clone https://github.com/mcp-hangar/mcp-hangar.git
 cd mcp-hangar
 
 # Install Python core with dev dependencies
@@ -64,21 +64,21 @@ make build
 ## Docker
 
 ```bash
-docker pull ghcr.io/mapyr/mcp-hangar:latest
+docker pull ghcr.io/mcp-hangar/mcp-hangar:latest
 
 # Run with config
 docker run -v $(pwd)/config.yaml:/app/config.yaml:ro \
-  ghcr.io/mapyr/mcp-hangar:latest
+  ghcr.io/mcp-hangar/mcp-hangar:latest
 ```
 
 ## Helm Charts
 
 ```bash
 # Install mcp-hangar
-helm install mcp-hangar oci://ghcr.io/mapyr/charts/mcp-hangar
+helm install mcp-hangar oci://ghcr.io/mcp-hangar/charts/mcp-hangar
 
 # Install Kubernetes operator
-helm install mcp-hangar-operator oci://ghcr.io/mapyr/charts/mcp-hangar-operator \
+helm install mcp-hangar-operator oci://ghcr.io/mcp-hangar/charts/mcp-hangar-operator \
   --namespace mcp-system --create-namespace
 ```
 

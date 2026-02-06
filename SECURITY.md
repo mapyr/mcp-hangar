@@ -9,7 +9,7 @@ We take the security of MCP Hangar seriously. If you believe you have found a se
 ### How to Report
 
 1. **Email**: Send details to the project maintainers (contact information in the repository)
-2. **Private Disclosure**: Use [GitHub's private vulnerability reporting](https://github.com/mapyr/mcp-hangar/security/advisories/new) if available
+2. **Private Disclosure**: Use [GitHub's private vulnerability reporting](https://github.com/mcp-hangar/mcp-hangar/security/advisories/new) if available
 
 ### What to Include
 

@@ -1,4 +1,4 @@
-module github.com/mapyr/mcp-hangar/operator
+module github.com/mcp-hangar/mcp-hangar/operator
 
 go 1.23.0
 

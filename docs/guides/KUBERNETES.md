@@ -22,9 +22,9 @@ The MCP-Hangar Operator provides:
 
 ```bash
 # Install Custom Resource Definitions
-kubectl apply -f https://raw.githubusercontent.com/mapyr/mcp-hangar/main/deploy/crds/mcpprovider.yaml
-kubectl apply -f https://raw.githubusercontent.com/mapyr/mcp-hangar/main/deploy/crds/mcpprovidergroup.yaml
-kubectl apply -f https://raw.githubusercontent.com/mapyr/mcp-hangar/main/deploy/crds/mcpdiscoverysource.yaml
+kubectl apply -f https://raw.githubusercontent.com/mcp-hangar/mcp-hangar/main/deploy/crds/mcpprovider.yaml
+kubectl apply -f https://raw.githubusercontent.com/mcp-hangar/mcp-hangar/main/deploy/crds/mcpprovidergroup.yaml
+kubectl apply -f https://raw.githubusercontent.com/mcp-hangar/mcp-hangar/main/deploy/crds/mcpdiscoverysource.yaml
 
 # Verify
 kubectl get crds | grep mcp-hangar.io
@@ -34,7 +34,7 @@ kubectl get crds | grep mcp-hangar.io
 
 ```bash
 # Add Helm repository
-helm repo add mcp-hangar https://mapyr.github.io/mcp-hangar
+helm repo add mcp-hangar https://mcp-hangar.github.io/mcp-hangar
 helm repo update
 
 # Install operator

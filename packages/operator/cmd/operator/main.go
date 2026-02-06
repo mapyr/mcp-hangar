@@ -16,9 +16,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	mcpv1alpha1 "github.com/mapyr/mcp-hangar/operator/api/v1alpha1"
-	"github.com/mapyr/mcp-hangar/operator/internal/controller"
-	"github.com/mapyr/mcp-hangar/operator/pkg/hangar"
+	mcpv1alpha1 "github.com/mcp-hangar/mcp-hangar/operator/api/v1alpha1"
+	"github.com/mcp-hangar/mcp-hangar/operator/internal/controller"
+	"github.com/mcp-hangar/mcp-hangar/operator/pkg/hangar"
 )
 
 var (

@@ -1,7 +1,7 @@
 # MCP Hangar
 
-[![CI - Core](https://github.com/mapyr/mcp-hangar/actions/workflows/ci-core.yml/badge.svg)](https://github.com/mapyr/mcp-hangar/actions/workflows/ci-core.yml)
-[![CI - Operator](https://github.com/mapyr/mcp-hangar/actions/workflows/ci-operator.yml/badge.svg)](https://github.com/mapyr/mcp-hangar/actions/workflows/ci-operator.yml)
+[![CI - Core](https://github.com/mcp-hangar/mcp-hangar/actions/workflows/ci-core.yml/badge.svg)](https://github.com/mcp-hangar/mcp-hangar/actions/workflows/ci-core.yml)
+[![CI - Operator](https://github.com/mcp-hangar/mcp-hangar/actions/workflows/ci-operator.yml/badge.svg)](https://github.com/mcp-hangar/mcp-hangar/actions/workflows/ci-operator.yml)
 [![PyPI](https://img.shields.io/pypi/v/mcp-hangar)](https://pypi.org/project/mcp-hangar/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -65,10 +65,10 @@ mcp-hangar serve
 
 📖 **[Full Documentation](https://mcp-hangar.io)**
 
-- [Installation](https://mapyr.github.io/mcp-hangar/getting-started/installation/)
-- [Quick Start Guide](https://mapyr.github.io/mcp-hangar/getting-started/quickstart/)
-- [Architecture Overview](https://mapyr.github.io/mcp-hangar/architecture/OVERVIEW/)
-- [Container Guide](https://mapyr.github.io/mcp-hangar/guides/CONTAINERS/)
+- [Installation](https://mcp-hangar.github.io/mcp-hangar/getting-started/installation/)
+- [Quick Start Guide](https://mcp-hangar.github.io/mcp-hangar/getting-started/quickstart/)
+- [Architecture Overview](https://mcp-hangar.github.io/mcp-hangar/architecture/OVERVIEW/)
+- [Container Guide](https://mcp-hangar.github.io/mcp-hangar/guides/CONTAINERS/)
 
 ## Contributing
 
@@ -76,4 +76,4 @@ See [Contributing Guide](development/CONTRIBUTING.md) for development setup and 
 
 ## License
 
-MIT - see [LICENSE](https://github.com/mapyr/mcp-hangar/blob/main/LICENSE) for details.
+MIT - see [LICENSE](https://github.com/mcp-hangar/mcp-hangar/blob/main/LICENSE) for details.

@@ -2,7 +2,7 @@
 
 Kubernetes Operator for managing MCP (Model Context Protocol) providers as native Kubernetes resources.
 
-> **Note**: This is part of the [MCP Hangar monorepo](https://github.com/mapyr/mcp-hangar). For Python core package, see `packages/core/`. For Helm charts, see `packages/helm-charts/`.
+> **Note**: This is part of the [MCP Hangar monorepo](https://github.com/mcp-hangar/mcp-hangar). For Python core package, see `packages/core/`. For Helm charts, see `packages/helm-charts/`.
 
 ## Features
 
@@ -26,7 +26,7 @@ Kubernetes Operator for managing MCP (Model Context Protocol) providers as nativ
 
 ```bash
 # Install via OCI registry
-helm install mcp-hangar-operator oci://ghcr.io/mapyr/charts/mcp-hangar-operator \
+helm install mcp-hangar-operator oci://ghcr.io/mcp-hangar/charts/mcp-hangar-operator \
   --namespace mcp-system \
   --create-namespace
 ```

@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   mcp-hangar:
-    image: ghcr.io/mapyr/mcp-hangar:latest
+    image: ghcr.io/mcp-hangar/mcp-hangar:latest
     container_name: mcp-hangar
     ports:
       - "8080:8080"

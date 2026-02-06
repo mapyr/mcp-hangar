@@ -6,9 +6,9 @@ version: 0.2.0
 appVersion: "0.2.0"
 home: https://mcp-hangar.io
 sources:
-  - https://github.com/mapyr/mcp-hangar
+  - https://github.com/mcp-hangar/mcp-hangar
 maintainers:
-  - name: mapyr
+  - name: mcp-hangar
     email: marcin@mcp-hangar.io
 keywords:
   - mcp

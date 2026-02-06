@@ -2,7 +2,7 @@
 
 Production-grade infrastructure for Model Context Protocol.
 
-> **Note**: This is the Python core package of the [MCP Hangar monorepo](https://github.com/mapyr/mcp-hangar). For Kubernetes operator, see `packages/operator/`. For Helm charts, see `packages/helm-charts/`.
+> **Note**: This is the Python core package of the [MCP Hangar monorepo](https://github.com/mcp-hangar/mcp-hangar). For Kubernetes operator, see `packages/operator/`. For Helm charts, see `packages/helm-charts/`.
 
 ## Installation
 
@@ -50,7 +50,7 @@ mypy mcp_hangar
 
 ## Documentation
 
-See [main documentation](https://mapyr.github.io/mcp-hangar/) for details.
+See [main documentation](https://mcp-hangar.github.io/mcp-hangar/) for details.
 
 ## License
 

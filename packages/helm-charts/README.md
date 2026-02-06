@@ -2,7 +2,7 @@
 
 Helm charts for deploying MCP-Hangar ecosystem on Kubernetes.
 
-> **Note**: This is part of the [MCP Hangar monorepo](https://github.com/mapyr/mcp-hangar). For Python core package, see `packages/core/`. For Kubernetes operator, see `packages/operator/`.
+> **Note**: This is part of the [MCP Hangar monorepo](https://github.com/mcp-hangar/mcp-hangar). For Python core package, see `packages/core/`. For Kubernetes operator, see `packages/operator/`.
 
 ## Charts
 
@@ -15,10 +15,10 @@ Helm charts for deploying MCP-Hangar ecosystem on Kubernetes.
 
 ```bash
 # Install core server
-helm install mcp-hangar oci://ghcr.io/mapyr/charts/mcp-hangar
+helm install mcp-hangar oci://ghcr.io/mcp-hangar/charts/mcp-hangar
 
 # Install operator
-helm install mcp-hangar-operator oci://ghcr.io/mapyr/charts/mcp-hangar-operator \
+helm install mcp-hangar-operator oci://ghcr.io/mcp-hangar/charts/mcp-hangar-operator \
   --namespace mcp-system \
   --create-namespace
 ```

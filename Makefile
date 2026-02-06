@@ -52,14 +52,14 @@ build-helm: ## Package Helm charts
 docker: docker-core docker-operator ## Build all Docker images
 
 docker-core: ## Build core Docker image
-	docker build -t ghcr.io/mapyr/mcp-hangar:$(VERSION) packages/core
+	docker build -t ghcr.io/mcp-hangar/mcp-hangar:$(VERSION) packages/core
 
 docker-operator: ## Build operator Docker image
-	docker build -t ghcr.io/mapyr/mcp-hangar-operator:$(VERSION) packages/operator
+	docker build -t ghcr.io/mcp-hangar/mcp-hangar-operator:$(VERSION) packages/operator
 
 docker-push: ## Push all Docker images
-	docker push ghcr.io/mapyr/mcp-hangar:$(VERSION)
-	docker push ghcr.io/mapyr/mcp-hangar-operator:$(VERSION)
+	docker push ghcr.io/mcp-hangar/mcp-hangar:$(VERSION)
+	docker push ghcr.io/mcp-hangar/mcp-hangar-operator:$(VERSION)
 
 ##@ Release
 
@@ -69,13 +69,13 @@ publish-core: ## Publish to PyPI
 	cd packages/core && hatch publish
 
 publish-operator: docker-operator ## Push operator image
-	docker push ghcr.io/mapyr/mcp-hangar-operator:$(VERSION)
-	docker tag ghcr.io/mapyr/mcp-hangar-operator:$(VERSION) ghcr.io/mapyr/mcp-hangar-operator:latest
-	docker push ghcr.io/mapyr/mcp-hangar-operator:latest
+	docker push ghcr.io/mcp-hangar/mcp-hangar-operator:$(VERSION)
+	docker tag ghcr.io/mcp-hangar/mcp-hangar-operator:$(VERSION) ghcr.io/mcp-hangar/mcp-hangar-operator:latest
+	docker push ghcr.io/mcp-hangar/mcp-hangar-operator:latest
 
 publish-helm: build-helm ## Push Helm charts to OCI
-	helm push dist/mcp-hangar-*.tgz oci://ghcr.io/mapyr/charts
-	helm push dist/mcp-hangar-operator-*.tgz oci://ghcr.io/mapyr/charts
+	helm push dist/mcp-hangar-*.tgz oci://ghcr.io/mcp-hangar/charts
+	helm push dist/mcp-hangar-operator-*.tgz oci://ghcr.io/mcp-hangar/charts
 
 release: ## Create a release (use VERSION=x.y.z)
 	@if [ -z "$(VERSION)" ]; then echo "VERSION required"; exit 1; fi

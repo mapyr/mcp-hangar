@@ -6,7 +6,7 @@ replicaCount: 1
 
 # Operator image configuration
 image:
-  repository: ghcr.io/mapyr/mcp-hangar-operator
+  repository: ghcr.io/mcp-hangar/mcp-hangar-operator
   pullPolicy: IfNotPresent
   # Overrides the image tag (defaults to chart appVersion)
   tag: ""

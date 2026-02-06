@@ -6,13 +6,13 @@ version: 0.2.0
 appVersion: "0.2.0"
 kubeVersion: ">=1.25.0-0"
 
-home: https://github.com/mapyr/mcp-hangar
+home: https://github.com/mcp-hangar/mcp-hangar
 sources:
-  - https://github.com/mapyr/mcp-hangar
+  - https://github.com/mcp-hangar/mcp-hangar
 
 maintainers:
   - name: MCP-Hangar Contributors
-    url: https://github.com/mapyr/mcp-hangar
+    url: https://github.com/mcp-hangar/mcp-hangar
 
 keywords:
   - mcp

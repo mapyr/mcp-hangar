@@ -17,10 +17,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	mcpv1alpha1 "github.com/mapyr/mcp-hangar/operator/api/v1alpha1"
-	"github.com/mapyr/mcp-hangar/operator/pkg/hangar"
-	"github.com/mapyr/mcp-hangar/operator/pkg/metrics"
-	"github.com/mapyr/mcp-hangar/operator/pkg/provider"
+	mcpv1alpha1 "github.com/mcp-hangar/mcp-hangar/operator/api/v1alpha1"
+	"github.com/mcp-hangar/mcp-hangar/operator/pkg/hangar"
+	"github.com/mcp-hangar/mcp-hangar/operator/pkg/metrics"
+	"github.com/mcp-hangar/mcp-hangar/operator/pkg/provider"
 )
 
 const (
@@ -82,7 +82,7 @@ func DefaultReconcilerConfig() *ReconcilerConfig {
 		MaxConcurrentReconciles: 10,
 		ReadyRequeueInterval:    5 * time.Minute,
 		ErrorRequeueInterval:    10 * time.Second,
-		DefaultImage:            "ghcr.io/mapyr/mcp-hangar-sidecar:latest",
+		DefaultImage:            "ghcr.io/mcp-hangar/mcp-hangar-sidecar:latest",
 	}
 }
 
