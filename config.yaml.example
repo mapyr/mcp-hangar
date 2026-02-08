@@ -1,12 +1,29 @@
 # MCP Hangar Configuration
 # Copy to config.yaml and customize
 
+# ---------------------------------------------------------------------------
+# Execution — system-wide concurrency control
+# ---------------------------------------------------------------------------
+# Controls how many tool calls can execute in parallel across all providers
+# and batches. Two levels of concurrency limiting apply simultaneously:
+#
+#   Global semaphore (execution.max_concurrency)
+#     +-- Provider A semaphore (providers.A.max_concurrency)
+#     +-- Provider B semaphore (providers.B.max_concurrency)
+#
+# A call must acquire BOTH the global and the provider slot before executing.
+# Set to 0 or omit for unlimited (not recommended in production).
+execution:
+  max_concurrency: 50                # Global limit across all providers (default: 50)
+  default_provider_concurrency: 10   # Default per-provider limit (default: 10)
+
 providers:
-  # Subprocess
+  # Subprocess — uses default per-provider concurrency (10)
   math:
     mode: subprocess
     command: [python, -m, examples.provider_math.server]
     idle_ttl_s: 180
+    # max_concurrency: 10   # Per-provider limit (inherits default_provider_concurrency)
     tools:
       - name: add
         description: "Add two numbers"
@@ -43,6 +60,7 @@ providers:
   #   image: localhost/mcp-fetch:latest
   #   network: bridge
   #   idle_ttl_s: 180
+  #   max_concurrency: 5    # Protect slow provider with lower limit
 
   # Provider Group
   # math-cluster:

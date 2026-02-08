@@ -5,6 +5,7 @@ timeout handling, and fail-fast behavior.
 
 Features:
 - Parallel execution with ThreadPoolExecutor
+- Two-level semaphore concurrency control (global + per-provider)
 - Single-flight pattern for cold starts (one provider starts once, not N times)
 - Cooperative cancellation via threading.Event
 - Eager validation before execution
@@ -26,6 +27,14 @@ from mcp.server.fastmcp import FastMCP
 
 from ....logging_config import get_logger
 from ....metrics import BATCH_CALLS_TOTAL, BATCH_VALIDATION_FAILURES_TOTAL
+from .concurrency import (
+    ConcurrencyManager,
+    DEFAULT_GLOBAL_CONCURRENCY,
+    DEFAULT_PROVIDER_CONCURRENCY,
+    get_concurrency_manager,
+    init_concurrency_manager,
+    reset_concurrency_manager,
+)
 from .executor import BatchExecutor, format_result_dict
 from .models import (
     BatchResult,
@@ -65,9 +74,20 @@ def hangar_call(
 
     Side effects: May start cold providers. Executes calls in parallel.
 
+    Concurrency model:
+        Two levels of concurrency control apply simultaneously:
+        1. Per-batch: max_concurrency limits threads for THIS invocation.
+        2. System-wide: global and per-provider semaphores (configured via
+           config.yaml ``execution.max_concurrency`` and per-provider
+           ``max_concurrency``) provide cross-batch backpressure.
+
+        All calls are submitted to the thread pool at once. Semaphores gate
+        execution -- a call starts as soon as a slot frees up, without waiting
+        for the entire batch wave to complete.
+
     Args:
         calls: list[{provider, tool, arguments, timeout?}] - Invocations to execute
-        max_concurrency: int - Parallel workers (default: 10, range: 1-20)
+        max_concurrency: int - Parallel workers for this batch (default: 10, range: 1-50)
         timeout: float - Batch timeout in seconds (default: 60, range: 1-300)
         fail_fast: bool - Stop batch on first error (default: false)
         max_attempts: int - Total attempts per call including retries (default: 1, range: 1-10)
@@ -266,6 +286,13 @@ __all__ = [
     "MAX_RESPONSE_SIZE_BYTES",
     "MAX_TIMEOUT",
     "MAX_TOTAL_RESPONSE_SIZE_BYTES",
+    # Concurrency
+    "ConcurrencyManager",
+    "DEFAULT_GLOBAL_CONCURRENCY",
+    "DEFAULT_PROVIDER_CONCURRENCY",
+    "get_concurrency_manager",
+    "init_concurrency_manager",
+    "reset_concurrency_manager",
     # Executor
     "BatchExecutor",
     # Internal (backward compat)

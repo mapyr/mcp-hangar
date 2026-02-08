@@ -2,6 +2,7 @@
 
 Provides parallel execution of batch invocations with:
 - ThreadPoolExecutor for concurrent execution
+- Two-level semaphore concurrency control (global + per-provider)
 - Single-flight pattern for cold starts
 - Cooperative cancellation
 - Circuit breaker integration
@@ -30,18 +31,40 @@ from ....metrics import (
 from ....retry import retry_sync, RetryPolicy, RetryResult
 from ...context import get_context
 from ...state import GROUPS
+from .concurrency import ConcurrencyManager, get_concurrency_manager
 from .models import BatchResult, CallResult, CallSpec, MAX_RESPONSE_SIZE_BYTES, RetryMetadata
 
 logger = get_logger(__name__)
 
 
 class BatchExecutor:
-    """Executes batch invocations with parallel processing."""
+    """Executes batch invocations with parallel processing.
 
-    def __init__(self):
+    Uses a two-level concurrency model:
+    1. ThreadPoolExecutor(max_workers=N) provides per-batch thread management.
+       N is the effective batch concurrency: min(user_param, global_limit).
+    2. ConcurrencyManager provides cross-batch, system-wide concurrency control
+       via global and per-provider semaphores.
+
+    All calls in a batch are submitted to the thread pool at once. Each worker
+    thread acquires global + provider semaphores before executing, providing
+    backpressure without sequential chunking. Fast calls release their slots
+    immediately, allowing queued calls to proceed without waiting for the
+    entire batch wave to complete.
+    """
+
+    def __init__(self, concurrency_manager: ConcurrencyManager | None = None):
         self._single_flight = SingleFlight(cache_results=False)
         self._active_batches = 0
         self._active_lock = threading.Lock()
+        self._concurrency_manager = concurrency_manager
+
+    @property
+    def concurrency_manager(self) -> ConcurrencyManager:
+        """Get the concurrency manager (lazy-loaded from singleton if not injected)."""
+        if self._concurrency_manager is None:
+            self._concurrency_manager = get_concurrency_manager()
+        return self._concurrency_manager
 
     def _apply_batch_truncation(self, batch_id: str, results: list[CallResult]) -> list[CallResult]:
         """Apply batch-level truncation if enabled and needed.
@@ -71,10 +94,19 @@ class BatchExecutor:
     ) -> BatchResult:
         """Execute batch of calls in parallel.
 
+        All calls are submitted to the thread pool immediately. Concurrency is
+        controlled by two mechanisms:
+        - ThreadPoolExecutor max_workers: caps threads for this batch
+        - ConcurrencyManager semaphores: caps in-flight calls globally and per-provider
+
+        The effective per-batch thread count is min(max_concurrency, global_limit)
+        when the global limit is set, ensuring we don't create more threads than
+        the system-wide limit allows.
+
         Args:
             batch_id: Unique batch identifier.
             calls: List of call specifications.
-            max_concurrency: Maximum parallel workers.
+            max_concurrency: Maximum parallel workers for this batch.
             global_timeout: Global timeout for entire batch.
             fail_fast: Abort on first error if True.
 
@@ -88,6 +120,17 @@ class BatchExecutor:
         succeeded = 0
         failed = 0
         cancelled = 0
+
+        # Determine effective thread pool size:
+        # - Capped by the per-batch max_concurrency (user/default)
+        # - Also capped by global concurrency limit (no point creating more
+        #   threads than the global semaphore will allow through)
+        cm = self.concurrency_manager
+        global_limit = cm.global_limit
+        if global_limit > 0:
+            effective_workers = min(max_concurrency, global_limit)
+        else:
+            effective_workers = max_concurrency
 
         # Track active batches for metrics
         with self._active_lock:
@@ -108,8 +151,18 @@ class BatchExecutor:
                 )
             )
 
-            # Execute calls in thread pool
-            with ThreadPoolExecutor(max_workers=max_concurrency) as executor:
+            logger.debug(
+                "batch_dispatch_start",
+                batch_id=batch_id,
+                call_count=len(calls),
+                effective_workers=effective_workers,
+                global_limit=global_limit if global_limit > 0 else "unlimited",
+                provider_count=len(providers),
+            )
+
+            # Execute calls in thread pool — all submitted at once, semaphores
+            # provide backpressure (not sequential chunking)
+            with ThreadPoolExecutor(max_workers=effective_workers) as executor:
                 futures = {
                     executor.submit(
                         self._execute_call,
@@ -265,8 +318,14 @@ class BatchExecutor:
     ) -> CallResult:
         """Execute a single call within the batch.
 
+        Acquires global and per-provider concurrency slots via the
+        ConcurrencyManager before performing the actual invocation.
+        This ensures system-wide and per-provider backpressure even
+        when multiple batches run concurrently.
+
         Handles:
         - Cooperative cancellation
+        - Two-level concurrency control (global + per-provider)
         - Single-flight cold starts
         - Circuit breaker checks
         - Response truncation
@@ -369,6 +428,48 @@ class BatchExecutor:
                 error_type="CancellationError",
                 elapsed_ms=(time.perf_counter() - call_start) * 1000,
             )
+
+        # Acquire concurrency slots (global + per-provider) before invocation.
+        # This is where backpressure happens: if the global or provider semaphore
+        # is full, this thread blocks until a slot frees up. Crucially, the call
+        # starts as soon as ANY slot is freed — it does not wait for an entire
+        # batch wave to complete (unlike sequential chunking).
+        cm = self.concurrency_manager
+        with cm.acquire(call.provider) as wait_s:
+            if wait_s > 0.01:
+                logger.debug(
+                    "concurrency_slot_wait",
+                    call_id=call.call_id,
+                    provider=call.provider,
+                    wait_ms=round(wait_s * 1000, 2),
+                )
+
+            return self._invoke_with_retry(call, cancel_event, effective_timeout, call_start, ctx)
+
+    def _invoke_with_retry(
+        self,
+        call: CallSpec,
+        cancel_event: threading.Event,
+        effective_timeout: float,
+        call_start: float,
+        ctx: Any,
+    ) -> CallResult:
+        """Perform the tool invocation, optionally with retries.
+
+        This method runs while concurrency slots are held. It contains the
+        actual I/O (command bus send) and retry logic extracted from
+        _execute_call for clarity.
+
+        Args:
+            call: Call specification.
+            cancel_event: Event to check for cancellation.
+            effective_timeout: Timeout for this call.
+            call_start: Monotonic time when the call started.
+            ctx: Application context.
+
+        Returns:
+            CallResult for this call.
+        """
 
         # Define the invocation operation for retry
         def do_invoke() -> dict[str, Any]:
@@ -506,34 +607,34 @@ class BatchExecutor:
         )
 
 
-def format_result_dict(r: CallResult) -> dict[str, Any]:
-    """Format a CallResult as a dictionary for API response.
+def format_result_dict(result: CallResult) -> dict[str, Any]:
+    """Format a CallResult into a response dictionary.
 
     Args:
-        r: The CallResult to format.
+        result: The call result to format.
 
     Returns:
-        Dictionary with result fields.
+        Dictionary suitable for JSON serialization.
     """
-    result_dict: dict[str, Any] = {
-        "index": r.index,
-        "call_id": r.call_id,
-        "success": r.success,
-        "result": r.result,
-        "error": r.error,
-        "error_type": r.error_type,
-        "elapsed_ms": round(r.elapsed_ms, 2),
+    d: dict[str, Any] = {
+        "index": result.index,
+        "call_id": result.call_id,
+        "success": result.success,
+        "result": result.result,
+        "error": result.error,
+        "error_type": result.error_type,
+        "elapsed_ms": round(result.elapsed_ms, 2),
     }
 
-    if r.truncated:
-        result_dict["truncated"] = r.truncated
-    if r.truncated_reason:
-        result_dict["truncated_reason"] = r.truncated_reason
-    if r.original_size_bytes is not None:
-        result_dict["original_size_bytes"] = r.original_size_bytes
-    if r.continuation_id:
-        result_dict["continuation_id"] = r.continuation_id
-    if r.retry_metadata:
-        result_dict["retry_metadata"] = r.retry_metadata.to_dict()
+    if result.truncated:
+        d["truncated"] = True
+        d["truncated_reason"] = result.truncated_reason
+        d["original_size_bytes"] = result.original_size_bytes
 
-    return result_dict
+    if result.continuation_id:
+        d["continuation_id"] = result.continuation_id
+
+    if result.retry_metadata:
+        d["retry_metadata"] = result.retry_metadata.to_dict()
+
+    return d

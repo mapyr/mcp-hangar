@@ -153,7 +153,7 @@ def main():
 
     # Test each user
     all_passed = True
-    for username, password, expected_groups, expected_role in USERS:
+    for username, password, _expected_groups, expected_role in USERS:
         print("-" * 60)
         print(f"Testing user: {username} (expected role: {expected_role})")
         print("-" * 60)

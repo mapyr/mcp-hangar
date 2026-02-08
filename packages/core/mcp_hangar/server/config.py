@@ -22,6 +22,7 @@ from ..logging_config import get_logger
 # Backward compatibility - config populates these collections
 # which are then shared with ApplicationContext
 from .state import get_group_rebalance_saga, GROUPS, PROVIDERS
+from .tools.batch.concurrency import DEFAULT_GLOBAL_CONCURRENCY, DEFAULT_PROVIDER_CONCURRENCY, init_concurrency_manager
 
 logger = get_logger(__name__)
 
@@ -218,10 +219,28 @@ def _load_provider_config(provider_id: str, spec_dict: dict[str, Any]) -> Provid
         http=spec_dict.get("http"),
     )
     PROVIDERS[provider_id] = provider
+
+    # Register per-provider concurrency limit if specified
+    provider_max_concurrency = spec_dict.get("max_concurrency")
+    if provider_max_concurrency is not None:
+        from .tools.batch.concurrency import get_concurrency_manager
+
+        try:
+            cm = get_concurrency_manager()
+            cm.set_provider_limit(provider_id, int(provider_max_concurrency))
+        except Exception as e:
+            logger.warning(
+                "provider_concurrency_limit_failed",
+                provider_id=provider_id,
+                max_concurrency=provider_max_concurrency,
+                error=str(e),
+            )
+
     logger.debug(
         "provider_loaded",
         provider_id=provider_id,
         mode=spec_dict.get("mode", "subprocess"),
+        max_concurrency=provider_max_concurrency,
     )
     return provider
 
@@ -255,6 +274,49 @@ def _load_group_config(group_id: str, spec_dict: dict[str, Any]) -> None:
     )
 
 
+def _init_concurrency_from_config(full_config: dict[str, Any]) -> None:
+    """Initialize the ConcurrencyManager from configuration.
+
+    Reads ``execution.max_concurrency`` for the global limit and
+    per-provider ``max_concurrency`` values from the ``providers`` section.
+
+    Called during load_configuration before providers are loaded, so that
+    per-provider limits set via _load_provider_config are applied on top.
+
+    Args:
+        full_config: Full configuration dictionary.
+    """
+    execution_config = full_config.get("execution", {})
+
+    global_limit_raw = execution_config.get("max_concurrency")
+    if global_limit_raw is not None:
+        # 0 or null in config means unlimited
+        global_limit = int(global_limit_raw) if global_limit_raw else 0
+    else:
+        global_limit = DEFAULT_GLOBAL_CONCURRENCY
+
+    default_provider_limit_raw = execution_config.get("default_provider_concurrency")
+    if default_provider_limit_raw is not None:
+        default_provider_limit = int(default_provider_limit_raw) if default_provider_limit_raw else 0
+    else:
+        default_provider_limit = DEFAULT_PROVIDER_CONCURRENCY
+
+    # Collect per-provider limits from providers section
+    provider_limits: dict[str, int] = {}
+    providers_config = full_config.get("providers", {})
+    for provider_id, spec in providers_config.items():
+        if isinstance(spec, dict):
+            pmc = spec.get("max_concurrency")
+            if pmc is not None:
+                provider_limits[provider_id] = int(pmc)
+
+    init_concurrency_manager(
+        global_limit=global_limit,
+        default_provider_limit=default_provider_limit,
+        provider_limits=provider_limits,
+    )
+
+
 def load_configuration(config_path: str | None = None) -> dict[str, Any]:
     """Load provider configuration from file or use defaults.
 
@@ -267,6 +329,7 @@ def load_configuration(config_path: str | None = None) -> dict[str, Any]:
     if Path(config_path).exists():
         logger.info("loading_config_from_file", config_path=config_path)
         full_config = load_config_from_file(config_path)
+        _init_concurrency_from_config(full_config)
         load_config(full_config.get("providers", {}))
         return full_config
     else:
@@ -278,5 +341,6 @@ def load_configuration(config_path: str | None = None) -> dict[str, Any]:
                 "idle_ttl_s": 180,
             },
         }
+        _init_concurrency_from_config({"providers": default_config})
         load_config(default_config)
         return {"providers": default_config}

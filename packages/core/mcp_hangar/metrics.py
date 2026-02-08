@@ -893,6 +893,23 @@ def _register_all_metrics():
         BATCH_CIRCUIT_BREAKER_REJECTIONS_TOTAL,
         BATCH_CANCELLATIONS_TOTAL,
     ]
+
+    # Concurrency metrics are defined in server/tools/batch/concurrency.py
+    # and registered here for inclusion in /metrics output.
+    from .server.tools.batch.concurrency import (
+        BATCH_CONCURRENCY_QUEUED_TOTAL,
+        BATCH_CONCURRENCY_WAIT_SECONDS,
+        BATCH_INFLIGHT_CALLS,
+        BATCH_INFLIGHT_CALLS_PER_PROVIDER,
+    )
+
+    concurrency_metrics = [
+        BATCH_INFLIGHT_CALLS,
+        BATCH_INFLIGHT_CALLS_PER_PROVIDER,
+        BATCH_CONCURRENCY_WAIT_SECONDS,
+        BATCH_CONCURRENCY_QUEUED_TOTAL,
+    ]
+    metrics.extend(concurrency_metrics)
     for metric in metrics:
         REGISTRY.register(metric)
 
