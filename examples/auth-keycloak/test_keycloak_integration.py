@@ -5,6 +5,11 @@ import json
 
 import httpx
 
+from mcp_hangar.domain.contracts.authentication import AuthRequest
+from mcp_hangar.infrastructure.auth.jwt_authenticator import JWKSTokenValidator, JWTAuthenticator, OIDCConfig
+from mcp_hangar.server.auth_bootstrap import bootstrap_auth
+from mcp_hangar.server.auth_config import AuthConfig, OIDCAuthConfig
+
 KEYCLOAK_URL = "http://localhost:8080"
 REALM = "mcp-hangar"
 CLIENT_ID = "mcp-cli"
@@ -68,11 +73,6 @@ print("\n" + "=" * 60)
 print("Now testing with MCP-Hangar JWT authenticator...")
 print("=" * 60)
 
-from mcp_hangar.domain.contracts.authentication import AuthRequest
-
-# Test with MCP-Hangar
-from mcp_hangar.infrastructure.auth.jwt_authenticator import JWKSTokenValidator, JWTAuthenticator, OIDCConfig
-
 # Get admin token
 token_data = get_token("admin", "admin123")
 access_token = token_data["access_token"]
@@ -115,9 +115,6 @@ print("=" * 60)
 print("\n" + "=" * 60)
 print("Testing full AuthN + AuthZ flow...")
 print("=" * 60)
-
-from mcp_hangar.server.auth_bootstrap import bootstrap_auth
-from mcp_hangar.server.auth_config import AuthConfig, OIDCAuthConfig
 
 # Create auth config matching Keycloak
 auth_config = AuthConfig(

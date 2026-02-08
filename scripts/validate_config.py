@@ -15,10 +15,10 @@ Usage:
 """
 
 import argparse
-import os
-import sys
 from dataclasses import dataclass, field
+import os
 from pathlib import Path
+import sys
 from typing import Any
 
 import yaml
